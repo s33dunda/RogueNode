@@ -21,7 +21,10 @@ export interface Item {
 	aliases?: string[];
 	examineText?: string;
 	onTake?: string;
-	use?: (gameState: GameState) => { message: string[]; updateState?: Partial<GameState> };
+	use?: (gameState: GameState) => {
+		message: string[];
+		updateState?: Partial<GameState>;
+	};
 }
 
 export interface GameState {
@@ -156,9 +159,11 @@ export const items = [
 		onTake:
 			"The tool lights up as you pick it up, ready to diagnose network problems.",
 		use: (_gameState: GameState) => ({
-			message: ["You run a network diagnostic scan. The tool identifies several vulnerabilities."],
-			updateState: {}
-		})
+			message: [
+				"You run a network diagnostic scan. The tool identifies several vulnerabilities.",
+			],
+			updateState: {},
+		}),
 	},
 	{
 		id: "admin-keycard",
@@ -170,9 +175,11 @@ export const items = [
 		examineText:
 			"The keycard belongs to the lead system administrator. It has access to all secure areas.",
 		use: (_gameState: GameState) => ({
-			message: ["You swipe the admin keycard. Access granted to secure systems."],
-			updateState: {}
-		})
+			message: [
+				"You swipe the admin keycard. Access granted to secure systems.",
+			],
+			updateState: {},
+		}),
 	},
 	{
 		id: "backup-drive",
@@ -184,9 +191,11 @@ export const items = [
 		examineText:
 			"A high-capacity drive containing verified clean backups of critical systems.",
 		use: (_gameState: GameState) => ({
-			message: ["You connect the backup drive. Clean system images are ready for restoration."],
-			updateState: {}
-		})
+			message: [
+				"You connect the backup drive. Clean system images are ready for restoration.",
+			],
+			updateState: {},
+		}),
 	},
 	{
 		id: "security-patch",
@@ -198,9 +207,11 @@ export const items = [
 		examineText:
 			"The USB contains critical security patches that haven't been applied yet.",
 		use: (_gameState: GameState) => ({
-			message: ["You deploy the security patches. Systems are being updated with the latest protections."],
-			updateState: {}
-		})
+			message: [
+				"You deploy the security patches. Systems are being updated with the latest protections.",
+			],
+			updateState: {},
+		}),
 	},
 ];
 
@@ -267,7 +278,7 @@ export const enemies = [
 ];
 
 // DevOps/SRE tools available in the game
-export const devopsTools = [
+export const commandLineTools = [
 	{
 		name: "ping",
 		syntax: "ping [system]",

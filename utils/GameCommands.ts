@@ -1,5 +1,5 @@
 import {
-	devopsTools,
+	commandLineTools,
 	type Enemy,
 	enemies,
 	type GameState,
@@ -29,7 +29,7 @@ export const parseCommand = (command: string, gameState: GameState) => {
 				"- inventory: Check what you're carrying",
 				"- status: Check your system status",
 				"- fix [target]: Attempt to repair a broken system",
-				"- tools: List available DevOps tools",
+				"- tools: List available command-line tools",
 				"- [toolname] help: Get help on a specific tool (e.g. 'ping help')",
 				"- restart: Restart the game (if you're stuck)",
 				"- help: Show this help text",
@@ -170,7 +170,10 @@ export const parseCommand = (command: string, gameState: GameState) => {
 				if (itemToUse.use) {
 					const useResult = itemToUse.use(gameState);
 					response = useResult.message;
-					if (useResult.updateState && typeof useResult.updateState === 'object') {
+					if (
+						useResult.updateState &&
+						typeof useResult.updateState === "object"
+					) {
 						newState = { ...newState, ...useResult.updateState };
 					}
 				} else {
@@ -192,8 +195,8 @@ export const parseCommand = (command: string, gameState: GameState) => {
 			break;
 
 		case "tools":
-			response = ["available devops tools:", "-------------------"];
-			devopsTools.forEach((tool) => {
+			response = ["available command-line tools:", "-------------------"];
+			commandLineTools.forEach((tool) => {
 				response.push(`- ${tool.name}: ${tool.description}`);
 			});
 			response.push("");
@@ -210,7 +213,7 @@ export const parseCommand = (command: string, gameState: GameState) => {
 		case "top":
 			// Check if this is a help request for a tool
 			if (target === "help") {
-				const tool = devopsTools.find((t) => t.name === action);
+				const tool = commandLineTools.find((t) => t.name === action);
 				if (tool) {
 					response = [
 						`${tool.name.toUpperCase()}:`,

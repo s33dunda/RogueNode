@@ -12,14 +12,17 @@
 		"lint": "next lint"
 	},
 	"dependencies": {
+		"@ai-sdk/openai": "^2.0.32",
 		"@clerk/clerk-react": "^5.47.0",
 		"@clerk/nextjs": "^6.32.0",
 		"@xyflow/react": "^12.8.5",
+		"ai": "^5.0.48",
 		"convex": "^1.27.1",
 		"lucide-react": "^0.544.0",
 		"next": "15.5.3",
 		"react": "^19.1.1",
-		"react-dom": "^19.1.1"
+		"react-dom": "^19.1.1",
+		"zod": "^4.1.11"
 	},
 	"devDependencies": {
 		"@eslint/eslintrc": "^3.3.1",

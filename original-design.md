@@ -872,7 +872,7 @@ module.exports = {
 ```
 
 ```utils/GameCommands.ts
-import { rooms, items, enemies, devopsTools } from './GameData'
+import { rooms, items, enemies, commandLineTools } from './GameData'
 // Process player commands and return response text and updated game state
 export const parseCommand = (command: string, gameState: any) => {
   const words = command.trim().toLowerCase().split(' ')
@@ -893,7 +893,7 @@ export const parseCommand = (command: string, gameState: any) => {
         "- inventory: Check what you're carrying",
         '- status: Check your system status',
         '- fix [target]: Attempt to repair a broken system',
-        '- tools: List available DevOps tools',
+        '- tools: List available command-line tools',
         "- [toolname] help: Get help on a specific tool (e.g. 'ping help')",
         "- restart: Restart the game (if you're stuck)",
         '- help: Show this help text',
@@ -1038,8 +1038,8 @@ export const parseCommand = (command: string, gameState: any) => {
       ]
       break
     case 'tools':
-      response = ['available devops tools:', '-------------------']
-      devopsTools.forEach((tool) => {
+      response = ['available command-line tools:', '-------------------']
+      commandLineTools.forEach((tool) => {
         response.push(`- ${tool.name}: ${tool.description}`)
       })
       response.push('')
@@ -1055,7 +1055,7 @@ export const parseCommand = (command: string, gameState: any) => {
     case 'top':
       // Check if this is a help request for a tool
       if (target === 'help') {
-        const tool = devopsTools.find((t) => t.name === action)
+        const tool = commandLineTools.find((t) => t.name === action)
         if (tool) {
           response = [
             `${tool.name.toUpperCase()}:`,
@@ -1418,7 +1418,7 @@ export const enemies = [
   },
 ]
 // DevOps/SRE tools available in the game
-export const devopsTools = [
+export const commandLineTools = [
   {
     name: 'ping',
     syntax: 'ping [system]',
