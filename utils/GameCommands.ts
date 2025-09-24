@@ -1,9 +1,8 @@
+import type { Enemy, GameState } from "../convex/types";
 import {
 	commandLineTools,
-	type Enemy,
 	enemies,
 	type GameActions,
-	type GameState,
 	items,
 	rooms,
 } from "./GameData";
@@ -42,7 +41,7 @@ export const parseCommand = async (
 			break;
 
 		case "look": {
-			const room = (rooms as any)[gameState.currentRoom];
+			const room = rooms[gameState.currentRoom];
 			response = [`[${room.name}]`, room.description];
 
 			// List exits
@@ -83,11 +82,12 @@ export const parseCommand = async (
 		case "move":
 		case "go": {
 			const direction = target.toLowerCase();
-			const currentRoom = (rooms as any)[gameState.currentRoom];
+			const currentRoom = rooms[gameState.currentRoom];
 			if (["north", "south", "east", "west"].includes(direction)) {
-				const nextRoomId = (currentRoom.exits as any)[direction];
+				const nextRoomId =
+					currentRoom.exits[direction as keyof typeof currentRoom.exits];
 				if (nextRoomId) {
-					const nextRoom = (rooms as any)[nextRoomId];
+					const nextRoom = rooms[nextRoomId];
 					newState.currentRoom = nextRoomId;
 
 					// Add room to visited list if first time
@@ -243,7 +243,8 @@ export const parseCommand = async (
 						newState = {
 							...newState,
 							skillPoints: (newState.skillPoints || 0) + result.skillGained,
-							toolSessionId: result.threadId,
+							// Preserve existing session if no new threadId was returned
+							toolSessionId: result.threadId ?? gameState.toolSessionId,
 						};
 					} catch (error) {
 						console.error("Ping command error:", error);

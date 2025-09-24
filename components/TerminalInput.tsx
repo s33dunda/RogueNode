@@ -7,11 +7,11 @@ interface TerminalInputProps {
 	disabled: boolean;
 }
 
-const TerminalInput: React.FC<TerminalInputProps> = ({ 
-	input, 
-	onInputChange, 
-	onSubmit, 
-	disabled 
+const TerminalInput: React.FC<TerminalInputProps> = ({
+	input,
+	onInputChange,
+	onSubmit,
+	disabled,
 }) => {
 	return (
 		<form onSubmit={onSubmit} className="flex border-t border-green-800 p-4">

@@ -6,7 +6,10 @@ interface TerminalNavProps {
 	isVisible: boolean;
 }
 
-const TerminalNav: React.FC<TerminalNavProps> = ({ executeCommand, isVisible }) => {
+const TerminalNav: React.FC<TerminalNavProps> = ({
+	executeCommand,
+	isVisible,
+}) => {
 	return (
 		<div
 			className={`transition-all duration-300 ease-in-out border-b border-green-800 bg-black ${isVisible ? "h-12 opacity-100" : "h-0 opacity-0 overflow-hidden"}`}

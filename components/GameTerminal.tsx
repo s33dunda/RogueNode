@@ -1,9 +1,10 @@
 import { useAction } from "convex/react";
 import type React from "react";
 import { useLayoutEffect, useRef, useState } from "react";
+import type { GameState } from "@/convex/types";
 import { api } from "../convex/_generated/api";
 import { useCommandProcessor } from "../lib/hooks/useCommandProcessor";
-import { enemies, type GameState, initialRoom } from "../utils/GameData";
+import { enemies, initialRoom } from "../utils/GameData";
 import CRTEffects from "./CRTEffects";
 import TerminalInput from "./TerminalInput";
 import TerminalNav from "./TerminalNav";
@@ -26,10 +27,10 @@ const GameTerminal = () => {
 	const [input, setInput] = useState("");
 	const [isNavVisible, setIsNavVisible] = useState(false);
 	const [gameState, setGameState] = useState<GameState>({
-		currentRoom: initialRoom,
+		currentRoom: initialRoom.id,
 		inventory: [],
 		health: 100,
-		visited: [initialRoom],
+		visited: [initialRoom.id],
 		enemies: [...enemies],
 		gameOver: false,
 		// AI agent enhancements

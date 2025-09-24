@@ -1,8 +1,8 @@
 import type { FunctionReturnType, OptionalRestArgs } from "convex/server";
 import { useCallback } from "react";
 import type { api } from "../../convex/_generated/api";
+import type { GameState } from "../../convex/types";
 import { parseCommand } from "../../utils/GameCommands";
-import type { GameState } from "../../utils/GameData";
 
 // Extract the action type from the generated API
 type PingCommandAction = typeof api.agents.pingAgent.executePingCommand;
