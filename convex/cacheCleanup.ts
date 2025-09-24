@@ -1,6 +1,7 @@
 import { type Infer, v } from "convex/values";
 import { internal } from "./_generated/api";
-import { action } from "./_generated/server";
+import { action, internalAction } from "./_generated/server";
+import { requireAdmin } from "./lib/auth";
 
 // Return type for cache cleanup operation
 const cleanupResult = v.object({
@@ -10,8 +11,8 @@ const cleanupResult = v.object({
 
 type CleanupResult = Infer<typeof cleanupResult>;
 
-// Action to clean up old cache entries (can be called manually or via cron)
-export const cleanupCacheEntries = action({
+// Internal action for cache cleanup (used by cron jobs)
+export const cleanupCacheEntriesInternal = internalAction({
 	args: {},
 	returns: cleanupResult,
 	handler: async (ctx): Promise<CleanupResult> => {
@@ -53,11 +54,41 @@ const cacheEntry = v.object({
 type CacheEntry = Infer<typeof cacheEntry>;
 type StatsResult = Infer<typeof statsResult>;
 
-// Action to get cache stats (for debugging)
+// Admin-only action for cache cleanup (requires admin privileges)
+export const cleanupCacheEntries = action({
+	args: {},
+	returns: cleanupResult,
+	handler: async (ctx): Promise<CleanupResult> => {
+		// Ensure user is an admin
+		await requireAdmin(ctx);
+
+		try {
+			const deletedCount = await ctx.runMutation(
+				internal.utils.cacheUtils.cleanupOldCacheEntries,
+			);
+
+			return {
+				deletedCount,
+				message: `Successfully deleted ${deletedCount} old cache entries`,
+			};
+		} catch (error) {
+			console.error("Cache cleanup error:", error);
+			return {
+				deletedCount: 0,
+				message: "Cache cleanup failed",
+			};
+		}
+	},
+});
+
+// Admin-only action to get cache stats (for debugging)
 export const getCacheStats = action({
 	args: {},
 	returns: statsResult,
 	handler: async (ctx): Promise<StatsResult> => {
+		// Ensure user is an admin
+		await requireAdmin(ctx);
+
 		try {
 			// Get all cache entries for stats
 			const entries: CacheEntry[] = await ctx.runQuery(

@@ -1,0 +1,55 @@
+import type { ActionCtx, MutationCtx, QueryCtx } from "../_generated/server";
+
+/**
+ * Authentication helper that ensures a user is logged in
+ * @param ctx - Convex context (query, mutation, or action)
+ * @returns User identity object
+ * @throws Error if user is not authenticated
+ */
+export async function requireAuth(ctx: QueryCtx | MutationCtx | ActionCtx) {
+	const identity = await ctx.auth.getUserIdentity();
+	if (!identity) {
+		throw new Error("Authentication required");
+	}
+	return identity;
+}
+
+/**
+ * Authentication helper that ensures a user is logged in and matches the provided playerId
+ * @param ctx - Convex context (query, mutation, or action)
+ * @param playerId - Player ID to validate against authenticated user
+ * @returns User identity object
+ * @throws Error if user is not authenticated or playerId doesn't match
+ */
+export async function requireAuthWithPlayerId(
+	ctx: QueryCtx | MutationCtx | ActionCtx,
+	playerId: string,
+) {
+	const identity = await requireAuth(ctx);
+
+	// Ensure the playerId matches the authenticated user's subject
+	if (identity.subject !== playerId) {
+		throw new Error("Player ID does not match authenticated user");
+	}
+
+	return identity;
+}
+
+/**
+ * Authentication helper that ensures a user is an admin
+ * For now, this is a placeholder that requires authentication.
+ * In a real application, you would check against admin roles/permissions.
+ * @param ctx - Convex context (query, mutation, or action)
+ * @returns User identity object
+ * @throws Error if user is not authenticated or not an admin
+ */
+export async function requireAdmin(ctx: QueryCtx | MutationCtx | ActionCtx) {
+	const identity = await requireAuth(ctx);
+
+	// TODO: Implement proper admin role checking
+	// For now, this is a placeholder that just requires authentication
+	// In production, you might check identity.customClaims?.role === "admin"
+	// or query a user roles table
+
+	return identity;
+}

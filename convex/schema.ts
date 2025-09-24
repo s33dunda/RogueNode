@@ -52,7 +52,7 @@ export default defineSchema({
 		lastUpdate: v.number(),
 	}).index("by_room", ["roomId"]),
 
-	// Command output cache for agent responses
+	// Command output cache for agent responses (shared across players for same game states)
 	commandOutputCache: defineTable({
 		command: v.string(), // "ping", "ssh", etc.
 		target: v.string(), // Command target (e.g., "database-01")
@@ -60,9 +60,10 @@ export default defineSchema({
 		output: v.array(v.string()), // Cached agent output
 		skillGained: v.number(), // Skill points from command
 		success: v.boolean(), // Command success status
-		playerId: v.string(), // Player who generated this
+		playerId: v.string(), // Player who originally generated this (for analytics only)
 		timestamp: v.number(), // When cached
-		hitCount: v.number(), // How many times used
+		hitCount: v.number(), // How many times used across all players
+		threadId: v.optional(v.string()), // Thread context from original generation
 	})
 		.index("by_command_target_hash", ["command", "target", "gameStateHash"])
 		.index("by_timestamp", ["timestamp"]),

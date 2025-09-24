@@ -4,6 +4,7 @@ import { z } from "zod";
 import { components, internal } from "../_generated/api";
 import type { Doc } from "../_generated/dataModel";
 import { action } from "../_generated/server";
+import { requireAuthWithPlayerId } from "../lib/auth";
 import { type CommandResult, commandArgs, commandResult } from "../types";
 import { generateCacheKey } from "../utils/cacheUtils";
 
@@ -99,6 +100,9 @@ export const executePingCommand = action({
 		{ target, gameState, threadId },
 	): Promise<CommandResult> => {
 		try {
+			// Ensure user is authenticated and matches the playerId in gameState
+			await requireAuthWithPlayerId(ctx, gameState.playerId);
+
 			// Generate cache key for this command
 			const cacheKey = generateCacheKey("ping", target, gameState);
 			const gameStateHash = cacheKey.split(":")[2]; // Extract hash portion
@@ -164,6 +168,7 @@ Use getNetworkContext tool to get network conditions, then provide realistic pin
 				skillGained: skillGain,
 				success: true,
 				playerId: gameState.playerId,
+				threadId: thread.threadId,
 			});
 
 			return {

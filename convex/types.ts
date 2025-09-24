@@ -112,6 +112,7 @@ export const commandOutputCacheEntry = v.object({
 	playerId: v.string(),
 	timestamp: v.number(),
 	hitCount: v.number(),
+	threadId: v.optional(v.string()),
 });
 
 // TypeScript types derived from validators

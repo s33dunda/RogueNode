@@ -20,12 +20,17 @@ export const recordToolUsage = internalMutation({
 			roomInfrastructure: v.optional(v.array(v.string())),
 		}),
 	},
+	returns: v.object({
+		sessionId: v.string(),
+		toolUsageId: v.id("toolUsage"),
+		sessionCreated: v.boolean(),
+	}),
 	handler: async (ctx, args) => {
 		// Create a unique session ID if one doesn't exist
 		const sessionId = `${args.playerId}-${Date.now()}`;
 
 		// Record the tool usage
-		await ctx.db.insert("toolUsage", {
+		const toolUsageId = await ctx.db.insert("toolUsage", {
 			playerId: args.playerId,
 			sessionId,
 			tool: args.tool,
@@ -43,6 +48,8 @@ export const recordToolUsage = internalMutation({
 			.order("desc")
 			.first();
 
+		let sessionCreated = false;
+
 		if (existingSession) {
 			await ctx.db.patch(existingSession._id, {
 				currentRoom: args.room,
@@ -56,6 +63,13 @@ export const recordToolUsage = internalMutation({
 				skillLevel: 1,
 				lastActivity: Date.now(),
 			});
+			sessionCreated = true;
 		}
+
+		return {
+			sessionId,
+			toolUsageId,
+			sessionCreated,
+		};
 	},
 });

@@ -1,3 +1,4 @@
+import { useUser } from "@clerk/nextjs";
 import { useAction } from "convex/react";
 import type React from "react";
 import { useLayoutEffect, useRef, useState } from "react";
@@ -11,7 +12,10 @@ import TerminalNav from "./TerminalNav";
 import TerminalOutput from "./TerminalOutput";
 
 const GameTerminal = () => {
-	// Convex action hook for ping command
+	// Get authenticated user from Clerk
+	const { user, isLoaded } = useUser();
+
+	// Convex action hook for ping command (must be called before any returns)
 	const executePingCommand = useAction(api.agents.pingAgent.executePingCommand);
 
 	const [output, setOutput] = useState<string[]>([
@@ -33,9 +37,8 @@ const GameTerminal = () => {
 		visited: [initialRoom.id],
 		enemies: [...enemies],
 		gameOver: false,
-		// AI agent enhancements
-		// TODO: use clerk user ID for playerId
-		playerId: `player-${Math.floor(Math.random() * 1000000)}-${Date.now()}`,
+		// Use authenticated Clerk user ID as playerId (fallback for loading state)
+		playerId: user?.id || "loading",
 		toolSessionId: undefined,
 		skillPoints: 0,
 		threatLevel: 1,
@@ -52,6 +55,43 @@ const GameTerminal = () => {
 		executePingCommand,
 	});
 
+	// Update playerId when user loads
+	useLayoutEffect(() => {
+		if (user?.id && gameState.playerId !== user.id) {
+			setGameState((prev) => ({
+				...prev,
+				playerId: user.id,
+			}));
+		}
+	}, [user?.id, gameState.playerId]);
+
+	// Auto-scroll to bottom when output changes
+	useLayoutEffect(() => {
+		const lines = output.length;
+		if (terminalRef.current) {
+			terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+		}
+		void lines;
+	}, [output.length]);
+
+	// Show loading state while user data loads
+	if (!isLoaded) {
+		return (
+			<div className="terminal-container bg-black text-green-400 p-4 font-mono">
+				<div>Loading...</div>
+			</div>
+		);
+	}
+
+	// Require authentication - redirect to sign in if no user
+	if (!user) {
+		return (
+			<div className="terminal-container bg-black text-green-400 p-4 font-mono">
+				<div>Please sign in to access the DevOps training terminal.</div>
+			</div>
+		);
+	}
+
 	const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setInput(e.target.value);
 	};
@@ -65,15 +105,6 @@ const GameTerminal = () => {
 	const executeCommand = async (command: string) => {
 		await processCommand(command);
 	};
-
-	// Auto-scroll to bottom when output changes
-	useLayoutEffect(() => {
-		const lines = output.length;
-		if (terminalRef.current) {
-			terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
-		}
-		void lines;
-	}, [output.length]);
 
 	return (
 		<nav

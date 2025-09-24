@@ -49,7 +49,7 @@ export function generateCacheKey(
 	return `${command}:${target}:${Math.abs(hash).toString(36)}`;
 }
 
-// Look up cached result for exact match
+// Look up cached result for exact match (shared across all players with same game state)
 export const lookupCache = internalQuery({
 	args: {
 		command: v.string(),
@@ -72,7 +72,7 @@ export const lookupCache = internalQuery({
 	},
 });
 
-// Store new cache entry
+// Store new cache entry (playerId stored for analytics, but cache is shared across players)
 export const storeInCache = internalMutation({
 	args: {
 		command: v.string(),
@@ -81,7 +81,8 @@ export const storeInCache = internalMutation({
 		output: v.array(v.string()),
 		skillGained: v.number(),
 		success: v.boolean(),
-		playerId: v.string(),
+		playerId: v.string(), // Original generator for analytics only
+		threadId: v.optional(v.string()),
 	},
 	returns: v.id("commandOutputCache"),
 	handler: async (ctx, args) => {
@@ -93,7 +94,7 @@ export const storeInCache = internalMutation({
 	},
 });
 
-// Increment cache hit count
+// Increment cache hit count (increments for any player using the cached result)
 export const incrementCacheHit = internalMutation({
 	args: {
 		cacheId: v.id("commandOutputCache"),
