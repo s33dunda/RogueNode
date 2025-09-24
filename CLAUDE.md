@@ -187,6 +187,67 @@ export const getSecretData = query({
 });
 ```
 
+### 6. **TypeScript Type Safety with Convex Exports** ⭐
+
+```typescript
+// ❌ Using 'any' or 'unknown' for ANY Convex function
+interface MyHookProps {
+  executeAction: (args: any) => Promise<any>; // Type safety lost
+  runQuery: (args: any) => Promise<any>; // Type safety lost
+  runMutation: (args: any) => Promise<any>; // Type safety lost
+}
+
+// ✅ Use Convex's exported utility types for ALL function types
+import type { FunctionReturnType, OptionalRestArgs } from "convex/server";
+import type { api, internal } from "../convex/_generated/api";
+
+// Extract exact types from generated API for ANY Convex function
+type PingActionType = typeof api.agents.pingAgent.executePingCommand;
+type CreateTaskMutationType = typeof api.tasks.createTask;  
+type GetTasksQueryType = typeof api.tasks.getAllTasks;
+type InternalHelperType = typeof internal.helpers.processData;
+
+// Agent-related functions (workflows, threads, etc.)
+type CreateThreadMutationType = typeof api.agents.support.createThread;
+type WorkflowType = typeof api.workflows.supportWorkflow;
+
+interface MyHookProps {
+  // Actions
+  executeAction: (...args: OptionalRestArgs<PingActionType>) => Promise<FunctionReturnType<PingActionType>>;
+  
+  // Mutations  
+  createTask: (...args: OptionalRestArgs<CreateTaskMutationType>) => Promise<FunctionReturnType<CreateTaskMutationType>>;
+  
+  // Queries
+  getTasks: (...args: OptionalRestArgs<GetTasksQueryType>) => Promise<FunctionReturnType<GetTasksQueryType>>;
+  
+  // Internal functions
+  processData: (...args: OptionalRestArgs<InternalHelperType>) => Promise<FunctionReturnType<InternalHelperType>>;
+  
+  // Agent functions
+  createThread: (...args: OptionalRestArgs<CreateThreadMutationType>) => Promise<FunctionReturnType<CreateThreadMutationType>>;
+}
+```
+
+**Convex Function Types This Pattern Covers:**
+
+- **Queries**: `query()` - Read-only database access
+- **Mutations**: `mutation()` - Read/write database access  
+- **Actions**: `action()` - Third-party APIs, no direct DB access
+- **Internal Functions**: `internalQuery()`, `internalMutation()`, `internalAction()`
+- **HTTP Actions**: `httpAction()` - HTTP endpoints
+- **Agent Functions**: `agent.createThreadMutation()`, `agent.generateTextAction()`
+- **Workflows**: `workflow.define()` - Multi-step orchestration
+- **Crons**: `crons.interval()` - Scheduled functions
+
+**Key Convex Type Utilities:**
+
+- `FunctionReturnType<T>` - Extracts return type from ANY Convex function
+- `OptionalRestArgs<T>` - Extracts parameter types with proper optional handling
+- `typeof api.module.function` - Gets exact function reference type for public functions
+- `typeof internal.module.function` - Gets exact function reference type for internal functions
+- Never use `any` or overly broad `unknown` - Convex provides precise types for EVERYTHING!
+
 ## Convex Agent Paradigm Shifts
 
 > Critical concepts for working with Convex's agent framework and AI orchestration

@@ -34,6 +34,32 @@ export interface GameState {
 	visited: string[];
 	enemies: Enemy[];
 	gameOver: boolean;
+	// AI agent enhancements
+	playerId: string;
+	toolSessionId?: string;
+	skillPoints: number;
+	threatLevel: number;
+}
+
+// Command action types for dependency injection
+export interface PingCommandArgs {
+	target: string;
+	gameState: GameState;
+	threadId?: string;
+}
+
+export interface PingCommandResult {
+	output: string[];
+	threadId: string;
+	skillGained: number;
+	success: boolean;
+}
+
+export interface GameActions {
+	executePingCommand?: (args: PingCommandArgs) => Promise<PingCommandResult>;
+	// Future actions for other command-line tools
+	// executeSSHCommand?: (args: SSHCommandArgs) => Promise<SSHCommandResult>;
+	// executeDockerCommand?: (args: DockerCommandArgs) => Promise<DockerCommandResult>;
 }
 
 // Map of the dungeon

@@ -1,0 +1,335 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+# CodeRabbit Configuration for RogueNode - PoC/MVP Mode
+# DevOps Adventure Game + Visual Service Topology Manager
+# Focus: Essential security with rapid prototyping for educational game development
+
+# =============================================================================
+# GLOBAL SETTINGS
+# =============================================================================
+
+language: "en-US"
+tone_instructions: "Focus on critical security issues (Convex auth, Clerk integration, game state integrity) while being permissive on code style and documentation. Prioritize unblocking development during PoC/MVP game feature iteration."
+early_access: true
+enable_free_tier: true
+
+# =============================================================================
+# REVIEWS
+# =============================================================================
+
+reviews:
+  # Chill profile for faster MVP development iterations
+  profile: "chill"
+
+  # Allow merges with warnings for faster development velocity
+  request_changes_workflow: false
+
+  # Enhanced summary and documentation
+  high_level_summary: true
+  high_level_summary_placeholder: "@coderabbitai summary"
+  high_level_summary_in_walkthrough: true
+
+  # Auto-generation features
+  auto_title_placeholder: "@coderabbitai"
+  auto_title_instructions: "Generate concise, descriptive titles following conventional commit format (feat/fix/docs/refactor/test/security). Focus on game mechanics, topology features, or backend changes."
+
+  # Review feedback and status
+  review_status: true
+  commit_status: true
+  fail_commit_status: true
+
+  # Walkthrough enhancements
+  collapse_walkthrough: true
+  changed_files_summary: true
+  sequence_diagrams: true
+  estimate_code_review_effort: true
+  assess_linked_issues: true
+  related_issues: true
+  related_prs: true
+
+  # Labeling and reviewer suggestions
+  suggested_labels: true
+  auto_apply_labels: true
+  suggested_reviewers: true
+  auto_assign_reviewers: false
+
+  # Keep the fun element
+  poem: true
+
+  # RogueNode-specific labeling instructions
+  labeling_instructions:
+    - label: "security"
+      instructions: "Apply when changes involve Convex auth, Clerk integration, game state integrity, or secrets handling."
+    - label: "game-mechanics"
+      instructions: "Apply for adventure game logic, command parsing, inventory system, room navigation, or enemy interactions."
+    - label: "topology-visual"
+      instructions: "Apply for ReactFlow canvas, service nodes, drag-and-drop, visual topology editor, or canvas interactions."
+    - label: "convex-backend"
+      instructions: "Apply when changes touch Convex schema, queries, mutations, actions, auth config, or internal APIs."
+    - label: "clerk-auth"
+      instructions: "Apply for Clerk authentication flows, user management, session handling, or auth middleware."
+    - label: "terminal-ui"
+      instructions: "Apply for game terminal interface, CRT styling, command input/output, or retro terminal aesthetics."
+    - label: "devops-education"
+      instructions: "Apply for educational command-line tools, game content, DevOps scenarios, or learning materials."
+    - label: "performance"
+      instructions: "Apply for game responsiveness, visual topology rendering, Convex optimization, or real-time updates."
+    - label: "ui-components"
+      instructions: "Apply for React component changes, Tailwind CSS styling, Next.js 15 patterns, or component behavior."
+    - label: "testing"
+      instructions: "Apply when adding/improving tests for game mechanics, topology features, or component behavior."
+    - label: "documentation"
+      instructions: "Apply for README/docs changes, game guides, API documentation, or code comments."
+    - label: "breaking"
+      instructions: "Apply for breaking changes to game state, Convex schema, or component APIs requiring migrations."
+
+  # Path-specific filters (exclude generated files and build artifacts)
+  path_filters:
+    - "!dist/**"
+    - "!node_modules/**"
+    - "!.next/**"
+    - "!coverage/**"
+    - "!convex/_generated/**"
+    - "app/**"
+    - "components/**"
+    - "utils/**"
+    - "convex/**"
+    - "docs/**"
+    - "*.md"
+    - "*.json"
+    - "*.yaml"
+    - "*.yml"
+    - "*.ts"
+    - "*.tsx"
+
+  # RogueNode path-specific review instructions
+  path_instructions:
+    - path: "convex/**"
+      instructions: |
+        Essential Convex review (PoC/MVP mode):
+        - Check authentication and authorization with Clerk (critical)
+        - Verify no secrets are exposed (critical)
+        - Ensure new function syntax with args/returns validators
+        - Allow rapid iteration on schema and game state functions
+
+    - path: "components/**"
+      instructions: |
+        Game and topology component review (PoC/MVP mode):
+        - Focus on functionality over perfect patterns
+        - Game terminal vs topology components distinction
+        - Basic TypeScript safety (any is OK during prototyping)
+        - Allow component iteration for game mechanics
+
+    - path: "utils/**"
+      instructions: |
+        Game logic and utilities review:
+        - Game command parsing and state management
+        - Educational DevOps content accuracy
+        - Basic error handling for game scenarios
+        - Allow rapid iteration on game mechanics
+
+    - path: "app/**"
+      instructions: |
+        Next.js App Router review (PoC/MVP mode):
+        - Convex integration with preloadQuery patterns
+        - Clerk auth middleware and route protection
+        - Basic functionality over perfect architecture
+        - Allow experimental routing during development
+
+    - path: "convex/auth.config.ts"
+      instructions: |
+        CRITICAL security focus (non-negotiable):
+        - Clerk integration security
+        - User identity validation
+        - No exposed auth secrets
+        - Proper session management
+
+    - path: "components/GameTerminal.tsx"
+      instructions: |
+        Game terminal essentials:
+        - Command parsing security (prevent injection)
+        - Game state integrity
+        - Terminal UI functionality
+        - Allow styling iteration during development
+
+    - path: "**/*.test.*"
+      instructions: |
+        Testing basics (PoC/MVP mode):
+        - Basic test functionality for game mechanics
+        - Security scenarios for auth and game state
+        - Allow minimal coverage during rapid prototyping
+
+    - path: "docs/**"
+      instructions: |
+        Documentation basics (PoC/MVP mode):
+        - Basic accuracy for game guides
+        - Allow incomplete documentation during development
+        - Focus on security and setup instructions
+
+  abort_on_close: true
+  disable_cache: false
+
+  # Auto-review configuration
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    ignore_title_keywords: ["wip", "draft", "temp", "temporary"]
+    labels: ["!wip", "!draft"]
+    drafts: false
+    base_branches: ["main", "develop", "preview"]
+    ignore_usernames: []
+
+  # Finishing touches
+  finishing_touches:
+    docstrings:
+      enabled: true
+    unit_tests:
+      enabled: true
+
+  # Pre-merge checks (enhanced from existing)
+  pre_merge_checks:
+    docstrings:
+      mode: "warning"  # Relaxed for PoC/MVP development
+      threshold: 50     # Lower threshold for faster game development iteration
+
+    title:
+      mode: "warning"
+      requirements: "Start with an imperative verb; keep under 50 characters."
+
+    description:
+      mode: "warning"   # Allow empty descriptions during rapid PoC/MVP development
+
+    issue_assessment:
+      mode: "warning"
+
+    # RogueNode custom checks for PoC/MVP development
+    custom_checks:
+      - name: "Critical Security Check"
+        mode: "error"
+        instructions: "CRITICAL: Verify no hardcoded API keys, tokens, or secrets are present. Ensure Clerk auth is properly configured and game state integrity is maintained."
+
+      - name: "Convex Function Standards"
+        mode: "warning"
+        instructions: "Review Convex functions for new syntax with args/returns validators, auth checks, and basic patterns. Allow flexibility during game development iteration."
+
+      - name: "Game State Integrity"
+        mode: "warning"
+        instructions: "Ensure game commands and state changes are validated to prevent cheating or manipulation. Focus on core game mechanics security."
+
+      - name: "Component Architecture"
+        mode: "warning"
+        instructions: "Review separation between game terminal and topology components. Ensure proper TypeScript usage but allow rapid prototyping patterns."
+
+  # Essential tooling for RogueNode PoC/MVP development
+  tools:
+    # Critical security tools (non-negotiable)
+    gitleaks:
+      enabled: true
+
+    semgrep:
+      enabled: true
+
+    # Code quality essentials for TypeScript/React
+    eslint:
+      enabled: true
+
+    # Disabled for faster CI during PoC/MVP development
+    # biome:
+    #   enabled: false
+    # markdownlint:
+    #   enabled: false
+    # yamllint:
+    #   enabled: false
+    # actionlint:
+    #   enabled: false
+    # hadolint:
+    #   enabled: false
+    # languagetool:
+    #   enabled: false
+
+    # GitHub integration
+    github-checks:
+      enabled: true
+      timeout_ms: 90000  # Reduced timeout for faster game development feedback
+
+# =============================================================================
+# CHAT
+# =============================================================================
+
+chat:
+  art: true
+  auto_reply: true
+
+  integrations:
+    jira:
+      usage: "auto"
+    linear:
+      usage: "auto"
+
+# =============================================================================
+# KNOWLEDGE BASE
+# =============================================================================
+
+knowledge_base:
+  opt_out: false
+
+  web_search:
+    enabled: true
+
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "**/CLAUDE.md"
+      - "docs/**/*.md"
+      - ".github/**/*.md"
+      - "**/README.md"
+      - "**/.cursorrules"
+
+  learnings:
+    scope: "local"
+
+  issues:
+    scope: "local"
+
+  jira:
+    usage: "disabled"
+    project_keys: []
+
+  linear:
+    usage: "disabled"
+    team_keys: []
+
+  pull_requests:
+    scope: "local"
+
+  mcp:
+    usage: "auto"
+    disabled_servers: []
+
+# =============================================================================
+# CODE GENERATION
+# =============================================================================
+
+code_generation:
+  docstrings:
+    language: "en-US"
+    path_instructions:
+      - path: "convex/**"
+        instructions: "Generate JSDoc comments for Convex functions including parameter types, return types, and game-specific usage examples. Focus on auth requirements and game state considerations."
+
+      - path: "components/**"
+        instructions: "Generate TSDoc comments for React components including prop descriptions, game mechanics usage, and component behavior notes. Distinguish between game terminal and topology components."
+
+      - path: "utils/**"
+        instructions: "Generate documentation for game logic functions, command parsers, and educational content. Include game state and command validation details."
+
+  unit_tests:
+    path_instructions:
+      - path: "convex/**"
+        instructions: "Generate tests for Convex functions including game state scenarios, auth conditions, and basic security cases. Focus on game mechanics and data integrity."
+
+      - path: "components/**"
+        instructions: "Generate React Testing Library tests focusing on game terminal interactions, topology canvas behavior, and component functionality. Test game command parsing and visual node interactions."
+
+      - path: "utils/**"
+        instructions: "Generate tests for game logic, command parsing, and DevOps educational content. Focus on game state management and command validation."

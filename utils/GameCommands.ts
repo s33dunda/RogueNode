@@ -2,13 +2,18 @@ import {
 	commandLineTools,
 	type Enemy,
 	enemies,
+	type GameActions,
 	type GameState,
 	items,
 	rooms,
 } from "./GameData";
 
 // Process player commands and return response text and updated game state
-export const parseCommand = (command: string, gameState: GameState) => {
+export const parseCommand = async (
+	command: string,
+	gameState: GameState,
+	actions?: GameActions,
+) => {
 	const words = command.trim().toLowerCase().split(" ");
 	const action = words[0];
 	const target = words.slice(1).join(" ");
@@ -203,7 +208,56 @@ export const parseCommand = (command: string, gameState: GameState) => {
 			response.push("Type '[toolname] help' for detailed usage information.");
 			break;
 
-		case "ping":
+		case "ping": {
+			// Check if this is a help request for the ping tool
+			if (target === "help") {
+				const tool = commandLineTools.find((t) => t.name === action);
+				if (tool) {
+					response = [
+						`${tool.name.toUpperCase()}:`,
+						`Syntax: ${tool.syntax}`,
+						`Description: ${tool.description}`,
+						`Example: ${tool.example}`,
+						`${tool.explanation}`,
+					];
+				} else {
+					response = ["Unknown tool. Type 'tools' to see available tools."];
+				}
+			} else {
+				// Execute ping command using injected action
+				if (!actions?.executePingCommand) {
+					response = [
+						"ping: command-line tools not available",
+						"Network diagnostics require agent integration",
+						"Contact system administrator",
+					];
+				} else {
+					try {
+						const result = await actions.executePingCommand({
+							target: target || "localhost",
+							gameState,
+							threadId: gameState.toolSessionId,
+						});
+
+						response = result.output;
+						newState = {
+							...newState,
+							skillPoints: (newState.skillPoints || 0) + result.skillGained,
+							toolSessionId: result.threadId,
+						};
+					} catch (error) {
+						console.error("Ping command error:", error);
+						response = [
+							"ping: network error occurred",
+							"Unable to reach target system",
+							"Check network connectivity and try again",
+						];
+					}
+				}
+			}
+			break;
+		}
+
 		case "ssh":
 		case "tail":
 		case "grep":
@@ -347,8 +401,11 @@ export const parseCommand = (command: string, gameState: GameState) => {
 				visited: ["server-room"],
 				enemies: [...enemies],
 				gameOver: false,
+				playerId: gameState.playerId,
+				toolSessionId: gameState.toolSessionId,
+				skillPoints: 0,
+				threatLevel: 1,
 			};
-			// Reset all items
 			items.forEach((item) => {
 				item.taken = false;
 			});
