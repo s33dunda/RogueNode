@@ -6,7 +6,10 @@ interface TerminalOutputProps {
 	terminalRef: RefObject<HTMLDivElement | null>;
 }
 
-const TerminalOutput: React.FC<TerminalOutputProps> = ({ output, terminalRef }) => {
+const TerminalOutput: React.FC<TerminalOutputProps> = ({
+	output,
+	terminalRef,
+}) => {
 	return (
 		<div
 			ref={terminalRef}

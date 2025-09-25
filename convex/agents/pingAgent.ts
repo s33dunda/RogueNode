@@ -1,9 +1,12 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, createTool } from "@convex-dev/agent";
-import { v } from "convex/values";
 import { z } from "zod";
-import { components } from "../_generated/api";
+import { components, internal } from "../_generated/api";
+import type { Doc } from "../_generated/dataModel";
 import { action } from "../_generated/server";
+import { requireAuthWithPlayerId } from "../lib/auth";
+import { type CommandResult, commandArgs, commandResult } from "../types";
+import { generateCacheKey } from "../utils/cacheUtils";
 
 // Network context tool for realistic ping simulation
 const getNetworkContext = createTool({
@@ -11,9 +14,9 @@ const getNetworkContext = createTool({
 	args: z.object({
 		target: z.string().describe("The target system to ping"),
 		sourceRoom: z.string().describe("The room where ping is executed from"),
-		playerId: z.string().describe("Player ID for context"),
+		playerId: z.string().optional().describe("Player ID for context"),
 	}),
-	handler: async (ctx, { target, sourceRoom, playerId }): Promise<string> => {
+	handler: async (_, { target, sourceRoom }): Promise<string> => {
 		// This provides context to the agent about current network conditions
 		const roomNetworkProfiles = {
 			"server-room": {
@@ -90,43 +93,47 @@ rtt min/avg/max/mdev = X.X/X.X/X.X/X.X ms`,
 
 // Convex action to execute ping commands using the agent
 export const executePingCommand = action({
-	args: {
-		target: v.string(),
-		gameState: v.object({
-			currentRoom: v.string(),
-			inventory: v.array(v.any()), // Items have complex structure with optional functions
-			health: v.number(),
-			visited: v.array(v.string()),
-			enemies: v.array(
-				v.object({
-					id: v.string(),
-					name: v.string(),
-					description: v.string(),
-					location: v.string(),
-					defeated: v.boolean(),
-					requiredItemId: v.string(),
-					aliases: v.array(v.string()),
-					examineText: v.string(),
-					failMessage: v.string(),
-					defeatMessage: v.string(),
-				}),
-			),
-			gameOver: v.boolean(),
-			playerId: v.string(),
-			toolSessionId: v.optional(v.string()),
-			skillPoints: v.number(),
-			threatLevel: v.number(),
-		}),
-		threadId: v.optional(v.string()),
-	},
-	returns: v.object({
-		output: v.array(v.string()),
-		threadId: v.string(),
-		skillGained: v.number(),
-		success: v.boolean(),
-	}),
-	handler: async (ctx, { target, gameState, threadId }) => {
+	args: commandArgs,
+	returns: commandResult,
+	handler: async (
+		ctx,
+		{ target, gameState, threadId },
+	): Promise<CommandResult> => {
 		try {
+			// Ensure user is authenticated and matches the playerId in gameState
+			await requireAuthWithPlayerId(ctx, gameState.playerId);
+
+			// Generate cache key for this command
+			const cacheKey = generateCacheKey("ping", target, gameState);
+			const lastColon = cacheKey.lastIndexOf(":");
+			const gameStateHash =
+				lastColon === -1 ? cacheKey : cacheKey.slice(lastColon + 1); // Extract hash portion
+
+			// Check for cached result first
+			const cachedResult: Doc<"commandOutputCache"> | null = await ctx.runQuery(
+				internal.utils.cacheUtils.lookupCache,
+				{
+					command: "ping",
+					target,
+					gameStateHash,
+				},
+			);
+
+			if (cachedResult) {
+				// Increment hit count and return cached result
+				await ctx.runMutation(internal.utils.cacheUtils.incrementCacheHit, {
+					cacheId: cachedResult._id,
+				});
+
+				return {
+					output: [...cachedResult.output, ""],
+					threadId,
+					skillGained: cachedResult.skillGained,
+					success: cachedResult.success,
+				};
+			}
+
+			// No cache hit - proceed with AI generation
 			// Create or continue thread for this ping session
 			const { thread } = threadId
 				? await pingAgent.continueThread(ctx, { threadId })
@@ -154,6 +161,18 @@ Use getNetworkContext tool to get network conditions, then provide realistic pin
 				.split("\n")
 				.filter((line) => line.trim() !== "");
 
+			// Store result in cache
+			await ctx.runMutation(internal.utils.cacheUtils.storeInCache, {
+				command: "ping",
+				target,
+				gameStateHash,
+				output: outputLines,
+				skillGained: skillGain,
+				success: true,
+				playerId: gameState.playerId,
+				threadId: thread.threadId,
+			});
+
 			return {
 				output: outputLines,
 				threadId: thread.threadId,
@@ -168,7 +187,7 @@ Use getNetworkContext tool to get network conditions, then provide realistic pin
 					"Unable to reach target system",
 					"Check network connectivity and try again",
 				],
-				threadId: threadId || "error",
+				threadId,
 				skillGained: 0,
 				success: false,
 			};

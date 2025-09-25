@@ -1,62 +1,17 @@
-// Type definitions
-export interface Enemy {
-	id: string;
-	name: string;
-	description: string;
-	location: string;
-	defeated: boolean;
-	requiredItemId: string;
-	aliases: string[];
-	examineText: string;
-	failMessage: string;
-	defeatMessage: string;
-}
-
-export interface Item {
-	id: string;
-	name: string;
-	description: string;
-	location: string;
-	taken: boolean;
-	aliases?: string[];
-	examineText?: string;
-	onTake?: string;
-	use?: (gameState: GameState) => {
-		message: string[];
-		updateState?: Partial<GameState>;
-	};
-}
-
-export interface GameState {
-	currentRoom: string;
-	inventory: Item[];
-	health: number;
-	visited: string[];
-	enemies: Enemy[];
-	gameOver: boolean;
-	// AI agent enhancements
-	playerId: string;
-	toolSessionId?: string;
-	skillPoints: number;
-	threatLevel: number;
-}
+// Import shared types from Convex for single source of truth
+import type {
+	CommandArgs,
+	CommandLineTool,
+	CommandResult,
+	GameState,
+	Room,
+	RoomsRecord,
+} from "../convex/types";
 
 // Command action types for dependency injection
-export interface PingCommandArgs {
-	target: string;
-	gameState: GameState;
-	threadId?: string;
-}
-
-export interface PingCommandResult {
-	output: string[];
-	threadId: string;
-	skillGained: number;
-	success: boolean;
-}
 
 export interface GameActions {
-	executePingCommand?: (args: PingCommandArgs) => Promise<PingCommandResult>;
+	executePingCommand?: (args: CommandArgs) => Promise<CommandResult>;
 	// Future actions for other command-line tools
 	// executeSSHCommand?: (args: SSHCommandArgs) => Promise<SSHCommandResult>;
 	// executeDockerCommand?: (args: DockerCommandArgs) => Promise<DockerCommandResult>;
@@ -68,11 +23,8 @@ export const gameMap = {
 	height: 5,
 };
 
-// Starting room
-export const initialRoom = "server-room";
-
 // Rooms in the dungeon
-export const rooms = {
+export const rooms: RoomsRecord = {
 	"server-room": {
 		id: "server-room",
 		name: "Server Room",
@@ -304,7 +256,7 @@ export const enemies = [
 ];
 
 // DevOps/SRE tools available in the game
-export const commandLineTools = [
+export const commandLineTools: CommandLineTool[] = [
 	{
 		name: "ping",
 		syntax: "ping [system]",
@@ -370,3 +322,6 @@ export const commandLineTools = [
 			"Displays CPU, memory, and process information to identify performance bottlenecks.",
 	},
 ];
+
+// Starting room
+export const initialRoom: Room = rooms["server-room"];

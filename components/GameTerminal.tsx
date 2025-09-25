@@ -1,16 +1,21 @@
+import { useUser } from "@clerk/nextjs";
 import { useAction } from "convex/react";
 import type React from "react";
 import { useLayoutEffect, useRef, useState } from "react";
+import type { GameState } from "@/convex/types";
 import { api } from "../convex/_generated/api";
 import { useCommandProcessor } from "../lib/hooks/useCommandProcessor";
-import { enemies, type GameState, initialRoom } from "../utils/GameData";
+import { enemies, initialRoom } from "../utils/GameData";
 import CRTEffects from "./CRTEffects";
 import TerminalInput from "./TerminalInput";
 import TerminalNav from "./TerminalNav";
 import TerminalOutput from "./TerminalOutput";
 
 const GameTerminal = () => {
-	// Convex action hook for ping command
+	// Get authenticated user from Clerk
+	const { user, isLoaded } = useUser();
+
+	// Convex action hook for ping command (must be called before any returns)
 	const executePingCommand = useAction(api.agents.pingAgent.executePingCommand);
 
 	const [output, setOutput] = useState<string[]>([
@@ -26,15 +31,14 @@ const GameTerminal = () => {
 	const [input, setInput] = useState("");
 	const [isNavVisible, setIsNavVisible] = useState(false);
 	const [gameState, setGameState] = useState<GameState>({
-		currentRoom: initialRoom,
+		currentRoom: initialRoom.id,
 		inventory: [],
 		health: 100,
-		visited: [initialRoom],
+		visited: [initialRoom.id],
 		enemies: [...enemies],
 		gameOver: false,
-		// AI agent enhancements
-		// TODO: use clerk user ID for playerId
-		playerId: `player-${Math.floor(Math.random() * 1000000)}-${Date.now()}`,
+		// Use authenticated Clerk user ID as playerId (fallback for loading state)
+		playerId: user?.id || "loading",
 		toolSessionId: undefined,
 		skillPoints: 0,
 		threatLevel: 1,
@@ -51,6 +55,63 @@ const GameTerminal = () => {
 		executePingCommand,
 	});
 
+	// Update playerId when user loads
+	useLayoutEffect(() => {
+		if (!user?.id || gameState.playerId === user.id) {
+			return;
+		}
+
+		setGameState({
+			currentRoom: initialRoom.id,
+			inventory: [],
+			health: 100,
+			visited: [initialRoom.id],
+			enemies: enemies.map((enemy) => ({ ...enemy })),
+			gameOver: false,
+			playerId: user.id,
+			toolSessionId: undefined,
+			skillPoints: 0,
+			threatLevel: 1,
+		});
+		setOutput([
+			"RogueNode v0.1 - DevOps Rogue Training Ground",
+			"© 1977 TERMINAL INDUSTRIES",
+			"---------------------------------------",
+			"You awaken in a dimly lit server room. The hum of machines surrounds you.",
+			"Your terminal flickers with an urgent message: 'SYSTEM COMPROMISED'",
+			"",
+			"Type 'help' for available commands or 'tools' to see DevOps commands.",
+			"> ",
+		]);
+	}, [user?.id, gameState.playerId]);
+
+	// Auto-scroll to bottom when output changes
+	useLayoutEffect(() => {
+		const lines = output.length;
+		if (terminalRef.current) {
+			terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+		}
+		void lines;
+	}, [output.length]);
+
+	// Show loading state while user data loads
+	if (!isLoaded) {
+		return (
+			<div className="terminal-container bg-black text-green-400 p-4 font-mono">
+				<div>Loading...</div>
+			</div>
+		);
+	}
+
+	// Require authentication - redirect to sign in if no user
+	if (!user) {
+		return (
+			<div className="terminal-container bg-black text-green-400 p-4 font-mono">
+				<div>Please sign in to access the DevOps training terminal.</div>
+			</div>
+		);
+	}
+
 	const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setInput(e.target.value);
 	};
@@ -64,15 +125,6 @@ const GameTerminal = () => {
 	const executeCommand = async (command: string) => {
 		await processCommand(command);
 	};
-
-	// Auto-scroll to bottom when output changes
-	useLayoutEffect(() => {
-		const lines = output.length;
-		if (terminalRef.current) {
-			terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
-		}
-		void lines;
-	}, [output.length]);
 
 	return (
 		<nav

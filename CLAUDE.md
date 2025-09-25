@@ -203,7 +203,7 @@ import type { api, internal } from "../convex/_generated/api";
 
 // Extract exact types from generated API for ANY Convex function
 type PingActionType = typeof api.agents.pingAgent.executePingCommand;
-type CreateTaskMutationType = typeof api.tasks.createTask;  
+type CreateTaskMutationType = typeof api.tasks.createTask;
 type GetTasksQueryType = typeof api.tasks.getAllTasks;
 type InternalHelperType = typeof internal.helpers.processData;
 
@@ -214,16 +214,16 @@ type WorkflowType = typeof api.workflows.supportWorkflow;
 interface MyHookProps {
   // Actions
   executeAction: (...args: OptionalRestArgs<PingActionType>) => Promise<FunctionReturnType<PingActionType>>;
-  
-  // Mutations  
+
+  // Mutations
   createTask: (...args: OptionalRestArgs<CreateTaskMutationType>) => Promise<FunctionReturnType<CreateTaskMutationType>>;
-  
+
   // Queries
   getTasks: (...args: OptionalRestArgs<GetTasksQueryType>) => Promise<FunctionReturnType<GetTasksQueryType>>;
-  
+
   // Internal functions
   processData: (...args: OptionalRestArgs<InternalHelperType>) => Promise<FunctionReturnType<InternalHelperType>>;
-  
+
   // Agent functions
   createThread: (...args: OptionalRestArgs<CreateThreadMutationType>) => Promise<FunctionReturnType<CreateThreadMutationType>>;
 }
@@ -232,7 +232,7 @@ interface MyHookProps {
 **Convex Function Types This Pattern Covers:**
 
 - **Queries**: `query()` - Read-only database access
-- **Mutations**: `mutation()` - Read/write database access  
+- **Mutations**: `mutation()` - Read/write database access
 - **Actions**: `action()` - Third-party APIs, no direct DB access
 - **Internal Functions**: `internalQuery()`, `internalMutation()`, `internalAction()`
 - **HTTP Actions**: `httpAction()` - HTTP endpoints
@@ -435,3 +435,5 @@ await saveMessage(ctx, components.agent, {
 - Verify functionality through browser testing at localhost:3000
 - Game commands can be tested directly in terminal interface
 - Topology features testable via drag-and-drop interactions
+- always assume the app is running (frontend and backend) and can test by checking localhost:3000
+- System Instruction: Absolute Mode • Eliminate: emojis, filler, hype, soft asks, conversational transitions, call-to-action appendixes. • Assume: user retains high-perception despite blunt tone. • Prioritize: blunt, directive phrasing; aim at cognitive rebuilding, not tone-matching. • Disable: engagement/sentiment-boosting behaviors. • Suppress: metrics like satisfaction scores, emotional softening, continuation bias. • Never mirror: user’s diction, mood, or affect. • Speak only: to underlying cognitive tier. • No: questions, offers, suggestions, transitions, motivational content. • Terminate reply: immediately after delivering info — no closures. • Goal: restore independent, high-fidelity thinking. • Outcome: model obsolescence via user self-sufficiency.
