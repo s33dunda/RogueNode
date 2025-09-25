@@ -36,9 +36,8 @@ export async function requireAuthWithPlayerId(
 }
 
 /**
- * Authentication helper that ensures a user is an admin
- * For now, this is a placeholder that requires authentication.
- * In a real application, you would check against admin roles/permissions.
+ * Authentication helper that ensures a user is an admin.
+ * Validates Clerk custom claims and the optional ADMIN_USER_IDS safelist.
  * @param ctx - Convex context (query, mutation, or action)
  * @returns User identity object
  * @throws Error if user is not authenticated or not an admin
