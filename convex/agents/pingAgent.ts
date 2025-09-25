@@ -14,7 +14,7 @@ const getNetworkContext = createTool({
 	args: z.object({
 		target: z.string().describe("The target system to ping"),
 		sourceRoom: z.string().describe("The room where ping is executed from"),
-		playerId: z.string().describe("Player ID for context"),
+		playerId: z.string().optional().describe("Player ID for context"),
 	}),
 	handler: async (_, { target, sourceRoom }): Promise<string> => {
 		// This provides context to the agent about current network conditions
