@@ -26,10 +26,35 @@ export const recordToolUsage = internalMutation({
 		sessionCreated: v.boolean(),
 	}),
 	handler: async (ctx, args) => {
-		// Create a unique session ID if one doesn't exist
-		const sessionId = `${args.playerId}-${Date.now()}`;
+		// Update or create game session tracking first to get unique session ID
+		const existingSession = await ctx.db
+			.query("gameSessions")
+			.withIndex("by_player", (q) => q.eq("playerId", args.playerId))
+			.order("desc")
+			.first();
 
-		// Record the tool usage
+		let sessionId: string;
+		let sessionCreated = false;
+
+		if (existingSession) {
+			await ctx.db.patch(existingSession._id, {
+				currentRoom: args.room,
+				lastActivity: Date.now(),
+			});
+			sessionId = existingSession._id;
+		} else {
+			const newSessionId = await ctx.db.insert("gameSessions", {
+				playerId: args.playerId,
+				currentRoom: args.room,
+				health: 100,
+				skillLevel: 1,
+				lastActivity: Date.now(),
+			});
+			sessionId = newSessionId;
+			sessionCreated = true;
+		}
+
+		// Record the tool usage with the unique session ID
 		const toolUsageId = await ctx.db.insert("toolUsage", {
 			playerId: args.playerId,
 			sessionId,
@@ -40,31 +65,6 @@ export const recordToolUsage = internalMutation({
 			success: args.success,
 			context: args.context,
 		});
-
-		// Update or create game session tracking
-		const existingSession = await ctx.db
-			.query("gameSessions")
-			.withIndex("by_player", (q) => q.eq("playerId", args.playerId))
-			.order("desc")
-			.first();
-
-		let sessionCreated = false;
-
-		if (existingSession) {
-			await ctx.db.patch(existingSession._id, {
-				currentRoom: args.room,
-				lastActivity: Date.now(),
-			});
-		} else {
-			await ctx.db.insert("gameSessions", {
-				playerId: args.playerId,
-				currentRoom: args.room,
-				health: 100,
-				skillLevel: 1,
-				lastActivity: Date.now(),
-			});
-			sessionCreated = true;
-		}
 
 		return {
 			sessionId,

@@ -1,5 +1,6 @@
 // Import shared types from Convex for single source of truth
 import type {
+	CommandArgs,
 	CommandLineTool,
 	CommandResult,
 	GameState,
@@ -8,11 +9,6 @@ import type {
 } from "../convex/types";
 
 // Command action types for dependency injection
-export interface CommandArgs {
-	target: string;
-	gameState: GameState;
-	threadId?: string;
-}
 
 export interface GameActions {
 	executePingCommand?: (args: CommandArgs) => Promise<CommandResult>;

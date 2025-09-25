@@ -25,6 +25,12 @@
    - Test ping command with same state returns cached result
    - Verify different states generate new results
 
+**Security Note**: Cache maintenance endpoints (cleanup, stats) must be:
+
+- Auth-protected (admin-only access) if exposed as public functions
+- OR implemented as internal functions called via cron jobs
+- Prevents untrusted clients from deleting cache data or accessing usage statistics
+
 ## **Success Criteria**
 
 Same ping command in same game state returns instant cached response on second execution.
