@@ -57,12 +57,32 @@ const GameTerminal = () => {
 
 	// Update playerId when user loads
 	useLayoutEffect(() => {
-		if (user?.id && gameState.playerId !== user.id) {
-			setGameState((prev) => ({
-				...prev,
-				playerId: user.id,
-			}));
+		if (!user?.id || gameState.playerId === user.id) {
+			return;
 		}
+
+		setGameState({
+			currentRoom: initialRoom.id,
+			inventory: [],
+			health: 100,
+			visited: [initialRoom.id],
+			enemies: enemies.map((enemy) => ({ ...enemy })),
+			gameOver: false,
+			playerId: user.id,
+			toolSessionId: undefined,
+			skillPoints: 0,
+			threatLevel: 1,
+		});
+		setOutput([
+			"RogueNode v0.1 - DevOps Rogue Training Ground",
+			"© 1977 TERMINAL INDUSTRIES",
+			"---------------------------------------",
+			"You awaken in a dimly lit server room. The hum of machines surrounds you.",
+			"Your terminal flickers with an urgent message: 'SYSTEM COMPROMISED'",
+			"",
+			"Type 'help' for available commands or 'tools' to see DevOps commands.",
+			"> ",
+		]);
 	}, [user?.id, gameState.playerId]);
 
 	// Auto-scroll to bottom when output changes

@@ -105,7 +105,9 @@ export const executePingCommand = action({
 
 			// Generate cache key for this command
 			const cacheKey = generateCacheKey("ping", target, gameState);
-			const gameStateHash = cacheKey.split(":")[2]; // Extract hash portion
+			const lastColon = cacheKey.lastIndexOf(":");
+			const gameStateHash =
+				lastColon === -1 ? cacheKey : cacheKey.slice(lastColon + 1); // Extract hash portion
 
 			// Check for cached result first
 			const cachedResult: Doc<"commandOutputCache"> | null = await ctx.runQuery(
