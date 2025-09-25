@@ -46,10 +46,16 @@ export async function requireAuthWithPlayerId(
 export async function requireAdmin(ctx: QueryCtx | MutationCtx | ActionCtx) {
 	const identity = await requireAuth(ctx);
 
-	// TODO: Implement proper admin role checking
-	// For now, this is a placeholder that just requires authentication
-	// In production, you might check identity.customClaims?.role === "admin"
-	// or query a user roles table
+	const isAdmin =
+		identity.customClaims?.role === "admin" ||
+		(process.env.ADMIN_USER_IDS ?? "")
+			.split(",")
+			.filter(Boolean)
+			.includes(identity.subject);
+
+	if (!isAdmin) {
+		throw new Error("Admin privileges required");
+	}
 
 	return identity;
 }
