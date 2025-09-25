@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
 import { internalMutation } from "./_generated/server";
 
 // Record tool usage for learning progression tracking
@@ -21,7 +22,7 @@ export const recordToolUsage = internalMutation({
 		}),
 	},
 	returns: v.object({
-		sessionId: v.string(),
+		sessionId: v.id("gameSessions"),
 		toolUsageId: v.id("toolUsage"),
 		sessionCreated: v.boolean(),
 	}),
@@ -33,7 +34,7 @@ export const recordToolUsage = internalMutation({
 			.order("desc")
 			.first();
 
-		let sessionId: string;
+		let sessionId: Id<"gameSessions">;
 		let sessionCreated = false;
 
 		if (existingSession) {
