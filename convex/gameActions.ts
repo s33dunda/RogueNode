@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
-import { action, internalMutation } from "./_generated/server";
+import { internalMutation, query } from "./_generated/server";
 import { requireAuthWithPlayerId } from "./lib/auth";
 import { gameState as gameStateValidator } from "./types";
 
@@ -78,7 +78,7 @@ export const recordToolUsage = internalMutation({
 });
 
 // Deterministic environment scan for the 'look' command
-export const getLook = action({
+export const getLook = query({
 	args: { gameState: gameStateValidator },
 	returns: v.object({ output: v.array(v.string()) }),
 	handler: async (ctx, { gameState }) => {

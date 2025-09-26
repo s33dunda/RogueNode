@@ -1,5 +1,5 @@
 import { useUser } from "@clerk/nextjs";
-import { useAction } from "convex/react";
+import { useAction, useConvex } from "convex/react";
 import type React from "react";
 import { useLayoutEffect, useRef, useState } from "react";
 import type { GameState } from "@/convex/types";
@@ -15,9 +15,11 @@ const GameTerminal = () => {
 	// Get authenticated user from Clerk
 	const { user, isLoaded } = useUser();
 
-	// Convex action hooks (must be called before any returns)
+	// Convex hooks (must be called before any returns)
 	const executePingCommand = useAction(api.agents.pingAgent.executePingCommand);
-	const executeLookCommand = useAction(api.gameActions.getLook);
+	const convex = useConvex();
+	const executeLookCommand = (args: { gameState: GameState }) =>
+		convex.query(api.gameActions.getLook, args);
 
 	const [output, setOutput] = useState<string[]>([
 		"RogueNode v0.1 - DevOps Rogue Training Ground",
