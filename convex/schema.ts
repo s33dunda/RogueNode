@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { gameState } from "./types";
 
 // The schema is entirely optional.
 // You can delete this file (schema.ts) and the
@@ -10,20 +11,12 @@ export default defineSchema({
 		value: v.number(),
 	}),
 
-	// Game session tracking for tool usage
-	gameSessions: defineTable({
-		playerId: v.string(),
-		currentRoom: v.string(),
-		health: v.number(),
-		skillLevel: v.number(),
-		toolSessionId: v.optional(v.string()),
-		lastActivity: v.number(),
-	}).index("by_player", ["playerId"]),
+	gameState: defineTable(gameState).index("by_player", ["playerId"]),
 
 	// Tool usage history for learning progression
 	toolUsage: defineTable({
 		playerId: v.string(),
-		sessionId: v.string(),
+		gameStateId: v.id("gameState"),
 		tool: v.string(),
 		command: v.string(),
 		room: v.string(),
@@ -41,7 +34,7 @@ export default defineSchema({
 		}),
 	})
 		.index("by_player_tool", ["playerId", "tool"])
-		.index("by_session", ["sessionId"]),
+		.index("by_gameState", ["gameStateId"]),
 
 	// Network context for realistic ping simulation
 	roomNetwork: defineTable({

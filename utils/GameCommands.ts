@@ -2,7 +2,7 @@ import type { Enemy, GameState } from "../convex/types";
 import {
 	commandLineTools,
 	enemies,
-	type GameActions,
+	type GameCommands,
 	items,
 	rooms,
 } from "./GameData";
@@ -60,7 +60,7 @@ function generateToolsOutput(
 export const parseCommand = async (
 	command: string,
 	gameState: GameState,
-	actions?: GameActions,
+	commands?: GameCommands,
 ) => {
 	const words = command.trim().toLowerCase().split(" ");
 	const action = words[0];
@@ -91,9 +91,9 @@ export const parseCommand = async (
 
 		case "look": {
 			// Prefer server-side deterministic look via Convex, fallback to client
-			if (actions?.executeLookCommand) {
+			if (commands?.executeLookCommand) {
 				try {
-					const result = await actions.executeLookCommand({ gameState });
+					const result = commands.executeLookCommand;
 					response = result.output;
 				} catch (err) {
 					console.error("Look command error:", err);
@@ -289,7 +289,7 @@ export const parseCommand = async (
 				}
 			} else {
 				// Execute ping command using injected action
-				if (!actions?.executePingCommand) {
+				if (!commands?.executePingCommand) {
 					response = [
 						"ping: command-line tools not available",
 						"Network diagnostics require agent integration",
@@ -297,7 +297,7 @@ export const parseCommand = async (
 					];
 				} else {
 					try {
-						const result = await actions.executePingCommand({
+						const result = await commands.executePingCommand({
 							target: target || "localhost",
 							gameState,
 							threadId: gameState.toolSessionId,

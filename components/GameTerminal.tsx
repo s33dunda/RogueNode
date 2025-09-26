@@ -1,5 +1,5 @@
 import { useUser } from "@clerk/nextjs";
-import { useAction, useConvex } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import type React from "react";
 import { useLayoutEffect, useRef, useState } from "react";
 import type { GameState } from "@/convex/types";
@@ -15,11 +15,10 @@ const GameTerminal = () => {
 	// Get authenticated user from Clerk
 	const { user, isLoaded } = useUser();
 
-	// Convex hooks (must be called before any returns)
+	// Convex action hooks (must be called before any returns)
 	const executePingCommand = useAction(api.agents.pingAgent.executePingCommand);
-	const convex = useConvex();
-	const executeLookCommand = (args: { gameState: GameState }) =>
-		convex.query(api.gameActions.getLook, args);
+	const executeLookCommand = useQuery(api.gameActions.getLook);
+	const initializeGameState = useMutation(api.gameActions.initializeGameState);
 
 	const [output, setOutput] = useState<string[]>([
 		"RogueNode v0.1 - DevOps Rogue Training Ground",
@@ -33,6 +32,7 @@ const GameTerminal = () => {
 	]);
 	const [input, setInput] = useState("");
 	const [isNavVisible, setIsNavVisible] = useState(false);
+	const [gameStateInitialized, setGameStateInitialized] = useState(false);
 	const [gameState, setGameState] = useState<GameState>({
 		currentRoom: initialRoom.id,
 		inventory: [],
@@ -59,35 +59,51 @@ const GameTerminal = () => {
 		executeLookCommand,
 	});
 
-	// Update playerId when user loads
+	// Initialize game state when user loads
 	useLayoutEffect(() => {
-		if (!user?.id || gameState.playerId === user.id) {
+		if (!user?.id) {
 			return;
 		}
 
-		setGameState({
-			currentRoom: initialRoom.id,
-			inventory: [],
-			health: 100,
-			visited: [initialRoom.id],
-			enemies: enemies.map((enemy) => ({ ...enemy })),
-			gameOver: false,
-			playerId: user.id,
-			toolSessionId: undefined,
-			skillPoints: 0,
-			threatLevel: 1,
-		});
-		setOutput([
-			"RogueNode v0.1 - DevOps Rogue Training Ground",
-			"© 1977 TERMINAL INDUSTRIES",
-			"---------------------------------------",
-			"You awaken in a dimly lit server room. The hum of machines surrounds you.",
-			"Your terminal flickers with an urgent message: 'SYSTEM COMPROMISED'",
-			"",
-			"Type 'help' for available commands or 'tools' to see DevOps commands.",
-			"> ",
-		]);
-	}, [user?.id, gameState.playerId]);
+		if (gameState.playerId === user.id && gameStateInitialized) {
+			return;
+		}
+
+		// Initialize game state in the database first
+		console.log("Attempting to initialize game state for user:", user.id);
+		initializeGameState()
+			.then((result) => {
+				console.log("Game state initialized successfully:", result);
+				setGameStateInitialized(true);
+				setGameState({
+					currentRoom: initialRoom.id,
+					inventory: [],
+					health: 100,
+					visited: [initialRoom.id],
+					enemies: enemies.map((enemy) => ({ ...enemy })),
+					gameOver: false,
+					playerId: user.id,
+					toolSessionId: undefined,
+					skillPoints: 0,
+					threatLevel: 1,
+				});
+				setOutput([
+					"RogueNode v0.1 - DevOps Rogue Training Ground",
+					"© 1977 TERMINAL INDUSTRIES",
+					"---------------------------------------",
+					"You awaken in a dimly lit server room. The hum of machines surrounds you.",
+					"Your terminal flickers with an urgent message: 'SYSTEM COMPROMISED'",
+					"",
+					"Type 'help' for available commands or 'tools' to see DevOps commands.",
+					"> ",
+				]);
+			})
+			.catch((err) => {
+				console.error("Failed to initialize game state:", err);
+				// Set initialized to true anyway to prevent infinite loading
+				setGameStateInitialized(true);
+			});
+	}, [user?.id, gameState.playerId, initializeGameState]);
 
 	// Auto-scroll to bottom when output changes
 	useLayoutEffect(() => {
@@ -112,6 +128,15 @@ const GameTerminal = () => {
 		return (
 			<div className="terminal-container bg-black text-green-400 p-4 font-mono">
 				<div>Please sign in to access the DevOps training terminal.</div>
+			</div>
+		);
+	}
+
+	// Show loading state while game state is being initialized
+	if (!gameStateInitialized) {
+		return (
+			<div className="terminal-container bg-black text-green-400 p-4 font-mono">
+				<div>Initializing game state...</div>
 			</div>
 		);
 	}

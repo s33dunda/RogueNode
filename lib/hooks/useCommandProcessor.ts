@@ -5,7 +5,7 @@ import type { GameState } from "../../convex/types";
 import { parseCommand } from "../../utils/GameCommands";
 
 type PingCommandAction = typeof api.agents.pingAgent.executePingCommand;
-type LookCommandAction = typeof api.gameActions.getLook;
+type LookCommandQuery = typeof api.gameActions.getLook;
 
 interface UseCommandProcessorProps {
 	gameState: GameState;
@@ -15,9 +15,7 @@ interface UseCommandProcessorProps {
 	executePingCommand: (
 		...args: OptionalRestArgs<PingCommandAction>
 	) => Promise<FunctionReturnType<PingCommandAction>>;
-	executeLookCommand: (
-		...args: OptionalRestArgs<LookCommandAction>
-	) => Promise<FunctionReturnType<LookCommandAction>>;
+	executeLookCommand: FunctionReturnType<LookCommandQuery> | undefined;
 }
 
 export const useCommandProcessor = ({
