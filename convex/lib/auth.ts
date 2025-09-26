@@ -66,7 +66,8 @@ export async function requireAdmin(ctx: QueryCtx | MutationCtx | ActionCtx) {
 	const identity = await requireAuth(ctx);
 
 	const isAdmin =
-		identity.customClaims?.role === "admin" ||
+		// TODO: Re-enable when Clerk roles are configured
+		// identity.customClaims?.role === "admin" ||
 		(process.env.ADMIN_USER_IDS ?? "")
 			.split(",")
 			.filter(Boolean)

@@ -12,6 +12,9 @@ import type {
 
 export interface GameActions {
 	executePingCommand?: (args: CommandArgs) => Promise<CommandResult>;
+	executeLookCommand?: (args: {
+		gameState: GameState;
+	}) => Promise<{ output: string[] }>;
 	// Future actions for other command-line tools
 	// executeSSHCommand?: (args: SSHCommandArgs) => Promise<SSHCommandResult>;
 	// executeDockerCommand?: (args: DockerCommandArgs) => Promise<DockerCommandResult>;

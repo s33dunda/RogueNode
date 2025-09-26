@@ -4,8 +4,8 @@ import type { api } from "../../convex/_generated/api";
 import type { GameState } from "../../convex/types";
 import { parseCommand } from "../../utils/GameCommands";
 
-// Extract the action type from the generated API
 type PingCommandAction = typeof api.agents.pingAgent.executePingCommand;
+type LookCommandAction = typeof api.gameActions.getLook;
 
 interface UseCommandProcessorProps {
 	gameState: GameState;
@@ -15,6 +15,9 @@ interface UseCommandProcessorProps {
 	executePingCommand: (
 		...args: OptionalRestArgs<PingCommandAction>
 	) => Promise<FunctionReturnType<PingCommandAction>>;
+	executeLookCommand: (
+		...args: OptionalRestArgs<LookCommandAction>
+	) => Promise<FunctionReturnType<LookCommandAction>>;
 }
 
 export const useCommandProcessor = ({
@@ -23,6 +26,7 @@ export const useCommandProcessor = ({
 	output,
 	setOutput,
 	executePingCommand,
+	executeLookCommand,
 }: UseCommandProcessorProps) => {
 	const processCommand = useCallback(
 		async (command: string) => {
@@ -33,7 +37,7 @@ export const useCommandProcessor = ({
 			if (command.trim() !== "") {
 				try {
 					// Check if this is an async command-line tool
-					const isAsyncCommand = ["ping"].includes(
+					const isAsyncCommand = ["ping", "look"].includes(
 						command.toLowerCase().split(" ")[0],
 					);
 
@@ -46,6 +50,7 @@ export const useCommandProcessor = ({
 					// Process command and get response with injected actions
 					const result = await parseCommand(command.toLowerCase(), gameState, {
 						executePingCommand,
+						executeLookCommand,
 					});
 
 					// Show final response (replace processing indicator)
@@ -70,7 +75,14 @@ export const useCommandProcessor = ({
 				setOutput(emptyOutput);
 			}
 		},
-		[gameState, output, setOutput, setGameState, executePingCommand],
+		[
+			gameState,
+			output,
+			setOutput,
+			setGameState,
+			executePingCommand,
+			executeLookCommand,
+		],
 	);
 
 	return { processCommand };

@@ -26,7 +26,7 @@ const TerminalOutput: React.FC<TerminalOutputProps> = ({
 				return (
 					// biome-ignore lint/suspicious/noArrayIndexKey: POC
 					<div key={i} className={className}>
-						{line}
+						{line === "" ? "\u00A0" : line}
 					</div>
 				);
 			})}

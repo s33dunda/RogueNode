@@ -1,6 +1,8 @@
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
-import { internalMutation } from "./_generated/server";
+import { action, internalMutation } from "./_generated/server";
+import { requireAuthWithPlayerId } from "./lib/auth";
+import { gameState as gameStateValidator } from "./types";
 
 // Record tool usage for learning progression tracking
 export const recordToolUsage = internalMutation({
@@ -71,6 +73,25 @@ export const recordToolUsage = internalMutation({
 			sessionId,
 			toolUsageId,
 			sessionCreated,
+		};
+	},
+});
+
+// Deterministic environment scan for the 'look' command
+export const getLook = action({
+	args: { gameState: gameStateValidator },
+	returns: v.object({ output: v.array(v.string()) }),
+	handler: async (ctx, { gameState }) => {
+		// Ensure the caller is authenticated and matches the playerId
+		await requireAuthWithPlayerId(ctx, gameState.playerId);
+
+		// Minimal stub output for step 1 integration; backend logic will be expanded in step 2
+		return {
+			output: [
+				`[${gameState.currentRoom}]`,
+				"Environment scan ready.",
+				"Type 'tools' to see available DevOps commands.",
+			],
 		};
 	},
 });

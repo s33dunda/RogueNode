@@ -15,8 +15,9 @@ const GameTerminal = () => {
 	// Get authenticated user from Clerk
 	const { user, isLoaded } = useUser();
 
-	// Convex action hook for ping command (must be called before any returns)
+	// Convex action hooks (must be called before any returns)
 	const executePingCommand = useAction(api.agents.pingAgent.executePingCommand);
+	const executeLookCommand = useAction(api.gameActions.getLook);
 
 	const [output, setOutput] = useState<string[]>([
 		"RogueNode v0.1 - DevOps Rogue Training Ground",
@@ -25,7 +26,7 @@ const GameTerminal = () => {
 		"You awaken in a dimly lit server room. The hum of machines surrounds you.",
 		"Your terminal flickers with an urgent message: 'SYSTEM COMPROMISED'",
 		"",
-		"Type 'help' for available commands or 'tools' to see DevOps commands.",
+		"Type 'help' for available commands like 'look' to take inventory",
 		"> ",
 	]);
 	const [input, setInput] = useState("");
@@ -53,6 +54,7 @@ const GameTerminal = () => {
 		output,
 		setOutput,
 		executePingCommand,
+		executeLookCommand,
 	});
 
 	// Update playerId when user loads
