@@ -7,7 +7,20 @@ import {
 	rooms,
 } from "./GameData";
 
-// Helper to format tools output like a realistic on-call ~/bin symlink listing
+/**
+ * Produce a deterministic, ls -l style string listing that simulates ~/bin symlinked tools.
+ *
+ * Produces an array of display-ready lines: a narrative prefix, an ls command header, and one line per tool
+ * formatted like a symbolic-link listing (e.g., "lrwxrwxrwx ... name -> /path/to/target").
+ *
+ * @param tools - Array of tool descriptors (each with `name`, `description`, and `syntax`) to include in the listing.
+ * @param options - Optional presentation settings:
+ *   - `username` — owner and group name used in the listing (default: "oncall").
+ *   - `symlinkTimestamp` — timestamp string shown for each entry (default: "Sep 25 02:00").
+ *   - `directoryPath` — directory shown in the ls command header (default: "~/bin").
+ *   - `narrativePrefix` — first-line narrative shown before the listing (default: a brief on-call bin description).
+ *   - `closingMessage` — reserved for an optional trailing message (not used by default).
+ * @returns An array of strings representing the formatted listing lines suitable for display.
 function generateToolsOutput(
 	tools: { name: string; description: string; syntax: string }[],
 	options?: {
