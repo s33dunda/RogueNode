@@ -5,7 +5,7 @@ import { requireAuth } from "./lib/auth";
 
 // Initialize game state for a new player
 export const initializeGameState = mutation({
-	args: {},
+	args: v.object({}),
 	returns: v.object({ gameStateId: v.id("gameState") }),
 	handler: async (ctx) => {
 		const identity = await requireAuth(ctx);
@@ -39,7 +39,7 @@ export const initializeGameState = mutation({
 
 // Record tool usage for learning progression tracking
 export const recordToolUsage = internalMutation({
-	args: {
+	args: v.object({
 		playerId: v.string(),
 		tool: v.string(),
 		command: v.string(),
@@ -55,7 +55,7 @@ export const recordToolUsage = internalMutation({
 			),
 			roomInfrastructure: v.optional(v.array(v.string())),
 		}),
-	},
+	}),
 	returns: v.object({
 		gameStateId: v.id("gameState"),
 		toolUsageId: v.id("toolUsage"),
@@ -116,7 +116,7 @@ export const recordToolUsage = internalMutation({
 
 // Get the current game state for the authenticated player
 export const getGameState = query({
-	args: {},
+	args: v.object({}),
 	handler: async (ctx) => {
 		// Ensure the caller is authenticated
 		const identity = await requireAuth(ctx);
@@ -133,7 +133,7 @@ export const getGameState = query({
 
 // Deterministic environment scan for the 'look' command
 export const getLook = query({
-	args: {},
+	args: v.object({}),
 	returns: v.object({ output: v.array(v.string()) }),
 	handler: async (ctx) => {
 		// Ensure the caller is authenticated and matches the playerId
@@ -145,10 +145,14 @@ export const getLook = query({
 			.order("desc")
 			.first();
 
+		if (!gameState) {
+			throw new Error("Game state not initialized for this player");
+		}
+
 		// Minimal stub output for step 1 integration; backend logic will be expanded in step 2
 		return {
 			output: [
-				`[${gameState?.currentRoom}]`,
+				`[${gameState.currentRoom}]`,
 				"Environment scan ready.",
 				"Type 'tools' to see available DevOps commands.",
 			],

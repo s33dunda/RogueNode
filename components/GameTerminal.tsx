@@ -54,18 +54,22 @@ const GameTerminal = () => {
 	];
 
 	// Use server game state as single source of truth
-	const gameState = serverGameState || {
-		currentRoom: initialRoom.id,
-		inventory: [],
-		health: 100,
-		visited: [initialRoom.id],
-		enemies: [...enemies],
-		gameOver: false,
-		playerId: "loading",
-		toolSessionId: undefined,
-		skillPoints: 0,
-		threatLevel: 1,
-	};
+	const isCurrentPlayerState = serverGameState?.playerId === user?.id;
+	const gameState =
+		isCurrentPlayerState && serverGameState
+			? serverGameState
+			: {
+					currentRoom: initialRoom.id,
+					inventory: [],
+					health: 100,
+					visited: [initialRoom.id],
+					enemies: [...enemies],
+					gameOver: false,
+					playerId: "loading",
+					toolSessionId: undefined,
+					skillPoints: 0,
+					threatLevel: 1,
+				};
 
 	const terminalRef = useRef<HTMLDivElement>(null);
 
@@ -112,15 +116,10 @@ const GameTerminal = () => {
 		}
 
 		// Initialize game state in the database first
-		initializeGameState()
-			.then(() => {
-				setGameStateInitialized(true);
-				setOutput(initializedOutput);
-			})
-			.catch((err) => {
-				console.error("Failed to initialize game state:", err);
-				// Don't set initialized=true on error to allow manual retry
-			});
+		initializeGameState().catch((err) => {
+			console.error("Failed to initialize game state:", err);
+			// Don't set initialized=true on error to allow manual retry
+		});
 	}, [
 		user?.id,
 		serverGameState?.playerId,
