@@ -114,6 +114,23 @@ export const recordToolUsage = internalMutation({
 	},
 });
 
+// Get the current game state for the authenticated player
+export const getGameState = query({
+	args: {},
+	handler: async (ctx) => {
+		// Ensure the caller is authenticated
+		const identity = await requireAuth(ctx);
+
+		const gameState = await ctx.db
+			.query("gameState")
+			.withIndex("by_player", (q) => q.eq("playerId", identity.subject))
+			.order("desc")
+			.first();
+
+		return gameState;
+	},
+});
+
 // Deterministic environment scan for the 'look' command
 export const getLook = query({
 	args: {},

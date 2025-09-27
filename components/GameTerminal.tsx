@@ -2,7 +2,6 @@ import { useUser } from "@clerk/nextjs";
 import { useAction, useMutation, useQuery } from "convex/react";
 import type React from "react";
 import { useLayoutEffect, useRef, useState } from "react";
-import type { GameState } from "@/convex/types";
 import { api } from "../convex/_generated/api";
 import { useCommandProcessor } from "../lib/hooks/useCommandProcessor";
 import { enemies, initialRoom } from "../utils/GameData";
@@ -19,6 +18,7 @@ const GameTerminal = () => {
 	const executePingCommand = useAction(api.agents.pingAgent.executePingCommand);
 	const executeLookCommand = useQuery(api.gameActions.getLook);
 	const initializeGameState = useMutation(api.gameActions.initializeGameState);
+	const serverGameState = useQuery(api.gameActions.getGameState);
 
 	const [output, setOutput] = useState<string[]>([
 		"RogueNode v0.1 - DevOps Rogue Training Ground",
@@ -33,26 +33,26 @@ const GameTerminal = () => {
 	const [input, setInput] = useState("");
 	const [isNavVisible, setIsNavVisible] = useState(false);
 	const [gameStateInitialized, setGameStateInitialized] = useState(false);
-	const [gameState, setGameState] = useState<GameState>({
+
+	// Use server game state as single source of truth
+	const gameState = serverGameState || {
 		currentRoom: initialRoom.id,
 		inventory: [],
 		health: 100,
 		visited: [initialRoom.id],
 		enemies: [...enemies],
 		gameOver: false,
-		// Use authenticated Clerk user ID as playerId (fallback for loading state)
 		playerId: user?.id || "loading",
 		toolSessionId: undefined,
 		skillPoints: 0,
 		threatLevel: 1,
-	});
+	};
 
 	const terminalRef = useRef<HTMLDivElement>(null);
 
 	// Use command processor hook
 	const { processCommand } = useCommandProcessor({
 		gameState,
-		setGameState,
 		output,
 		setOutput,
 		executePingCommand,
@@ -70,23 +70,9 @@ const GameTerminal = () => {
 		}
 
 		// Initialize game state in the database first
-		console.log("Attempting to initialize game state for user:", user.id);
 		initializeGameState()
-			.then((result) => {
-				console.log("Game state initialized successfully:", result);
+			.then(() => {
 				setGameStateInitialized(true);
-				setGameState({
-					currentRoom: initialRoom.id,
-					inventory: [],
-					health: 100,
-					visited: [initialRoom.id],
-					enemies: enemies.map((enemy) => ({ ...enemy })),
-					gameOver: false,
-					playerId: user.id,
-					toolSessionId: undefined,
-					skillPoints: 0,
-					threatLevel: 1,
-				});
 				setOutput([
 					"RogueNode v0.1 - DevOps Rogue Training Ground",
 					"© 1977 TERMINAL INDUSTRIES",
@@ -103,7 +89,7 @@ const GameTerminal = () => {
 				// Set initialized to true anyway to prevent infinite loading
 				setGameStateInitialized(true);
 			});
-	}, [user?.id, gameState.playerId, initializeGameState]);
+	}, [user?.id, gameState.playerId, initializeGameState, gameStateInitialized]);
 
 	// Auto-scroll to bottom when output changes
 	useLayoutEffect(() => {
@@ -132,8 +118,8 @@ const GameTerminal = () => {
 		);
 	}
 
-	// Show loading state while game state is being initialized
-	if (!gameStateInitialized) {
+	// Show loading state while game state is being initialized or query is loading
+	if (!gameStateInitialized || executeLookCommand === undefined) {
 		return (
 			<div className="terminal-container bg-black text-green-400 p-4 font-mono">
 				<div>Initializing game state...</div>

@@ -9,7 +9,6 @@ type LookCommandQuery = typeof api.gameActions.getLook;
 
 interface UseCommandProcessorProps {
 	gameState: GameState;
-	setGameState: (state: GameState) => void;
 	output: string[];
 	setOutput: (output: string[]) => void;
 	executePingCommand: (
@@ -20,7 +19,6 @@ interface UseCommandProcessorProps {
 
 export const useCommandProcessor = ({
 	gameState,
-	setGameState,
 	output,
 	setOutput,
 	executePingCommand,
@@ -55,10 +53,11 @@ export const useCommandProcessor = ({
 					const finalOutput = [...userOutput, ...result.response, "> "];
 					setOutput(finalOutput);
 
-					// Update game state if command changed it
-					if (result.newState) {
-						setGameState(result.newState);
-					}
+					// TODO: Update game state on server when command changes it
+					// We'll need to create a mutation for this
+					// if (result.newState) {
+					//   await updateGameState(result.newState);
+					// }
 				} catch (error) {
 					console.error("Command execution error:", error);
 					const errorOutput = [
@@ -73,14 +72,7 @@ export const useCommandProcessor = ({
 				setOutput(emptyOutput);
 			}
 		},
-		[
-			gameState,
-			output,
-			setOutput,
-			setGameState,
-			executePingCommand,
-			executeLookCommand,
-		],
+		[gameState, output, setOutput, executePingCommand, executeLookCommand],
 	);
 
 	return { processCommand };
