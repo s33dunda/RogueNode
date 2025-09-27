@@ -42,7 +42,7 @@ const GameTerminal = () => {
 		visited: [initialRoom.id],
 		enemies: [...enemies],
 		gameOver: false,
-		playerId: user?.id || "loading",
+		playerId: "loading",
 		toolSessionId: undefined,
 		skillPoints: 0,
 		threatLevel: 1,
@@ -58,6 +58,19 @@ const GameTerminal = () => {
 		executePingCommand,
 		executeLookCommand,
 	});
+
+	// Reset state when user changes to prevent cross-account leakage
+	// biome-ignore lint/correctness/useExhaustiveDependencies: maybe we create a reset or clearCache later
+	useLayoutEffect(() => {
+		setGameStateInitialized(false);
+		setOutput([
+			"RogueNode v0.1 - DevOps Rogue Training Ground",
+			"© 1977 TERMINAL INDUSTRIES",
+			"---------------------------------------",
+			"Loading...",
+			"> ",
+		]);
+	}, [user?.id]);
 
 	// Initialize game state when user loads
 	useLayoutEffect(() => {
