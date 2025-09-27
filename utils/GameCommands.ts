@@ -2,16 +2,80 @@ import type { Enemy, GameState } from "../convex/types";
 import {
 	commandLineTools,
 	enemies,
-	type GameActions,
+	type GameCommands,
 	items,
 	rooms,
 } from "./GameData";
+
+/**
+ * Produce a deterministic, ls -l style string listing that simulates ~/bin symlinked tools.
+ *
+ * Produces an array of display-ready lines: a narrative prefix, an ls command header, and one line per tool
+ * formatted like a symbolic-link listing (e.g., "lrwxrwxrwx ... name -> /path/to/target").
+ *
+ * @param tools - Array of tool descriptors (each with `name`, `description`, and `syntax`) to include in the listing.
+ * @param options - Optional presentation settings:
+ *   - `username` — owner and group name used in the listing (default: "oncall").
+ *   - `symlinkTimestamp` — timestamp string shown for each entry (default: "Sep 25 02:00").
+ *   - `directoryPath` — directory shown in the ls command header (default: "~/bin").
+ *   - `narrativePrefix` — first-line narrative shown before the listing (default: a brief on-call bin description).
+ *   - `closingMessage` — reserved for an optional trailing message (not used by default).
+ * @returns An array of strings representing the formatted listing lines suitable for display.
+ *
+ **/
+function generateToolsOutput(
+	tools: { name: string; description: string; syntax: string }[],
+	options?: {
+		username?: string;
+		symlinkTimestamp?: string;
+		directoryPath?: string;
+		narrativePrefix?: string;
+		closingMessage?: string;
+	},
+): string[] {
+	const {
+		username = "oncall",
+		symlinkTimestamp = "Sep 25 02:00",
+		directoryPath = "~/bin",
+		narrativePrefix = "You check your home directory and find a bin folder with essential utilities for quick access during investigations.",
+	} = options || {};
+
+	const targetMap: Record<string, string> = {
+		ping: "/bin/ping",
+		ssh: "/usr/bin/ssh",
+		tail: "/usr/bin/tail",
+		grep: "/usr/bin/grep",
+		netstat: "/usr/bin/netstat",
+		docker: "/usr/bin/docker",
+		kubectl: "/usr/local/bin/kubectl",
+		top: "/usr/bin/top",
+	};
+
+	const lsLines = tools
+		.map((tool) => {
+			const targetPath = targetMap[tool.name] || `/usr/bin/${tool.name}`;
+			const permissions = "lrwxrwxrwx"; // standard symlink perms
+			const ownerGroup = `${username} ${username}`;
+			const size = String(targetPath.length).padStart(2, " ");
+			return `${permissions} 1 ${ownerGroup}  ${size} ${symlinkTimestamp} ${tool.name} -> ${targetPath}`;
+		})
+		.join("\n");
+
+	// Assemble deterministic sections with explicit spacing
+	const linesArr = [
+		narrativePrefix,
+		"",
+		`$ ls -l ${directoryPath}`,
+		...lsLines.split("\n"),
+	];
+	return linesArr;
+}
 
 // Process player commands and return response text and updated game state
 export const parseCommand = async (
 	command: string,
 	gameState: GameState,
-	actions?: GameActions,
+	commands?: GameCommands,
 ) => {
 	const words = command.trim().toLowerCase().split(" ");
 	const action = words[0];
@@ -41,6 +105,19 @@ export const parseCommand = async (
 			break;
 
 		case "look": {
+			// Prefer server-side deterministic look via Convex, fallback to client
+			if (commands?.executeLookCommand) {
+				try {
+					const result = commands.executeLookCommand;
+					response = result.output;
+				} catch (err) {
+					console.error("Look command error:", err);
+					response = ["look: environment scan failed", "Please try again."];
+				}
+				break;
+			}
+
+			// Fallback client-side implementation
 			const room = rooms[gameState.currentRoom];
 			response = [`[${room.name}]`, room.description];
 
@@ -199,14 +276,16 @@ export const parseCommand = async (
 			];
 			break;
 
-		case "tools":
-			response = ["available command-line tools:", "-------------------"];
-			commandLineTools.forEach((tool) => {
-				response.push(`- ${tool.name}: ${tool.description}`);
-			});
-			response.push("");
-			response.push("Type '[toolname] help' for detailed usage information.");
+		case "tools": {
+			response = generateToolsOutput(
+				commandLineTools.map((t) => ({
+					name: t.name,
+					description: t.description,
+					syntax: t.syntax,
+				})),
+			);
 			break;
+		}
 
 		case "ping": {
 			// Check if this is a help request for the ping tool
@@ -225,7 +304,7 @@ export const parseCommand = async (
 				}
 			} else {
 				// Execute ping command using injected action
-				if (!actions?.executePingCommand) {
+				if (!commands?.executePingCommand) {
 					response = [
 						"ping: command-line tools not available",
 						"Network diagnostics require agent integration",
@@ -233,7 +312,7 @@ export const parseCommand = async (
 					];
 				} else {
 					try {
-						const result = await actions.executePingCommand({
+						const result = await commands.executePingCommand({
 							target: target || "localhost",
 							gameState,
 							threadId: gameState.toolSessionId,

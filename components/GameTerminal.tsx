@@ -1,8 +1,7 @@
 import { useUser } from "@clerk/nextjs";
-import { useAction } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import type React from "react";
 import { useLayoutEffect, useRef, useState } from "react";
-import type { GameState } from "@/convex/types";
 import { api } from "../convex/_generated/api";
 import { useCommandProcessor } from "../lib/hooks/useCommandProcessor";
 import { enemies, initialRoom } from "../utils/GameData";
@@ -15,8 +14,18 @@ const GameTerminal = () => {
 	// Get authenticated user from Clerk
 	const { user, isLoaded } = useUser();
 
-	// Convex action hook for ping command (must be called before any returns)
+	// Convex action hooks (must be called before any returns)
 	const executePingCommand = useAction(api.agents.pingAgent.executePingCommand);
+	const identityReady = isLoaded && !!user?.id;
+	const executeLookCommand = useQuery(
+		api.gameActions.getLook,
+		identityReady ? {} : "skip",
+	);
+	const initializeGameState = useMutation(api.gameActions.initializeGameState);
+	const serverGameState = useQuery(
+		api.gameActions.getGameState,
+		identityReady ? {} : "skip",
+	);
 
 	const [output, setOutput] = useState<string[]>([
 		"RogueNode v0.1 - DevOps Rogue Training Ground",
@@ -25,65 +34,98 @@ const GameTerminal = () => {
 		"You awaken in a dimly lit server room. The hum of machines surrounds you.",
 		"Your terminal flickers with an urgent message: 'SYSTEM COMPROMISED'",
 		"",
-		"Type 'help' for available commands or 'tools' to see DevOps commands.",
+		"Type 'help' for available commands like 'look' to take inventory",
 		"> ",
 	]);
 	const [input, setInput] = useState("");
 	const [isNavVisible, setIsNavVisible] = useState(false);
-	const [gameState, setGameState] = useState<GameState>({
-		currentRoom: initialRoom.id,
-		inventory: [],
-		health: 100,
-		visited: [initialRoom.id],
-		enemies: [...enemies],
-		gameOver: false,
-		// Use authenticated Clerk user ID as playerId (fallback for loading state)
-		playerId: user?.id || "loading",
-		toolSessionId: undefined,
-		skillPoints: 0,
-		threatLevel: 1,
-	});
+	const [gameStateInitialized, setGameStateInitialized] = useState(false);
+
+	// Reusable output for initialized game state
+	const initializedOutput = [
+		"RogueNode v0.1 - DevOps Rogue Training Ground",
+		"© 1977 TERMINAL INDUSTRIES",
+		"---------------------------------------",
+		"You awaken in a dimly lit server room. The hum of machines surrounds you.",
+		"Your terminal flickers with an urgent message: 'SYSTEM COMPROMISED'",
+		"",
+		"Type 'help' for available commands or 'tools' to see DevOps commands.",
+		"> ",
+	];
+
+	// Use server game state as single source of truth
+	const isCurrentPlayerState = serverGameState?.playerId === user?.id;
+	const gameState =
+		isCurrentPlayerState && serverGameState
+			? serverGameState
+			: {
+					currentRoom: initialRoom.id,
+					inventory: [],
+					health: 100,
+					visited: [initialRoom.id],
+					enemies: [...enemies],
+					gameOver: false,
+					playerId: "loading",
+					toolSessionId: undefined,
+					skillPoints: 0,
+					threatLevel: 1,
+				};
 
 	const terminalRef = useRef<HTMLDivElement>(null);
 
 	// Use command processor hook
 	const { processCommand } = useCommandProcessor({
 		gameState,
-		setGameState,
 		output,
 		setOutput,
 		executePingCommand,
+		executeLookCommand,
 	});
 
-	// Update playerId when user loads
+	// Reset state when user changes to prevent cross-account leakage
+	// biome-ignore lint/correctness/useExhaustiveDependencies: maybe we create a reset or clearCache later
 	useLayoutEffect(() => {
-		if (!user?.id || gameState.playerId === user.id) {
-			return;
-		}
-
-		setGameState({
-			currentRoom: initialRoom.id,
-			inventory: [],
-			health: 100,
-			visited: [initialRoom.id],
-			enemies: enemies.map((enemy) => ({ ...enemy })),
-			gameOver: false,
-			playerId: user.id,
-			toolSessionId: undefined,
-			skillPoints: 0,
-			threatLevel: 1,
-		});
+		setGameStateInitialized(false);
 		setOutput([
 			"RogueNode v0.1 - DevOps Rogue Training Ground",
 			"© 1977 TERMINAL INDUSTRIES",
 			"---------------------------------------",
-			"You awaken in a dimly lit server room. The hum of machines surrounds you.",
-			"Your terminal flickers with an urgent message: 'SYSTEM COMPROMISED'",
-			"",
-			"Type 'help' for available commands or 'tools' to see DevOps commands.",
+			"Loading...",
 			"> ",
 		]);
-	}, [user?.id, gameState.playerId]);
+	}, [user?.id]);
+
+	// Initialize game state when user loads
+	useLayoutEffect(() => {
+		if (!user?.id) {
+			return;
+		}
+
+		// If server already has correct user data, just set initialized
+		if (serverGameState?.playerId === user.id) {
+			if (!gameStateInitialized) {
+				setGameStateInitialized(true);
+				setOutput(initializedOutput);
+			}
+			return;
+		}
+
+		// If already tried to initialize, don't retry
+		if (gameStateInitialized) {
+			return;
+		}
+
+		// Initialize game state in the database first
+		initializeGameState().catch((err) => {
+			console.error("Failed to initialize game state:", err);
+			// Don't set initialized=true on error to allow manual retry
+		});
+	}, [
+		user?.id,
+		serverGameState?.playerId,
+		gameStateInitialized,
+		initializeGameState,
+	]);
 
 	// Auto-scroll to bottom when output changes
 	useLayoutEffect(() => {
@@ -108,6 +150,15 @@ const GameTerminal = () => {
 		return (
 			<div className="terminal-container bg-black text-green-400 p-4 font-mono">
 				<div>Please sign in to access the DevOps training terminal.</div>
+			</div>
+		);
+	}
+
+	// Show loading state while game state is being initialized or query is loading
+	if (!gameStateInitialized || executeLookCommand === undefined) {
+		return (
+			<div className="terminal-container bg-black text-green-400 p-4 font-mono">
+				<div>Initializing game state...</div>
 			</div>
 		);
 	}

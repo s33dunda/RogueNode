@@ -10,8 +10,9 @@ import type {
 
 // Command action types for dependency injection
 
-export interface GameActions {
+export interface GameCommands {
 	executePingCommand?: (args: CommandArgs) => Promise<CommandResult>;
+	executeLookCommand?: { output: string[] } | undefined;
 	// Future actions for other command-line tools
 	// executeSSHCommand?: (args: SSHCommandArgs) => Promise<SSHCommandResult>;
 	// executeDockerCommand?: (args: DockerCommandArgs) => Promise<DockerCommandResult>;

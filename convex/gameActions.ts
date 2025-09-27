@@ -1,10 +1,46 @@
 import { v } from "convex/values";
+import { enemies } from "../utils/GameData";
 import type { Id } from "./_generated/dataModel";
-import { internalMutation } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
+import { requireAuth } from "./lib/auth";
+
+// Initialize game state for a new player
+export const initializeGameState = mutation({
+	args: v.object({}),
+	returns: v.object({ gameStateId: v.id("gameState") }),
+	handler: async (ctx) => {
+		const identity = await requireAuth(ctx);
+
+		// Check if player already has game state
+		const existingGameState = await ctx.db
+			.query("gameState")
+			.withIndex("by_player", (q) => q.eq("playerId", identity.subject))
+			.first();
+
+		if (existingGameState) {
+			return { gameStateId: existingGameState._id };
+		}
+
+		// Create initial game state
+		const gameStateId = await ctx.db.insert("gameState", {
+			playerId: identity.subject,
+			currentRoom: "server-room", // Starting room
+			inventory: [],
+			health: 100,
+			visited: ["server-room"],
+			enemies: enemies.map((enemy) => ({ ...enemy })), // Deep clone enemy roster
+			gameOver: false,
+			skillPoints: 0,
+			threatLevel: 0,
+		});
+
+		return { gameStateId };
+	},
+});
 
 // Record tool usage for learning progression tracking
 export const recordToolUsage = internalMutation({
-	args: {
+	args: v.object({
 		playerId: v.string(),
 		tool: v.string(),
 		command: v.string(),
@@ -20,45 +56,49 @@ export const recordToolUsage = internalMutation({
 			),
 			roomInfrastructure: v.optional(v.array(v.string())),
 		}),
-	},
+	}),
 	returns: v.object({
-		sessionId: v.id("gameSessions"),
+		gameStateId: v.id("gameState"),
 		toolUsageId: v.id("toolUsage"),
-		sessionCreated: v.boolean(),
+		gameStateCreated: v.boolean(),
 	}),
 	handler: async (ctx, args) => {
-		// Update or create game session tracking first to get unique session ID
-		const existingSession = await ctx.db
-			.query("gameSessions")
+		// Update or create game state tracking first to get unique game state ID
+		const existingGameState = await ctx.db
+			.query("gameState")
 			.withIndex("by_player", (q) => q.eq("playerId", args.playerId))
 			.order("desc")
 			.first();
 
-		let sessionId: Id<"gameSessions">;
-		let sessionCreated = false;
+		let gameStateId: Id<"gameState">;
+		let gameStateCreated = false;
 
-		if (existingSession) {
-			await ctx.db.patch(existingSession._id, {
+		if (existingGameState) {
+			await ctx.db.patch(existingGameState._id, {
 				currentRoom: args.room,
-				lastActivity: Date.now(),
 			});
-			sessionId = existingSession._id;
+			gameStateId = existingGameState._id;
 		} else {
-			const newSessionId = await ctx.db.insert("gameSessions", {
+			// Create initial game state if none exists
+			const newGameStateId = await ctx.db.insert("gameState", {
 				playerId: args.playerId,
 				currentRoom: args.room,
+				inventory: [],
 				health: 100,
-				skillLevel: 1,
-				lastActivity: Date.now(),
+				visited: [args.room],
+				enemies: enemies.map((enemy) => ({ ...enemy })), // Deep clone enemy roster
+				gameOver: false,
+				skillPoints: 0,
+				threatLevel: 0,
 			});
-			sessionId = newSessionId;
-			sessionCreated = true;
+			gameStateId = newGameStateId;
+			gameStateCreated = true;
 		}
 
-		// Record the tool usage with the unique session ID
+		// Record the tool usage with the unique game state ID
 		const toolUsageId = await ctx.db.insert("toolUsage", {
 			playerId: args.playerId,
-			sessionId,
+			gameStateId,
 			tool: args.tool,
 			command: args.command,
 			room: args.room,
@@ -68,9 +108,61 @@ export const recordToolUsage = internalMutation({
 		});
 
 		return {
-			sessionId,
+			gameStateId,
 			toolUsageId,
-			sessionCreated,
+			gameStateCreated,
+		};
+	},
+});
+
+// Get the current game state for the authenticated player
+export const getGameState = query({
+	args: v.object({}),
+	handler: async (ctx) => {
+		// Ensure the caller is authenticated
+		const identity = await requireAuth(ctx);
+
+		const gameState = await ctx.db
+			.query("gameState")
+			.withIndex("by_player", (q) => q.eq("playerId", identity.subject))
+			.order("desc")
+			.first();
+
+		return gameState;
+	},
+});
+
+// Deterministic environment scan for the 'look' command
+export const getLook = query({
+	args: v.object({}),
+	returns: v.object({ output: v.array(v.string()) }),
+	handler: async (ctx) => {
+		// Ensure the caller is authenticated and matches the playerId
+		const identity = await requireAuth(ctx);
+
+		const gameState = await ctx.db
+			.query("gameState")
+			.withIndex("by_player", (q) => q.eq("playerId", identity.subject))
+			.order("desc")
+			.first();
+
+		if (!gameState) {
+			return {
+				output: [
+					"[scanning]",
+					"Environment sensors are warming up.",
+					"Please run 'look' again once initialization completes.",
+				],
+			};
+		}
+
+		// Minimal stub output for step 1 integration; backend logic will be expanded in step 2
+		return {
+			output: [
+				`[${gameState.currentRoom}]`,
+				"Environment scan ready.",
+				"Type 'tools' to see available DevOps commands.",
+			],
 		};
 	},
 });
