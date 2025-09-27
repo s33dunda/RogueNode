@@ -21,6 +21,8 @@ import {
  *   - `narrativePrefix` — first-line narrative shown before the listing (default: a brief on-call bin description).
  *   - `closingMessage` — reserved for an optional trailing message (not used by default).
  * @returns An array of strings representing the formatted listing lines suitable for display.
+ *
+ **/
 function generateToolsOutput(
 	tools: { name: string; description: string; syntax: string }[],
 	options?: {

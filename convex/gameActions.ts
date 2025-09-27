@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { enemies } from "../utils/GameData";
 import type { Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query } from "./_generated/server";
 import { requireAuth } from "./lib/auth";
@@ -27,7 +28,7 @@ export const initializeGameState = mutation({
 			inventory: [],
 			health: 100,
 			visited: ["server-room"],
-			enemies: [],
+			enemies: enemies.map((enemy) => ({ ...enemy })), // Deep clone enemy roster
 			gameOver: false,
 			skillPoints: 0,
 			threatLevel: 0,
@@ -85,7 +86,7 @@ export const recordToolUsage = internalMutation({
 				inventory: [],
 				health: 100,
 				visited: [args.room],
-				enemies: [],
+				enemies: enemies.map((enemy) => ({ ...enemy })), // Deep clone enemy roster
 				gameOver: false,
 				skillPoints: 0,
 				threatLevel: 0,
@@ -146,7 +147,13 @@ export const getLook = query({
 			.first();
 
 		if (!gameState) {
-			throw new Error("Game state not initialized for this player");
+			return {
+				output: [
+					"[scanning]",
+					"Environment sensors are warming up.",
+					"Please run 'look' again once initialization completes.",
+				],
+			};
 		}
 
 		// Minimal stub output for step 1 integration; backend logic will be expanded in step 2

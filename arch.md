@@ -1,3 +1,5 @@
+# Deterministic look command flow
+
 ```mermaid
 flowchart TD
     A[Call Ping Tool] --> B{cache exists?}
