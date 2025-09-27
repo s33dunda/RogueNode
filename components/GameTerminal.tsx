@@ -34,6 +34,18 @@ const GameTerminal = () => {
 	const [isNavVisible, setIsNavVisible] = useState(false);
 	const [gameStateInitialized, setGameStateInitialized] = useState(false);
 
+	// Reusable output for initialized game state
+	const initializedOutput = [
+		"RogueNode v0.1 - DevOps Rogue Training Ground",
+		"© 1977 TERMINAL INDUSTRIES",
+		"---------------------------------------",
+		"You awaken in a dimly lit server room. The hum of machines surrounds you.",
+		"Your terminal flickers with an urgent message: 'SYSTEM COMPROMISED'",
+		"",
+		"Type 'help' for available commands or 'tools' to see DevOps commands.",
+		"> ",
+	];
+
 	// Use server game state as single source of truth
 	const gameState = serverGameState || {
 		currentRoom: initialRoom.id,
@@ -78,7 +90,17 @@ const GameTerminal = () => {
 			return;
 		}
 
-		if (gameState.playerId === user.id && gameStateInitialized) {
+		// If server already has correct user data, just set initialized
+		if (serverGameState?.playerId === user.id) {
+			if (!gameStateInitialized) {
+				setGameStateInitialized(true);
+				setOutput(initializedOutput);
+			}
+			return;
+		}
+
+		// If already tried to initialize, don't retry
+		if (gameStateInitialized) {
 			return;
 		}
 
@@ -86,23 +108,18 @@ const GameTerminal = () => {
 		initializeGameState()
 			.then(() => {
 				setGameStateInitialized(true);
-				setOutput([
-					"RogueNode v0.1 - DevOps Rogue Training Ground",
-					"© 1977 TERMINAL INDUSTRIES",
-					"---------------------------------------",
-					"You awaken in a dimly lit server room. The hum of machines surrounds you.",
-					"Your terminal flickers with an urgent message: 'SYSTEM COMPROMISED'",
-					"",
-					"Type 'help' for available commands or 'tools' to see DevOps commands.",
-					"> ",
-				]);
+				setOutput(initializedOutput);
 			})
 			.catch((err) => {
 				console.error("Failed to initialize game state:", err);
-				// Set initialized to true anyway to prevent infinite loading
-				setGameStateInitialized(true);
+				// Don't set initialized=true on error to allow manual retry
 			});
-	}, [user?.id, gameState.playerId, initializeGameState, gameStateInitialized]);
+	}, [
+		user?.id,
+		serverGameState?.playerId,
+		gameStateInitialized,
+		initializeGameState,
+	]);
 
 	// Auto-scroll to bottom when output changes
 	useLayoutEffect(() => {
