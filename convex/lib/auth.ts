@@ -46,14 +46,14 @@ export async function requireAuthWithPlayerId(
 }
 
 /**
- * Ensure the current request is made by an administrator and return the authenticated identity.
+ * Ensure the request is from an administrator and return the authenticated identity.
  *
- * Determines admin status by checking `identity.customClaims?.role === "admin"` or whether
- * `identity.subject` is included in the comma-separated `ADMIN_USER_IDS` environment variable.
+ * Admin status is determined by whether the authenticated identity's `subject` is listed
+ * in the comma-separated `ADMIN_USER_IDS` environment variable.
  *
  * @param ctx - Convex context (`QueryCtx | MutationCtx | ActionCtx`)
  * @returns The authenticated user identity object
- * @throws Error if the request is not authenticated or the user is not an admin
+ * @throws Error if there is no authenticated user or the user is not an admin
  *
  * @example
  * // In a mutation that requires admin privileges:
