@@ -16,9 +16,16 @@ const GameTerminal = () => {
 
 	// Convex action hooks (must be called before any returns)
 	const executePingCommand = useAction(api.agents.pingAgent.executePingCommand);
-	const executeLookCommand = useQuery(api.gameActions.getLook);
+	const identityReady = isLoaded && !!user?.id;
+	const executeLookCommand = useQuery(
+		api.gameActions.getLook,
+		identityReady ? {} : "skip",
+	);
 	const initializeGameState = useMutation(api.gameActions.initializeGameState);
-	const serverGameState = useQuery(api.gameActions.getGameState);
+	const serverGameState = useQuery(
+		api.gameActions.getGameState,
+		identityReady ? {} : "skip",
+	);
 
 	const [output, setOutput] = useState<string[]>([
 		"RogueNode v0.1 - DevOps Rogue Training Ground",
