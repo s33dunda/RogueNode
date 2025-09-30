@@ -1,118 +1,34 @@
-# RogueNode Sources of Truth Aggregator
+# RogueNode SSOT Starter
 
-This document anchors every canonical artifact in RogueNode. Each section names the source of truth (SOT), its owner, how downstream assets are produced from it, and the commands that keep the system in sync. When you touch an area, update the corresponding SOT first, then regenerate or validate all derived outputs before merging.
+This slim index tracks the minimum artifacts we must keep in sync while we shape the MVP: define the game verbs, spin out solvable problems, surface them in the app. Start edits at the canonical source listed here, then manually sync downstream files until generators/CI land.
 
-## Stewardship
+## Core Truths Today
 
-- **Owner of this index:** @roguecore (product+tech)
-- **Update cadence:** update immediately with any change to a canonical artifact or generator
-- **Validation:** CI target `pnpm ssot:check` (planned) will run all generators and drift detectors referenced here
+### 1. Domain Verbs & State
 
-> **Rule of thumb:** change the source, regenerate the derivatives, confirm CI is green, and note the touch points in your PR.
+- **Canonical artifact:** `utils/GameData.ts` (rooms, items, command wiring) paired with shared types from `convex/types`.
+- **Used by:** Convex action handlers (`convex/gameActions.ts`) and client processors (`lib/hooks/useCommandProcessor.ts`).
+- **How to update:** edit `GameData.ts` (add rooms/items/command hooks), ensure Convex types stay aligned, run targeted tests or manual playtest in the app.
+- **Planned next step:** extract this into `packages/domain-spec/` with codegen, but for now treat `GameData.ts` as the single editable source.
 
-## Canonical Artifacts
+### 2. Scenario Seeds & Plans
 
-### 1. Domain Schema (Game Rules)
+- **Canonical artifact:** PDDL domain/problem files under `../RogueNodeScenarios/` (`domains/rogue-devops-poc-domain.pddl`, `problems/*/problem.pddl`). These set up machine-solvable missions.
+- **Used by:** Fast Downward scripts for solution steps (`../RogueNodeScenarios/scripts/plan_fd.py`) and any plan JSON fed back into the game.
+- **How to update:** author or tweak PDDL, run `devbox run -- python scripts/plan_fd.py ...` to regenerate `plan.json`, then import the resulting steps into gameplay data.
+- **Planned next step:** generate PDDL from the domain spec once that package exists.
 
-- **Canonical artifact:** `packages/domain-spec/schema.ts` *(planned package exporting Zod/TypeScript schema)*
-- **Derived assets:**
-  - Runtime types consumed by Convex actions and UI helpers (`convex/gameActions.ts`, `utils/GameData.ts`)
-  - Content authoring helpers (`packages/domain-spec/authoring.ts`)
-  - Human-readable docs (`docs/gameplay/domain.md`)
-- **Generator / checks:**
-  - `pnpm domain:generate` – emits runtime types and docs (planned)
-  - `pnpm test domain` – schema conformance/unit tests (existing test suite once added)
-- **Update rules:**
-  - Introduce or modify actions/predicates here first
-  - Run `pnpm domain:generate`, commit updated artifacts, and reference the schema change in PR notes
+### 3. Runtime Surfacing
 
-### 2. Scenario Content (Missions & Levels)
+- **Canonical artifact:** the Convex + Next.js glue that exposes problems to players: `convex/gameActions.ts`, `lib/hooks/useCommandProcessor.ts`, and UI state under `app/`.
+- **Used by:** Player sessions—these files are the runtime truth for how missions show up and how commands execute.
+- **How to update:** keep these files aligned with the domain data and imported plan outputs; test via the local app (`pnpm dev`).
 
-- **Canonical artifact:** `packages/scenario-schema/scenarios/*.yaml` *(planned content bundle referencing domain schema IDs)*
-- **Derived assets:**
-  - Scenario fixtures for Convex and client (`convex/data/scenarios.ts`, `lib/api/scenarios.ts`)
-  - Narrative docs (`docs/gameplay/scenarios.md`)
-  - AI prompt snippets / tool configs (`agents/prompts/generatedScenarios.md`)
-- **Generator / checks:**
-  - `pnpm scenarios:generate` – syncs fixtures & docs (planned)
-  - `pnpm test scenarios` – validates references against the domain schema (planned)
-- **Update rules:**
-  - Edit YAML in schema package, regenerate outputs, verify tests
+## Working Loop
 
-### 3. Planning Pipeline (PDDL Integration)
+1. **Shape the mission** in `GameData.ts` (rooms, tools, win conditions) and, when needed, extend types in `convex/types`.
+2. **Describe the automation** by editing/adding a PDDL problem; run the planner to produce a fresh `plan.json`.
+3. **Load the experience** by wiring the plan/mission into Convex actions + React hooks so the player can attempt the solution path.
+4. **Document intent** briefly in the PR description (or drop an ADR if the change is significant); update this file if a new canonical artifact appears.
 
-- **Canonical artifact:** Domain & scenario schema above, emitted as PDDL under `../RogueNodeScenarios`
-- **Derived assets:**
-  - `../RogueNodeScenarios/domains/*.pddl` & `problems/*/problem.pddl`
-  - Generated documentation `../RogueNodeScenarios/README.md`
-  - Plan fixtures (`../RogueNodeScenarios/problems/*/plan.json`)
-- **Generator / checks:**
-  - `pnpm planning:generate` – converts schema into PDDL + docs (planned)
-  - `pnpm planning:smoke` – runs Fast Downward oneshot to ensure solvability (planned)
-- **Update rules:**
-  - Never hand-edit PDDL; adjust the canonical schema and regenerate
-  - Commit regenerated PDDL/docs/plan outputs alongside schema updates
-
-### 4. Contracts (APIs, Events, Data Interchange)
-
-- **Canonical artifact:** `contracts/openapi.yaml` *(planned OpenAPI spec) and supporting JSON Schema files*
-- **Derived assets:**
-  - Server request handlers (`app/api/*` stubs, Convex HTTP actions)
-  - Type-safe client SDK (`lib/api/generated.ts`)
-  - Public API docs (`docs/api/`)
-- **Generator / checks:**
-  - `pnpm contracts:generate` – emits server/client code and docs (planned)
-  - `pnpm contracts:test` – contract tests against running services (planned)
-- **Update rules:**
-  - Update OpenAPI/JSON Schema first, regenerate stubs/clients, rerun contract tests
-
-### 5. Runtime Implementation
-
-- **Canonical artifact:** Application code repositories referencing generated types (Next.js app under `app/`, Convex functions under `convex/`, agent workers under `agents/`)
-- **Derived assets:**
-  - Build artifacts distributed to users
-  - Storybook or UI docs (`docs/ui/` when present)
-- **Generator / checks:**
-  - `pnpm lint`, `pnpm test`, `pnpm build`
-  - Type-share validation triggered via generators above
-- **Update rules:**
-  - Runtime code must consume generated types; avoid duplicating schema logic inline
-  - If runtime changes imply schema shifts, loop back and update the canonical schema first
-
-### 6. Operations & Infrastructure
-
-- **Canonical artifact:** `infra/` (Terraform or Pulumi modules), `ops/slo/*.yaml`, `docs/runbooks/*.md`
-- **Derived assets:**
-  - Deployed infrastructure, monitoring dashboards, alerting configurations
-  - On-call documentation surfaced in PagerDuty or equivalent
-- **Generator / checks:**
-  - `pnpm infra:plan` – renders IaC plan
-  - `pnpm ops:lint` – validates SLO/alert definitions
-- **Update rules:**
-  - Version all changes with code; update runbooks alongside configuration edits
-
-### 7. Intent & Decisions (Why)
-
-- **Canonical artifact:** `docs/adr/*.md` (Architecture Decision Records), `docs/product/*.md` (product briefs)
-- **Derived assets:**
-  - References in PRs, onboarding guides, narrative docs
-- **Generator / checks:**
-  - No generation; rely on review checklist to ensure ADR exists for impactful shifts
-- **Update rules:**
-  - Record rationale before or during implementation; link ADR IDs in code/doc comments when relevant
-
-## CI & Tooling Alignment
-
-- Add `pnpm ssot:check` to orchestrate all `*:generate` and validation commands.
-- CI job `ssot-guard.yml` runs on PRs, failing if any generator output is outdated or validation fails.
-- PR template includes checkboxes for each SSOT area (`domain`, `scenarios`, `planning`, `contracts`, `runtime`, `ops`, `intent`). Authors tick boxes and confirm generators ran.
-
-## Working Agreement
-
-1. Locate the relevant SSOT entry before editing any derived file.
-2. Modify the canonical artifact (or add one if missing).
-3. Run associated generator/validation commands.
-4. Update this aggregator if ownership, commands, or artifacts change.
-5. Reference the SSOT sections touched in your PR description.
-
-Keeping this document current ensures every team member knows where truth lives and how the system proves it.
+This starter list will grow into the full SSOT map once the schema packages and generators are in place. Keep it light, keep it accurate.
