@@ -1,22 +1,10 @@
 // Import shared types from Convex for single source of truth
 import type {
-	CommandArgs,
 	CommandLineTool,
-	CommandResult,
 	GameState,
 	Room,
 	RoomsRecord,
 } from "../convex/types";
-
-// Command action types for dependency injection
-
-export interface GameCommands {
-	executePingCommand?: (args: CommandArgs) => Promise<CommandResult>;
-	executeLookCommand?: { output: string[] } | undefined;
-	// Future actions for other command-line tools
-	// executeSSHCommand?: (args: SSHCommandArgs) => Promise<SSHCommandResult>;
-	// executeDockerCommand?: (args: DockerCommandArgs) => Promise<DockerCommandResult>;
-}
 
 // Map of the dungeon
 export const gameMap = {
