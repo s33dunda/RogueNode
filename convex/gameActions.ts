@@ -445,6 +445,14 @@ type ProcessSyncCommandArgs = {
 
 const ASYNC_COMMANDS = new Set(["ping"]);
 
+/**
+ * Extracts the command type and target from a raw command string.
+ *
+ * Trims whitespace, lowercases the input, and splits on the first token. If the input is empty or whitespace, both `commandType` and `target` are empty strings.
+ *
+ * @param command - Raw user-entered command string (may include leading/trailing whitespace and multiple words)
+ * @returns An object with `commandType` set to the first token and `target` set to the remaining text joined by spaces; both are `""` when the input contains no tokens.
+ */
 function parseCommandType(command: string) {
 	const normalized = command.trim().toLowerCase();
 	if (!normalized) {
@@ -454,10 +462,27 @@ function parseCommandType(command: string) {
 	return { commandType, target: rest.join(" ") };
 }
 
+/**
+ * Determine whether a command type should be processed synchronously.
+ *
+ * @param commandType - The normalized command name provided by the player (e.g., "look", "ping")
+ * @returns `true` if `commandType` is a non-empty string that should be handled synchronously, `false` otherwise.
+ */
 function isSyncCommand(commandType: string) {
 	return commandType !== "" && !ASYNC_COMMANDS.has(commandType);
 }
 
+/**
+ * Retrieve the most recent gameState document for the specified player.
+ *
+ * @param ctx - Mutation context providing database access
+ * @param playerId - The player's identifier whose game state to load
+ * @returns The latest `gameState` document for `playerId`
+ * @throws Error if no game state exists for the player
+ *
+ * @example
+ * const state = await loadPlayerGameState(ctx, identity.subject);
+ */
 async function loadPlayerGameState(ctx: MutationCtx, playerId: string) {
 	const existingGameState = await ctx.db
 		.query("gameState")
@@ -472,6 +497,16 @@ async function loadPlayerGameState(ctx: MutationCtx, playerId: string) {
 	return existingGameState;
 }
 
+/**
+ * Convert a Convex `Doc<"gameState">` into a plain `GameState` by removing internal Convex metadata.
+ *
+ * Use this after loading a `gameState` document from the database to obtain a value suitable for
+ * game logic and serialization; the result represents the stored game state without `_id` or
+ * `_creationTime` metadata.
+ *
+ * @param doc - The Convex document for a game state
+ * @returns The `GameState` object with Convex-specific fields removed
+ */
 function docToGameState(doc: Doc<"gameState">): GameState {
 	const { _id: _unusedId, _creationTime: _unusedCreationTime, ...rest } = doc;
 	void _unusedId;
@@ -479,6 +514,17 @@ function docToGameState(doc: Doc<"gameState">): GameState {
 	return rest as GameState;
 }
 
+/**
+ * Handle a synchronous in-game command and produce terminal output lines and a success flag.
+ *
+ * Supports the built-in synchronous commands: `help`, `look`, and `tools`. For `help` returns a
+ * static list of supported client commands; for `look` returns a deterministic environment scan
+ * derived from the supplied `gameState`; for `tools` returns the available command-line tools.
+ *
+ * @param args.commandType - The normalized command name to execute (e.g., `"look"`, `"help"`, `"tools"`).
+ * @param args.gameState - The player's current game state used to build command-specific output (read-only).
+ * @returns An object with `outputLines` containing the lines to display in the terminal and `success` indicating whether the command succeeded (`true`) or not (`false`).
+ */
 function processSyncCommand({
 	commandType,
 	gameState,
@@ -524,6 +570,14 @@ function processSyncCommand({
 	}
 }
 
+/**
+ * Builds the array of text lines displayed to the player for their current room.
+ *
+ * If the game's current room is not defined, returns a single-line message indicating the area is undefined.
+ *
+ * @param gameState - The game state document used to determine currentRoom, visible exits, and non-defeated enemies
+ * @returns An array of strings containing the room header, description, exits (or absence of exits), and any active threat lines
+ */
 function buildLookOutput(gameState: Doc<"gameState">) {
 	const room = rooms[gameState.currentRoom];
 	if (!room) {
@@ -555,6 +609,26 @@ function buildLookOutput(gameState: Doc<"gameState">) {
 	return lines;
 }
 
+/**
+ * Build a textual, line-by-line description of available command-line tools for the player.
+ *
+ * The output is suitable for writing to the game's terminal UI and lists each tool's name,
+ * short description, and example syntax.
+ *
+ * @returns An array of lines (`string[]`) representing the terminal output for the tools listing.
+ *
+ * @example
+ * // Result can be written directly to a terminal output document:
+ * const lines = buildToolsOutput();
+ * // lines -> [
+ * //   "You inspect the ~/bin directory and note the following utilities:",
+ * //   "",
+ * //   "$ ls -l ~/bin",
+ * //   "ping       -> Send ICMP-style probe (usage: ping <host>)",
+ * //   "scan       -> Quick port scan (usage: scan <host> <ports>)",
+ * //   ...
+ * // ]
+ */
 function buildToolsOutput() {
 	const lines = [
 		"You inspect the ~/bin directory and note the following utilities:",
