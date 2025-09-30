@@ -170,6 +170,7 @@ export const executeAsyncCommand = internalAction({
 		target: v.string(),
 		outputId: v.id("terminalOutput"),
 	}),
+	returns: v.null(),
 	handler: async (ctx, args) => {
 		const gameStateDoc = await ctx.runQuery(
 			internal.gameActions.getGameStateById,
@@ -260,6 +261,7 @@ export const getGameStateById = internalQuery({
 	args: v.object({
 		gameStateId: v.id("gameState"),
 	}),
+	returns: v.any(),
 	handler: async (ctx, { gameStateId }) => {
 		return await ctx.db.get(gameStateId);
 	},
@@ -275,11 +277,13 @@ export const writeCommandOutput = internalMutation({
 		success: v.boolean(),
 		outputId: v.id("terminalOutput"),
 	}),
+	returns: v.null(),
 	handler: async (ctx, args) => {
 		await ctx.db.patch(args.outputId, {
 			outputLines: args.outputLines,
 			success: args.success,
 		});
+		return null;
 	},
 });
 
@@ -289,10 +293,11 @@ export const persistCommandGameState = internalMutation({
 		skillDelta: v.optional(v.number()),
 		toolSessionId: v.optional(v.string()),
 	}),
+	returns: v.null(),
 	handler: async (ctx, { gameStateId, skillDelta, toolSessionId }) => {
 		const state = await ctx.db.get(gameStateId);
 		if (!state) {
-			return;
+			return null;
 		}
 
 		const updates: Partial<Doc<"gameState">> = {};
@@ -306,6 +311,7 @@ export const persistCommandGameState = internalMutation({
 		if (Object.keys(updates).length > 0) {
 			await ctx.db.patch(gameStateId, updates);
 		}
+		return null;
 	},
 });
 
@@ -389,6 +395,7 @@ export const recordToolUsage = internalMutation({
 // Get the current game state for the authenticated player
 export const getGameState = query({
 	args: v.object({}),
+	returns: v.any(),
 	handler: async (ctx) => {
 		// Ensure the caller is authenticated
 		const identity = await requireAuth(ctx);
@@ -647,6 +654,7 @@ function buildToolsOutput() {
 
 export const getTerminalOutput = query({
 	args: {},
+	returns: v.any(),
 	handler: async (ctx) => {
 		const identity = await requireAuth(ctx);
 		const outputs = await ctx.db
