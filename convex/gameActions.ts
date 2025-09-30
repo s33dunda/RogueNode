@@ -1,8 +1,18 @@
 import { v } from "convex/values";
-import { enemies } from "../utils/GameData";
-import type { Id } from "./_generated/dataModel";
-import { internalMutation, mutation, query } from "./_generated/server";
+import { commandLineTools, enemies, rooms } from "../utils/GameData";
+import { internal } from "./_generated/api";
+import type { Doc, Id } from "./_generated/dataModel";
+import {
+	internalAction,
+	internalMutation,
+	internalQuery,
+	type MutationCtx,
+	mutation,
+	query,
+} from "./_generated/server";
 import { requireAuth } from "./lib/auth";
+import type { GameState } from "./types";
+import { generateCacheKey } from "./utils/cacheUtils";
 
 // Initialize game state for a new player
 export const initializeGameState = mutation({
@@ -15,6 +25,7 @@ export const initializeGameState = mutation({
 		const existingGameState = await ctx.db
 			.query("gameState")
 			.withIndex("by_player", (q) => q.eq("playerId", identity.subject))
+			.order("desc")
 			.first();
 
 		if (existingGameState) {
@@ -35,6 +46,272 @@ export const initializeGameState = mutation({
 		});
 
 		return { gameStateId };
+	},
+});
+
+export const sendCommand = mutation({
+	args: v.object({
+		command: v.string(),
+	}),
+	returns: v.object({
+		outputId: v.id("terminalOutput"),
+	}),
+	handler: async (ctx, { command }) => {
+		const identity = await requireAuth(ctx);
+		const trimmed = command.trim();
+		const { commandType, target } = parseCommandType(trimmed);
+
+		const gameState = await loadPlayerGameState(ctx, identity.subject);
+
+		if (!commandType) {
+			const outputId = await ctx.db.insert("terminalOutput", {
+				playerId: identity.subject,
+				gameStateId: gameState._id,
+				commandInput: command,
+				outputLines: [],
+				commandType,
+				success: false,
+			});
+			return { outputId };
+		}
+
+		if (!isSyncCommand(commandType)) {
+			const normalizedTarget = target || "localhost";
+			const normalizedState = docToGameState(gameState);
+			const cacheKey = generateCacheKey(
+				commandType,
+				normalizedTarget,
+				normalizedState,
+			);
+			const hash = cacheKey.slice(cacheKey.lastIndexOf(":") + 1);
+
+			const cached = await ctx.db
+				.query("commandOutputCache")
+				.withIndex("by_command_target_hash", (q) =>
+					q
+						.eq("command", commandType)
+						.eq("target", normalizedTarget)
+						.eq("gameStateHash", hash),
+				)
+				.first();
+
+			if (cached) {
+				await ctx.runMutation(internal.utils.cacheUtils.incrementCacheHit, {
+					cacheId: cached._id,
+				});
+
+				const outputId = await ctx.db.insert("terminalOutput", {
+					playerId: identity.subject,
+					gameStateId: gameState._id,
+					commandInput: command,
+					outputLines: cached.output,
+					commandType,
+					success: cached.success,
+				});
+
+				await ctx.runMutation(internal.gameActions.persistCommandGameState, {
+					gameStateId: gameState._id,
+					skillDelta: cached.success ? cached.skillGained : 0,
+					toolSessionId: cached.threadId ?? normalizedState.toolSessionId,
+				});
+
+				return { outputId };
+			}
+
+			const outputId = await ctx.db.insert("terminalOutput", {
+				playerId: identity.subject,
+				gameStateId: gameState._id,
+				commandInput: command,
+				outputLines: ["Processing..."],
+				commandType,
+				success: false,
+			});
+
+			await ctx.scheduler.runAfter(
+				0,
+				internal.gameActions.executeAsyncCommand,
+				{
+					playerId: identity.subject,
+					gameStateId: gameState._id,
+					command,
+					commandType,
+					target,
+					outputId,
+				},
+			);
+
+			return { outputId };
+		}
+
+		const { outputLines, success } = processSyncCommand({
+			commandType,
+			gameState,
+		});
+
+		const outputId = await ctx.db.insert("terminalOutput", {
+			playerId: identity.subject,
+			gameStateId: gameState._id,
+			commandInput: command,
+			outputLines,
+			commandType,
+			success,
+		});
+
+		return { outputId };
+	},
+});
+
+export const executeAsyncCommand = internalAction({
+	args: v.object({
+		playerId: v.string(),
+		gameStateId: v.id("gameState"),
+		command: v.string(),
+		commandType: v.string(),
+		target: v.string(),
+		outputId: v.id("terminalOutput"),
+	}),
+	returns: v.null(),
+	handler: async (ctx, args) => {
+		const gameStateDoc = await ctx.runQuery(
+			internal.gameActions.getGameStateById,
+			{ gameStateId: args.gameStateId },
+		);
+
+		if (!gameStateDoc) {
+			await ctx.runMutation(internal.gameActions.writeCommandOutput, {
+				playerId: args.playerId,
+				gameStateId: args.gameStateId,
+				commandInput: args.command,
+				outputLines: [
+					"Unable to process command.",
+					"No active game state found.",
+				],
+				commandType: args.commandType,
+				success: false,
+				outputId: args.outputId,
+			});
+			return;
+		}
+
+		const gameState = docToGameState(gameStateDoc);
+
+		try {
+			switch (args.commandType) {
+				case "ping": {
+					const target = args.target || "localhost";
+					const result = await ctx.runAction(
+						internal.agents.pingAgent.executePingCommand,
+						{
+							target,
+							gameState: gameState,
+							threadId: gameState.toolSessionId,
+						},
+					);
+
+					await ctx.runMutation(internal.gameActions.writeCommandOutput, {
+						playerId: args.playerId,
+						gameStateId: args.gameStateId,
+						commandInput: args.command,
+						outputLines: result.output,
+						commandType: args.commandType,
+						success: result.success,
+						outputId: args.outputId,
+					});
+
+					await ctx.runMutation(internal.gameActions.persistCommandGameState, {
+						gameStateId: args.gameStateId,
+						skillDelta: result.success ? result.skillGained : 0,
+						toolSessionId: result.threadId ?? gameState.toolSessionId,
+					});
+					break;
+				}
+				default: {
+					await ctx.runMutation(internal.gameActions.writeCommandOutput, {
+						playerId: args.playerId,
+						gameStateId: args.gameStateId,
+						commandInput: args.command,
+						outputLines: [
+							`Command '${args.commandType}' is not yet implemented.`,
+						],
+						commandType: args.commandType,
+						success: false,
+						outputId: args.outputId,
+					});
+				}
+			}
+		} catch (error) {
+			console.error("executeAsyncCommand error", error);
+			await ctx.runMutation(internal.gameActions.writeCommandOutput, {
+				playerId: args.playerId,
+				gameStateId: args.gameStateId,
+				commandInput: args.command,
+				outputLines: [
+					"An unexpected error occurred while processing the command.",
+					"Please try again shortly.",
+				],
+				commandType: args.commandType,
+				success: false,
+				outputId: args.outputId,
+			});
+		}
+	},
+});
+
+export const getGameStateById = internalQuery({
+	args: v.object({
+		gameStateId: v.id("gameState"),
+	}),
+	returns: v.any(),
+	handler: async (ctx, { gameStateId }) => {
+		return await ctx.db.get(gameStateId);
+	},
+});
+
+export const writeCommandOutput = internalMutation({
+	args: v.object({
+		playerId: v.string(),
+		gameStateId: v.id("gameState"),
+		commandInput: v.string(),
+		outputLines: v.array(v.string()),
+		commandType: v.string(),
+		success: v.boolean(),
+		outputId: v.id("terminalOutput"),
+	}),
+	returns: v.null(),
+	handler: async (ctx, args) => {
+		await ctx.db.patch(args.outputId, {
+			outputLines: args.outputLines,
+			success: args.success,
+		});
+		return null;
+	},
+});
+
+export const persistCommandGameState = internalMutation({
+	args: v.object({
+		gameStateId: v.id("gameState"),
+		skillDelta: v.optional(v.number()),
+		toolSessionId: v.optional(v.string()),
+	}),
+	returns: v.null(),
+	handler: async (ctx, { gameStateId, skillDelta, toolSessionId }) => {
+		const state = await ctx.db.get(gameStateId);
+		if (!state) {
+			return null;
+		}
+
+		const updates: Partial<Doc<"gameState">> = {};
+		if (typeof skillDelta === "number" && skillDelta !== 0) {
+			updates.skillPoints = (state.skillPoints ?? 0) + skillDelta;
+		}
+		if (toolSessionId !== undefined) {
+			updates.toolSessionId = toolSessionId;
+		}
+
+		if (Object.keys(updates).length > 0) {
+			await ctx.db.patch(gameStateId, updates);
+		}
+		return null;
 	},
 });
 
@@ -118,6 +395,7 @@ export const recordToolUsage = internalMutation({
 // Get the current game state for the authenticated player
 export const getGameState = query({
 	args: v.object({}),
+	returns: v.any(),
 	handler: async (ctx) => {
 		// Ensure the caller is authenticated
 		const identity = await requireAuth(ctx);
@@ -164,5 +442,226 @@ export const getLook = query({
 				"Type 'tools' to see available DevOps commands.",
 			],
 		};
+	},
+});
+
+type ProcessSyncCommandArgs = {
+	commandType: string;
+	gameState: Doc<"gameState">;
+};
+
+const ASYNC_COMMANDS = new Set(["ping"]);
+
+/**
+ * Extracts the command type and target from a raw command string.
+ *
+ * Trims whitespace, lowercases the input, and splits on the first token. If the input is empty or whitespace, both `commandType` and `target` are empty strings.
+ *
+ * @param command - Raw user-entered command string (may include leading/trailing whitespace and multiple words)
+ * @returns An object with `commandType` set to the first token and `target` set to the remaining text joined by spaces; both are `""` when the input contains no tokens.
+ */
+function parseCommandType(command: string) {
+	const normalized = command.trim().toLowerCase();
+	if (!normalized) {
+		return { commandType: "", target: "" };
+	}
+	const [commandType, ...rest] = normalized.split(/\s+/);
+	return { commandType, target: rest.join(" ") };
+}
+
+/**
+ * Determine whether a command type should be processed synchronously.
+ *
+ * @param commandType - The normalized command name provided by the player (e.g., "look", "ping")
+ * @returns `true` if `commandType` is a non-empty string that should be handled synchronously, `false` otherwise.
+ */
+function isSyncCommand(commandType: string) {
+	return commandType !== "" && !ASYNC_COMMANDS.has(commandType);
+}
+
+/**
+ * Retrieve the most recent gameState document for the specified player.
+ *
+ * @param ctx - Mutation context providing database access
+ * @param playerId - The player's identifier whose game state to load
+ * @returns The latest `gameState` document for `playerId`
+ * @throws Error if no game state exists for the player
+ *
+ * @example
+ * const state = await loadPlayerGameState(ctx, identity.subject);
+ */
+async function loadPlayerGameState(ctx: MutationCtx, playerId: string) {
+	const existingGameState = await ctx.db
+		.query("gameState")
+		.withIndex("by_player", (q) => q.eq("playerId", playerId))
+		.order("desc")
+		.first();
+
+	if (!existingGameState) {
+		throw new Error("Game state not initialized for player");
+	}
+
+	return existingGameState;
+}
+
+/**
+ * Convert a Convex `Doc<"gameState">` into a plain `GameState` by removing internal Convex metadata.
+ *
+ * Use this after loading a `gameState` document from the database to obtain a value suitable for
+ * game logic and serialization; the result represents the stored game state without `_id` or
+ * `_creationTime` metadata.
+ *
+ * @param doc - The Convex document for a game state
+ * @returns The `GameState` object with Convex-specific fields removed
+ */
+function docToGameState(doc: Doc<"gameState">): GameState {
+	const { _id: _unusedId, _creationTime: _unusedCreationTime, ...rest } = doc;
+	void _unusedId;
+	void _unusedCreationTime;
+	return rest as GameState;
+}
+
+/**
+ * Handle a synchronous in-game command and produce terminal output lines and a success flag.
+ *
+ * Supports the built-in synchronous commands: `help`, `look`, and `tools`. For `help` returns a
+ * static list of supported client commands; for `look` returns a deterministic environment scan
+ * derived from the supplied `gameState`; for `tools` returns the available command-line tools.
+ *
+ * @param args.commandType - The normalized command name to execute (e.g., `"look"`, `"help"`, `"tools"`).
+ * @param args.gameState - The player's current game state used to build command-specific output (read-only).
+ * @returns An object with `outputLines` containing the lines to display in the terminal and `success` indicating whether the command succeeded (`true`) or not (`false`).
+ */
+function processSyncCommand({
+	commandType,
+	gameState,
+}: ProcessSyncCommandArgs) {
+	switch (commandType) {
+		case "help":
+			return {
+				outputLines: [
+					"Available commands:",
+					"- look: Examine your surroundings",
+					"- move [north|south|east|west]: Move in a direction",
+					"- examine [object]: Look at something specific",
+					"- take [item]: Pick up an item",
+					"- use [item]: Use an item in your inventory",
+					"- inventory: Check what you're carrying",
+					"- status: Check your system status",
+					"- fix [target]: Attempt to repair a broken system",
+					"- tools: List available command-line tools",
+					"- [toolname] help: Get help on a specific tool (e.g. 'ping help')",
+					"- restart: Restart the game (if you're stuck)",
+					"- help: Show this help text",
+				],
+				success: true,
+			};
+		case "look":
+			return {
+				outputLines: buildLookOutput(gameState),
+				success: true,
+			};
+		case "tools":
+			return {
+				outputLines: buildToolsOutput(),
+				success: true,
+			};
+		default:
+			return {
+				outputLines: [
+					`Command '${commandType}' is not yet available on the server.`,
+					"Type 'help' to review supported commands.",
+				],
+				success: false,
+			};
+	}
+}
+
+/**
+ * Builds the array of text lines displayed to the player for their current room.
+ *
+ * If the game's current room is not defined, returns a single-line message indicating the area is undefined.
+ *
+ * @param gameState - The game state document used to determine currentRoom, visible exits, and non-defeated enemies
+ * @returns An array of strings containing the room header, description, exits (or absence of exits), and any active threat lines
+ */
+function buildLookOutput(gameState: Doc<"gameState">) {
+	const room = rooms[gameState.currentRoom];
+	if (!room) {
+		return ["You look around but the area is undefined."];
+	}
+
+	const lines = [`[${room.name}]`, room.description];
+
+	const exits = Object.entries(room.exits)
+		.filter(([, destination]) => destination !== null)
+		.map(([direction]) => direction);
+
+	if (exits.length > 0) {
+		lines.push("", `Exits: ${exits.join(", ")}`);
+	} else {
+		lines.push("", "There are no visible exits.");
+	}
+
+	const roomEnemies = gameState.enemies.filter(
+		(enemy) => enemy.location === gameState.currentRoom && !enemy.defeated,
+	);
+	if (roomEnemies.length > 0) {
+		lines.push("", "ALERT! System threats detected:");
+		for (const enemy of roomEnemies) {
+			lines.push(`- ${enemy.name}: ${enemy.description}`);
+		}
+	}
+
+	return lines;
+}
+
+/**
+ * Build a textual, line-by-line description of available command-line tools for the player.
+ *
+ * The output is suitable for writing to the game's terminal UI and lists each tool's name,
+ * short description, and example syntax.
+ *
+ * @returns An array of lines (`string[]`) representing the terminal output for the tools listing.
+ *
+ * @example
+ * // Result can be written directly to a terminal output document:
+ * const lines = buildToolsOutput();
+ * // lines -> [
+ * //   "You inspect the ~/bin directory and note the following utilities:",
+ * //   "",
+ * //   "$ ls -l ~/bin",
+ * //   "ping       -> Send ICMP-style probe (usage: ping <host>)",
+ * //   "scan       -> Quick port scan (usage: scan <host> <ports>)",
+ * //   ...
+ * // ]
+ */
+function buildToolsOutput() {
+	const lines = [
+		"You inspect the ~/bin directory and note the following utilities:",
+		"",
+		"$ ls -l ~/bin",
+	];
+
+	for (const tool of commandLineTools) {
+		lines.push(
+			`${tool.name.padEnd(10, " ")} -> ${tool.description} (usage: ${tool.syntax})`,
+		);
+	}
+
+	return lines;
+}
+
+export const getTerminalOutput = query({
+	args: {},
+	returns: v.any(),
+	handler: async (ctx) => {
+		const identity = await requireAuth(ctx);
+		const outputs = await ctx.db
+			.query("terminalOutput")
+			.withIndex("by_player", (q) => q.eq("playerId", identity.subject))
+			.order("desc") // sorted by `_creationTime`
+			.take(50);
+		return outputs.reverse(); // Chronological order
 	},
 });

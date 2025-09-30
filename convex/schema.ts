@@ -13,6 +13,17 @@ export default defineSchema({
 
 	gameState: defineTable(gameState).index("by_player", ["playerId"]),
 
+	terminalOutput: defineTable({
+		playerId: v.string(),
+		gameStateId: v.id("gameState"),
+		commandInput: v.string(),
+		outputLines: v.array(v.string()),
+		commandType: v.string(),
+		success: v.boolean(),
+	})
+		.index("by_player", ["playerId"])
+		.index("by_gameState", ["gameStateId"]),
+
 	// Tool usage history for learning progression
 	toolUsage: defineTable({
 		playerId: v.string(),
