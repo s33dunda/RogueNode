@@ -41,21 +41,9 @@ terminalOutput: defineTable({
 ### 2. Create `sendCommand` Mutation (convex/gameActions.ts)
 
 ```typescript
-const cachedAsyncResult = v.object({
-  commandType: v.string(),
-  target: v.string(),
-  output: v.array(v.string()),
-  success: v.boolean(),
-  skillGained: v.number(),
-  threadId: v.optional(v.string()),
-});
-
 export const sendCommand = mutation({
-  args: {
-    command: v.string(),
-    cachedResult: v.optional(cachedAsyncResult),
-  },
-  handler: async (ctx, { command, cachedResult }) => {
+  args: { command: v.string() },
+  handler: async (ctx, { command }) => {
     const identity = await requireAuth(ctx);
     const gameState = await getPlayerGameState(ctx, identity.subject);
 
@@ -75,25 +63,36 @@ export const sendCommand = mutation({
     }
 
     const normalizedTarget = target || "localhost";
+    const normalizedState = docToGameState(gameState);
+    const cacheKey = generateCacheKey(commandType, normalizedTarget, normalizedState);
+    const cached = await ctx.db
+      .query("commandOutputCache")
+      .withIndex("by_command_target_hash", (q) =>
+        q
+          .eq("command", commandType)
+          .eq("target", normalizedTarget)
+          .eq("gameStateHash", cacheKey.slice(cacheKey.lastIndexOf(":") + 1)),
+      )
+      .first();
 
-    if (
-      cachedResult &&
-      cachedResult.commandType === commandType &&
-      cachedResult.target === normalizedTarget
-    ) {
+    if (cached) {
+      await ctx.runMutation(internal.utils.cacheUtils.incrementCacheHit, {
+        cacheId: cached._id,
+      });
+
       const outputId = await ctx.db.insert("terminalOutput", {
         playerId: identity.subject,
         gameStateId: gameState._id,
         commandInput: command,
-        outputLines: cachedResult.output,
+        outputLines: cached.output,
         commandType,
-        success: cachedResult.success,
+        success: cached.success,
       });
 
       await ctx.runMutation(internal.gameActions.persistCommandGameState, {
         gameStateId: gameState._id,
-        skillDelta: cachedResult.success ? cachedResult.skillGained : 0,
-        toolSessionId: cachedResult.threadId ?? gameState.toolSessionId,
+        skillDelta: cached.success ? cached.skillGained : 0,
+        toolSessionId: cached.threadId ?? normalizedState.toolSessionId,
       });
 
       return { outputId };
@@ -122,61 +121,9 @@ export const sendCommand = mutation({
 });
 ```
 
-> Utility: add a shared `docToGameState` helper so queries/actions can normalize the stored document consistently when deriving cache keys.
+> Utility: `docToGameState` converts the Convex document to the shared type so cache keys stay consistent between mutations and actions.
 
-### 3. Create `getCachedAsyncCommandResult` Query (convex/gameActions.ts)
-
-```typescript
-export const getCachedAsyncCommandResult = query({
-  args: { command: v.string() },
-  returns: v.union(
-    v.null(),
-    v.object({
-      commandType: v.string(),
-      target: v.string(),
-      output: v.array(v.string()),
-      success: v.boolean(),
-      skillGained: v.number(),
-      threadId: v.optional(v.string()),
-    }),
-  ),
-  handler: async (ctx, { command }) => {
-    const identity = await requireAuth(ctx);
-    const { commandType, target } = parseCommandType(command);
-    if (!isAsyncCommand(commandType)) return null;
-
-    const gameState = await loadPlayerGameStateForQuery(ctx, identity.subject);
-    if (!gameState) return null;
-
-    const normalizedTarget = target || "localhost";
-    const cacheKey = generateCacheKey(commandType, normalizedTarget, docToGameState(gameState));
-    const cached = await ctx.db
-      .query("commandOutputCache")
-      .withIndex("by_command_target_hash", (q) =>
-        q
-          .eq("command", commandType)
-          .eq("target", normalizedTarget)
-          .eq("gameStateHash", cacheKey.slice(cacheKey.lastIndexOf(":") + 1)),
-      )
-      .first();
-
-    if (!cached) return null;
-
-    return {
-      commandType,
-      target: normalizedTarget,
-      output: cached.output,
-      success: cached.success,
-      skillGained: cached.skillGained,
-      threadId: cached.threadId,
-    };
-  },
-});
-```
-
-> Helper: `loadPlayerGameStateForQuery` mirrors the mutation loader but keeps queries pure by returning `null` when no state exists.
-
-### 4. Create `executeAsyncCommand` Action (convex/gameActions.ts)
+### 3. Create `executeAsyncCommand` Action (convex/gameActions.ts)
 
 ```typescript
 export const executeAsyncCommand = internalAction({
@@ -208,7 +155,7 @@ export const executeAsyncCommand = internalAction({
 
     switch (args.commandType) {
       case "ping": {
-        const result = await ctx.runAction(api.agents.pingAgent.executePingCommand, {
+        const result = await ctx.runAction(internal.agents.pingAgent.executePingCommand, {
           target: args.target || "localhost",
           gameState,
           threadId: gameState.toolSessionId,
@@ -331,21 +278,14 @@ export const getTerminalOutput = query({
 
 ```typescript
 export const useCommandProcessor = () => {
-  const convex = useConvex();
   const sendCommand = useMutation(api.gameActions.sendCommand);
 
   const processCommand = useCallback(async (command: string) => {
-    const cachedResult = await convex.query(
-      api.gameActions.getCachedAsyncCommandResult,
-      { command },
-    );
+    const trimmed = command.trim();
+    if (trimmed === "") return;
 
-    await sendCommand(
-      cachedResult
-        ? { command, cachedResult }
-        : { command },
-    );
-  }, [convex, sendCommand]);
+    await sendCommand({ command: trimmed });
+  }, [sendCommand]);
 
   return { processCommand };
 };
@@ -382,12 +322,11 @@ const GameTerminal = () => {
 ## Migration Steps
 
 1. Add `terminalOutput` table to the schema (done).
-2. Expose `getCachedAsyncCommandResult` query so clients can ask the sync engine for cached outputs.
-3. Implement `sendCommand` mutation with optional `cachedResult` short-circuit.
-4. Build `executeAsyncCommand`, `writeCommandOutput`, `persistCommandGameState`, and related helpers.
-5. Refactor `useCommandProcessor` to query the cache first, then call `sendCommand` only if needed.
-6. Update `GameTerminal` to rely solely on Convex queries for output history.
-7. Remove client-side `parseCommand` logic once server coverage is complete.
-8. Regression-test sync + async commands end-to-end.
+2. Implement `sendCommand` with server-side cache lookup before scheduling async work.
+3. Build `executeAsyncCommand`, `writeCommandOutput`, `persistCommandGameState`, and related helpers.
+4. Refactor `useCommandProcessor` to trim input and call `sendCommand` directly.
+5. Update `GameTerminal` to rely solely on Convex queries for output history.
+6. Remove client-side `parseCommand` logic once server coverage is complete.
+7. Regression-test sync + async commands end-to-end.
 
 This keeps reads in queries, limits actions to external work, and lets Convex's sync engine drive the UI per the Zen guidelines.

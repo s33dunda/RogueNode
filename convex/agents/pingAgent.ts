@@ -3,8 +3,7 @@ import { Agent, createTool } from "@convex-dev/agent";
 import { z } from "zod";
 import { components, internal } from "../_generated/api";
 import type { Doc } from "../_generated/dataModel";
-import { action } from "../_generated/server";
-import { requireAuthWithPlayerId } from "../lib/auth";
+import { internalAction } from "../_generated/server";
 import { type CommandResult, commandArgs, commandResult } from "../types";
 import { generateCacheKey } from "../utils/cacheUtils";
 
@@ -92,7 +91,7 @@ rtt min/avg/max/mdev = X.X/X.X/X.X/X.X ms`,
 });
 
 // Convex action to execute ping commands using the agent
-export const executePingCommand = action({
+export const executePingCommand = internalAction({
 	args: commandArgs,
 	returns: commandResult,
 	handler: async (
@@ -100,9 +99,6 @@ export const executePingCommand = action({
 		{ target, gameState, threadId },
 	): Promise<CommandResult> => {
 		try {
-			// Ensure user is authenticated and matches the playerId in gameState
-			await requireAuthWithPlayerId(ctx, gameState.playerId);
-
 			// Generate cache key for this command
 			const cacheKey = generateCacheKey("ping", target, gameState);
 			const lastColon = cacheKey.lastIndexOf(":");

@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { commandLineTools, enemies, rooms } from "../utils/GameData";
-import { api, internal } from "./_generated/api";
+import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import {
 	internalAction,
@@ -8,7 +8,6 @@ import {
 	internalQuery,
 	type MutationCtx,
 	mutation,
-	type QueryCtx,
 	query,
 } from "./_generated/server";
 import { requireAuth } from "./lib/auth";
@@ -50,24 +49,14 @@ export const initializeGameState = mutation({
 	},
 });
 
-const cachedAsyncResult = v.object({
-	commandType: v.string(),
-	target: v.string(),
-	output: v.array(v.string()),
-	success: v.boolean(),
-	skillGained: v.number(),
-	threadId: v.optional(v.string()),
-});
-
 export const sendCommand = mutation({
 	args: v.object({
 		command: v.string(),
-		cachedResult: v.optional(cachedAsyncResult),
 	}),
 	returns: v.object({
 		outputId: v.id("terminalOutput"),
 	}),
-	handler: async (ctx, { command, cachedResult }) => {
+	handler: async (ctx, { command }) => {
 		const identity = await requireAuth(ctx);
 		const trimmed = command.trim();
 		const { commandType, target } = parseCommandType(trimmed);
@@ -88,25 +77,42 @@ export const sendCommand = mutation({
 
 		if (!isSyncCommand(commandType)) {
 			const normalizedTarget = target || "localhost";
+			const normalizedState = docToGameState(gameState);
+			const cacheKey = generateCacheKey(
+				commandType,
+				normalizedTarget,
+				normalizedState,
+			);
+			const hash = cacheKey.slice(cacheKey.lastIndexOf(":") + 1);
 
-			if (
-				cachedResult &&
-				cachedResult.commandType === commandType &&
-				cachedResult.target === normalizedTarget
-			) {
+			const cached = await ctx.db
+				.query("commandOutputCache")
+				.withIndex("by_command_target_hash", (q) =>
+					q
+						.eq("command", commandType)
+						.eq("target", normalizedTarget)
+						.eq("gameStateHash", hash),
+				)
+				.first();
+
+			if (cached) {
+				await ctx.runMutation(internal.utils.cacheUtils.incrementCacheHit, {
+					cacheId: cached._id,
+				});
+
 				const outputId = await ctx.db.insert("terminalOutput", {
 					playerId: identity.subject,
 					gameStateId: gameState._id,
 					commandInput: command,
-					outputLines: cachedResult.output,
+					outputLines: cached.output,
 					commandType,
-					success: cachedResult.success,
+					success: cached.success,
 				});
 
 				await ctx.runMutation(internal.gameActions.persistCommandGameState, {
 					gameStateId: gameState._id,
-					skillDelta: cachedResult.success ? cachedResult.skillGained : 0,
-					toolSessionId: cachedResult.threadId ?? gameState.toolSessionId,
+					skillDelta: cached.success ? cached.skillGained : 0,
+					toolSessionId: cached.threadId ?? normalizedState.toolSessionId,
 				});
 
 				return { outputId };
@@ -193,7 +199,7 @@ export const executeAsyncCommand = internalAction({
 				case "ping": {
 					const target = args.target || "localhost";
 					const result = await ctx.runAction(
-						api.agents.pingAgent.executePingCommand,
+						internal.agents.pingAgent.executePingCommand,
 						{
 							target,
 							gameState: gameState,
@@ -247,70 +253,6 @@ export const executeAsyncCommand = internalAction({
 				outputId: args.outputId,
 			});
 		}
-	},
-});
-
-export const getCachedAsyncCommandResult = query({
-	args: v.object({
-		command: v.string(),
-	}),
-	returns: v.union(
-		v.null(),
-		v.object({
-			commandType: v.string(),
-			target: v.string(),
-			output: v.array(v.string()),
-			success: v.boolean(),
-			skillGained: v.number(),
-			threadId: v.optional(v.string()),
-		}),
-	),
-	handler: async (ctx, { command }) => {
-		const identity = await requireAuth(ctx);
-		const { commandType, target } = parseCommandType(command);
-
-		if (!isAsyncCommand(commandType)) {
-			return null;
-		}
-
-		const gameStateDoc = await loadPlayerGameStateForQuery(
-			ctx,
-			identity.subject,
-		);
-		if (!gameStateDoc) {
-			return null;
-		}
-
-		const normalizedTarget = target || "localhost";
-		const cacheKey = generateCacheKey(
-			commandType,
-			normalizedTarget,
-			docToGameState(gameStateDoc),
-		);
-		const hash = cacheKey.slice(cacheKey.lastIndexOf(":") + 1);
-
-		const cached = await ctx.db
-			.query("commandOutputCache")
-			.withIndex("by_command_target_hash", (q) =>
-				q
-					.eq("command", commandType)
-					.eq("target", normalizedTarget)
-					.eq("gameStateHash", hash),
-			)
-			.first();
-
-		if (!cached) {
-			return null;
-		}
-
-		return {
-			commandType,
-			target: normalizedTarget,
-			output: cached.output,
-			success: cached.success,
-			skillGained: cached.skillGained,
-			threadId: cached.threadId,
-		};
 	},
 });
 
@@ -503,10 +445,6 @@ type ProcessSyncCommandArgs = {
 
 const ASYNC_COMMANDS = new Set(["ping"]);
 
-function isAsyncCommand(commandType: string) {
-	return commandType !== "" && ASYNC_COMMANDS.has(commandType);
-}
-
 function parseCommandType(command: string) {
 	const normalized = command.trim().toLowerCase();
 	if (!normalized) {
@@ -532,14 +470,6 @@ async function loadPlayerGameState(ctx: MutationCtx, playerId: string) {
 	}
 
 	return existingGameState;
-}
-
-async function loadPlayerGameStateForQuery(ctx: QueryCtx, playerId: string) {
-	return await ctx.db
-		.query("gameState")
-		.withIndex("by_player", (q) => q.eq("playerId", playerId))
-		.order("desc")
-		.first();
 }
 
 function docToGameState(doc: Doc<"gameState">): GameState {
@@ -640,3 +570,16 @@ function buildToolsOutput() {
 
 	return lines;
 }
+
+export const getTerminalOutput = query({
+	args: {},
+	handler: async (ctx) => {
+		const identity = await requireAuth(ctx);
+		const outputs = await ctx.db
+			.query("terminalOutput")
+			.withIndex("by_player", (q) => q.eq("playerId", identity.subject))
+			.order("desc") // sorted by `_creationTime`
+			.take(50);
+		return outputs.reverse(); // Chronological order
+	},
+});

@@ -1,10 +1,9 @@
 import { useUser } from "@clerk/nextjs";
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import type React from "react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { api } from "../convex/_generated/api";
 import { useCommandProcessor } from "../lib/hooks/useCommandProcessor";
-import { enemies, initialRoom } from "../utils/GameData";
 import CRTEffects from "./CRTEffects";
 import TerminalInput from "./TerminalInput";
 import TerminalNav from "./TerminalNav";
@@ -15,84 +14,55 @@ const GameTerminal = () => {
 	const { user, isLoaded } = useUser();
 
 	// Convex action hooks (must be called before any returns)
-	const executePingCommand = useAction(api.agents.pingAgent.executePingCommand);
 	const identityReady = isLoaded && !!user?.id;
-	const executeLookCommand = useQuery(
-		api.gameActions.getLook,
-		identityReady ? {} : "skip",
-	);
 	const initializeGameState = useMutation(api.gameActions.initializeGameState);
 	const serverGameState = useQuery(
 		api.gameActions.getGameState,
 		identityReady ? {} : "skip",
 	);
+	const terminalOutputs = useQuery(
+		api.gameActions.getTerminalOutput,
+		identityReady ? {} : "skip",
+	);
 
-	const [output, setOutput] = useState<string[]>([
-		"RogueNode v0.1 - DevOps Rogue Training Ground",
-		"© 1977 TERMINAL INDUSTRIES",
-		"---------------------------------------",
-		"You awaken in a dimly lit server room. The hum of machines surrounds you.",
-		"Your terminal flickers with an urgent message: 'SYSTEM COMPROMISED'",
-		"",
-		"Type 'help' for available commands like 'look' to take inventory",
-		"> ",
-	]);
 	const [input, setInput] = useState("");
 	const [isNavVisible, setIsNavVisible] = useState(false);
 	const [gameStateInitialized, setGameStateInitialized] = useState(false);
 
-	// Reusable output for initialized game state
-	const initializedOutput = [
-		"RogueNode v0.1 - DevOps Rogue Training Ground",
-		"© 1977 TERMINAL INDUSTRIES",
-		"---------------------------------------",
-		"You awaken in a dimly lit server room. The hum of machines surrounds you.",
-		"Your terminal flickers with an urgent message: 'SYSTEM COMPROMISED'",
-		"",
-		"Type 'help' for available commands or 'tools' to see DevOps commands.",
-		"> ",
-	];
-
-	// Use server game state as single source of truth
-	const isCurrentPlayerState = serverGameState?.playerId === user?.id;
-	const gameState =
-		isCurrentPlayerState && serverGameState
-			? serverGameState
-			: {
-					currentRoom: initialRoom.id,
-					inventory: [],
-					health: 100,
-					visited: [initialRoom.id],
-					enemies: [...enemies],
-					gameOver: false,
-					playerId: "loading",
-					toolSessionId: undefined,
-					skillPoints: 0,
-					threatLevel: 1,
-				};
-
 	const terminalRef = useRef<HTMLDivElement>(null);
 
-	// Use command processor hook
-	const { processCommand } = useCommandProcessor({
-		gameState,
-		output,
-		setOutput,
-		executePingCommand,
-		executeLookCommand,
-	});
+	const { processCommand } = useCommandProcessor();
+
+	const introLines = useMemo(
+		() => [
+			"RogueNode v0.1 - DevOps Rogue Training Ground",
+			"© 1977 TERMINAL INDUSTRIES",
+			"---------------------------------------",
+			"You awaken in a dimly lit server room. The hum of machines surrounds you.",
+			"Your terminal flickers with an urgent message: 'SYSTEM COMPROMISED'",
+			"",
+			"Type 'help' for available commands or 'tools' to see DevOps commands.",
+		],
+		[],
+	);
+
+	const renderedOutput = useMemo(() => {
+		if (!terminalOutputs || terminalOutputs.length === 0) {
+			return [...introLines, "> "];
+		}
+
+		const history = terminalOutputs.flatMap((entry) => [
+			`> ${entry.commandInput}`,
+			...entry.outputLines,
+		]);
+
+		return [...introLines, ...history];
+	}, [introLines, terminalOutputs]);
 
 	// Reset state when user changes to prevent cross-account leakage
 	// biome-ignore lint/correctness/useExhaustiveDependencies: maybe we create a reset or clearCache later
 	useLayoutEffect(() => {
 		setGameStateInitialized(false);
-		setOutput([
-			"RogueNode v0.1 - DevOps Rogue Training Ground",
-			"© 1977 TERMINAL INDUSTRIES",
-			"---------------------------------------",
-			"Loading...",
-			"> ",
-		]);
 	}, [user?.id]);
 
 	// Initialize game state when user loads
@@ -105,7 +75,6 @@ const GameTerminal = () => {
 		if (serverGameState?.playerId === user.id) {
 			if (!gameStateInitialized) {
 				setGameStateInitialized(true);
-				setOutput(initializedOutput);
 			}
 			return;
 		}
@@ -129,12 +98,12 @@ const GameTerminal = () => {
 
 	// Auto-scroll to bottom when output changes
 	useLayoutEffect(() => {
-		const lines = output.length;
+		const lines = renderedOutput.length;
 		if (terminalRef.current) {
 			terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
 		}
 		void lines;
-	}, [output.length]);
+	}, [renderedOutput.length]);
 
 	// Show loading state while user data loads
 	if (!isLoaded) {
@@ -155,7 +124,7 @@ const GameTerminal = () => {
 	}
 
 	// Show loading state while game state is being initialized or query is loading
-	if (!gameStateInitialized || executeLookCommand === undefined) {
+	if (!gameStateInitialized || terminalOutputs === undefined) {
 		return (
 			<div className="terminal-container bg-black text-green-400 p-4 font-mono">
 				<div>Initializing game state...</div>
@@ -193,14 +162,14 @@ const GameTerminal = () => {
 			<TerminalNav executeCommand={executeCommand} isVisible={isNavVisible} />
 
 			{/* Terminal output */}
-			<TerminalOutput output={output} terminalRef={terminalRef} />
+			<TerminalOutput output={renderedOutput} terminalRef={terminalRef} />
 
 			{/* Input form */}
 			<TerminalInput
 				input={input}
 				onInputChange={handleInput}
 				onSubmit={handleSubmit}
-				disabled={gameState.gameOver}
+				disabled={serverGameState?.gameOver || !serverGameState}
 			/>
 
 			{/* CRT effect overlays */}
