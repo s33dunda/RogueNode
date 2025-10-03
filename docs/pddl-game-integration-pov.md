@@ -1,6 +1,32 @@
+---
+ssot-area: pddl-integration
+owner: runtime-team
+derived-from: planner-integration-plan
+---
+
 # RogueNode POV: PDDL-Driven Game Integration
 
 **Goal**: Wire PDDL planner artifacts (domains, problems, plans) into the game runtime so missions are automatically validated against generated optimal solutions.
+
+**Status**: ✅ Reviewed and Refined (2025-10-03)
+**Implementation Ready**: Yes - See detailed guides below
+
+---
+
+## 📚 Documentation Index
+
+This POV has been reviewed against Convex best practices and expanded into detailed implementation guides:
+
+1. **[Summary](./pddl-integration-summary.md)** - Executive overview for stakeholders
+2. **[Quickstart](./pddl-integration-quickstart.md)** - Step-by-step guide for developers (START HERE)
+3. **[Implementation](./pddl-integration-implementation.md)** - Detailed code and architecture
+4. **[Review](./pddl-integration-review.md)** - Convex best practices analysis
+
+**For Developers**: Start with `pddl-integration-quickstart.md` → 6 steps, 4-6 hours total
+
+---
+
+## Original Plan (Validated)
 
 ---
 
