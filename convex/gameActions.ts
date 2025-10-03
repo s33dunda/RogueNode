@@ -541,17 +541,7 @@ function processSyncCommand({
 			return {
 				outputLines: [
 					"Available commands:",
-					"- look: Examine your surroundings",
-					"- move [north|south|east|west]: Move in a direction",
-					"- examine [object]: Look at something specific",
-					"- take [item]: Pick up an item",
-					"- use [item]: Use an item in your inventory",
-					"- inventory: Check what you're carrying",
-					"- status: Check your system status",
-					"- fix [target]: Attempt to repair a broken system",
-					"- tools: List available command-line tools",
-					"- [toolname] help: Get help on a specific tool (e.g. 'ping help')",
-					"- restart: Restart the game (if you're stuck)",
+					"- look: Inspect your current environment",
 					"- help: Show this help text",
 				],
 				success: true,

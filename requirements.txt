@@ -1,0 +1,4 @@
+# Planning stack (Unified Planning + Fast Downward)
+# Extras syntax installs the Fast Downward plugin (up-fast-downward)
+unified-planning[fast-downward]>=1.2.0
+

@@ -1,0 +1,45 @@
+You are a planning engineer. Convert the RogueNode domain description into PDDL 2.1 (classical STRIPS with typing). Follow these rules:
+- Output **only** two fenced blocks: one for the domain file, one for the problem file. Use ```lisp fences.
+- Mirror the definitions exactly; do not rename symbols.
+- Include requirements :strips and :typing.
+- Ensure parameter typing uses the ?param - type notation.
+- Effects should use the minimal (and ...) form, even when there is a single literal.
+- Do not invent new types, predicates, actions, or constants beyond what appears in the domain context.
+- For the problem file, include objects for every room/item/enemy referenced and set the goal according to the mission success condition.
+
+Example to follow exactly:
+```lisp
+; domain
+(define (domain sample-domain)
+  (:requirements :strips :typing)
+  (:types server)
+  (:predicates (reachable ?s - server))
+  (:action ping
+    :parameters (?s - server)
+    :precondition ()
+    :effect (and (reachable ?s))))
+```
+```lisp
+; problem
+(define (problem sample-problem)
+  (:domain sample-domain)
+  (:objects main-server - server)
+  (:init)
+  (:goal (and (reachable main-server))))
+```
+
+Domain context ({{DOMAIN_REL_PATH}}):
+{{DOMAIN_CONTENT}}
+
+{{MISSION_CONTEXTS}}
+Return output as:
+```lisp
+; domain
+(define ...)
+...
+```
+```lisp
+; problem
+(define ...)
+...
+```
