@@ -1,5 +1,4 @@
 import { v } from "convex/values";
-import { commandLineTools, enemies, rooms } from "../utils/GameData";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import {
@@ -10,8 +9,11 @@ import {
 	mutation,
 	query,
 } from "./_generated/server";
+import { getMissionById } from "./domainSpec/runtime";
+import { commandLineTools, enemies, rooms } from "./gameData";
 import { requireAuth } from "./lib/auth";
 import type { GameState } from "./types";
+import { enemy, item } from "./types";
 import { generateCacheKey } from "./utils/cacheUtils";
 
 // Initialize game state for a new player
@@ -56,7 +58,10 @@ export const sendCommand = mutation({
 	returns: v.object({
 		outputId: v.id("terminalOutput"),
 	}),
-	handler: async (ctx, { command }) => {
+	handler: async (
+		ctx,
+		{ command },
+	): Promise<{ outputId: Id<"terminalOutput"> }> => {
 		const identity = await requireAuth(ctx);
 		const trimmed = command.trim();
 		const { commandType, target } = parseCommandType(trimmed);
@@ -64,14 +69,17 @@ export const sendCommand = mutation({
 		const gameState = await loadPlayerGameState(ctx, identity.subject);
 
 		if (!commandType) {
-			const outputId = await ctx.db.insert("terminalOutput", {
-				playerId: identity.subject,
-				gameStateId: gameState._id,
-				commandInput: command,
-				outputLines: [],
-				commandType,
-				success: false,
-			});
+			const outputId: Id<"terminalOutput"> = await ctx.db.insert(
+				"terminalOutput",
+				{
+					playerId: identity.subject,
+					gameStateId: gameState._id,
+					commandInput: command,
+					outputLines: [],
+					commandType,
+					success: false,
+				},
+			);
 			return { outputId };
 		}
 
@@ -100,32 +108,75 @@ export const sendCommand = mutation({
 					cacheId: cached._id,
 				});
 
-				const outputId = await ctx.db.insert("terminalOutput", {
-					playerId: identity.subject,
-					gameStateId: gameState._id,
-					commandInput: command,
-					outputLines: cached.output,
-					commandType,
-					success: cached.success,
-				});
+				// Validate against active missions even for cached commands
+				const activeMissions: Array<{ missionId: string }> = await ctx.runQuery(
+					internal.missions.getActiveMissions,
+					{
+						playerId: identity.subject,
+					},
+				);
+
+				const missionFeedback: string[] = [];
+				let totalMissionSkillGained = 0;
+				for (const mission of activeMissions) {
+					const validation = await ctx.runMutation(
+						internal.missions.validateMissionStep,
+						{
+							playerId: identity.subject,
+							missionId: mission.missionId,
+							playerCommand: command,
+						},
+					);
+					if (validation.feedback.length > 0) {
+						missionFeedback.push(...validation.feedback);
+					}
+					totalMissionSkillGained += validation.skillGained;
+				}
+
+				// Combine cached output with mission feedback
+				const outputLines: string[] = [
+					...cached.output,
+					...(missionFeedback.length > 0
+						? ["", "=== Mission Progress ===", ...missionFeedback]
+						: activeMissions.length === 0
+							? []
+							: []),
+				];
+
+				const outputId: Id<"terminalOutput"> = await ctx.db.insert(
+					"terminalOutput",
+					{
+						playerId: identity.subject,
+						gameStateId: gameState._id,
+						commandInput: command,
+						outputLines,
+						commandType,
+						success: cached.success,
+					},
+				);
 
 				await ctx.runMutation(internal.gameActions.persistCommandGameState, {
 					gameStateId: gameState._id,
-					skillDelta: cached.success ? cached.skillGained : 0,
+					skillDelta: cached.success
+						? cached.skillGained + totalMissionSkillGained
+						: 0,
 					toolSessionId: cached.threadId ?? normalizedState.toolSessionId,
 				});
 
 				return { outputId };
 			}
 
-			const outputId = await ctx.db.insert("terminalOutput", {
-				playerId: identity.subject,
-				gameStateId: gameState._id,
-				commandInput: command,
-				outputLines: ["Processing..."],
-				commandType,
-				success: false,
-			});
+			const outputId: Id<"terminalOutput"> = await ctx.db.insert(
+				"terminalOutput",
+				{
+					playerId: identity.subject,
+					gameStateId: gameState._id,
+					commandInput: command,
+					outputLines: ["Processing..."],
+					commandType,
+					success: false,
+				},
+			);
 
 			await ctx.scheduler.runAfter(
 				0,
@@ -148,14 +199,17 @@ export const sendCommand = mutation({
 			gameState,
 		});
 
-		const outputId = await ctx.db.insert("terminalOutput", {
-			playerId: identity.subject,
-			gameStateId: gameState._id,
-			commandInput: command,
-			outputLines,
-			commandType,
-			success,
-		});
+		const outputId: Id<"terminalOutput"> = await ctx.db.insert(
+			"terminalOutput",
+			{
+				playerId: identity.subject,
+				gameStateId: gameState._id,
+				commandInput: command,
+				outputLines,
+				commandType,
+				success,
+			},
+		);
 
 		return { outputId };
 	},
@@ -208,11 +262,51 @@ export const executeAsyncCommand = internalAction({
 						},
 					);
 
+					// Get all active missions for this player
+					const activeMissions = await ctx.runQuery(
+						internal.missions.getActiveMissions,
+						{
+							playerId: args.playerId,
+						},
+					);
+
+					// Validate command against all active missions
+					const missionFeedback: string[] = [];
+					let totalMissionSkillGained = 0;
+					for (const mission of activeMissions) {
+						const validation = await ctx.runMutation(
+							internal.missions.validateMissionStep,
+							{
+								playerId: args.playerId,
+								missionId: mission.missionId,
+								playerCommand: args.command,
+							},
+						);
+						if (validation.feedback.length > 0) {
+							missionFeedback.push(...validation.feedback);
+						}
+						totalMissionSkillGained += validation.skillGained;
+					}
+
+					// Combine command output with mission feedback
+					const outputLines = [
+						...result.output,
+						...(missionFeedback.length > 0
+							? ["", "=== Mission Progress ===", ...missionFeedback]
+							: activeMissions.length === 0
+								? [
+										"",
+										"=== Mission Progress ===",
+										"No active mission found. Start a mission first.",
+									]
+								: []),
+					];
+
 					await ctx.runMutation(internal.gameActions.writeCommandOutput, {
 						playerId: args.playerId,
 						gameStateId: args.gameStateId,
 						commandInput: args.command,
-						outputLines: result.output,
+						outputLines,
 						commandType: args.commandType,
 						success: result.success,
 						outputId: args.outputId,
@@ -220,7 +314,9 @@ export const executeAsyncCommand = internalAction({
 
 					await ctx.runMutation(internal.gameActions.persistCommandGameState, {
 						gameStateId: args.gameStateId,
-						skillDelta: result.success ? result.skillGained : 0,
+						skillDelta: result.success
+							? result.skillGained + totalMissionSkillGained
+							: 0,
 						toolSessionId: result.threadId ?? gameState.toolSessionId,
 					});
 					break;
@@ -261,7 +357,23 @@ export const getGameStateById = internalQuery({
 	args: v.object({
 		gameStateId: v.id("gameState"),
 	}),
-	returns: v.any(),
+	returns: v.union(
+		v.object({
+			_id: v.id("gameState"),
+			_creationTime: v.number(),
+			currentRoom: v.string(),
+			inventory: v.array(item),
+			health: v.number(),
+			visited: v.array(v.string()),
+			enemies: v.array(enemy),
+			gameOver: v.boolean(),
+			playerId: v.string(),
+			toolSessionId: v.optional(v.string()),
+			skillPoints: v.number(),
+			threatLevel: v.number(),
+		}),
+		v.null(),
+	),
 	handler: async (ctx, { gameStateId }) => {
 		return await ctx.db.get(gameStateId);
 	},
@@ -395,7 +507,23 @@ export const recordToolUsage = internalMutation({
 // Get the current game state for the authenticated player
 export const getGameState = query({
 	args: v.object({}),
-	returns: v.any(),
+	returns: v.union(
+		v.object({
+			_id: v.id("gameState"),
+			_creationTime: v.number(),
+			currentRoom: v.string(),
+			inventory: v.array(item),
+			health: v.number(),
+			visited: v.array(v.string()),
+			enemies: v.array(enemy),
+			gameOver: v.boolean(),
+			playerId: v.string(),
+			toolSessionId: v.optional(v.string()),
+			skillPoints: v.number(),
+			threatLevel: v.number(),
+		}),
+		v.null(),
+	),
 	handler: async (ctx) => {
 		// Ensure the caller is authenticated
 		const identity = await requireAuth(ctx);
@@ -549,6 +677,8 @@ function processSyncCommand({
 				outputLines: [
 					"Available commands:",
 					"- look: Inspect your current environment",
+					"- tools: List available DevOps command-line tools",
+					"- missions: View and start available missions",
 					"- help: Show this help text",
 				],
 				success: true,
@@ -660,5 +790,121 @@ export const getTerminalOutput = query({
 			.order("desc") // sorted by `_creationTime`
 			.take(50);
 		return outputs.reverse(); // Chronological order
+	},
+});
+
+// ============================================================================
+// Mission System - PDDL Integration
+// ============================================================================
+
+/**
+ * Public mutation: Start a mission (with auth)
+ *
+ * Initiates a new mission for the authenticated player. Creates a progress
+ * tracker and returns mission details for UI display.
+ */
+export const startMission = mutation({
+	args: { missionId: v.string() },
+	returns: v.object({
+		missionProgressId: v.id("missionProgress"),
+		mission: v.object({
+			id: v.string(),
+			title: v.string(),
+			synopsis: v.string(),
+		}),
+	}),
+	handler: async (
+		ctx,
+		{ missionId },
+	): Promise<{
+		missionProgressId: Id<"missionProgress">;
+		mission: { id: string; title: string; synopsis: string };
+	}> => {
+		const identity = await requireAuth(ctx);
+		const gameState = await loadPlayerGameState(ctx, identity.subject);
+
+		// Validate mission before creating any progress records
+		const mission = getMissionById(missionId);
+		if (!mission) {
+			throw new Error(`Mission ${missionId} not found`);
+		}
+
+		const missionProgressId: Id<"missionProgress"> = await ctx.runMutation(
+			internal.missions.startMission,
+			{
+				playerId: identity.subject,
+				gameStateId: gameState._id,
+				missionId,
+			},
+		);
+
+		return {
+			missionProgressId,
+			mission: {
+				id: mission.id,
+				title: mission.title,
+				synopsis: mission.synopsis,
+			},
+		};
+	},
+});
+
+/**
+ * Public query: Get active missions for current room
+ *
+ * Returns all missions available in the player's current room along with
+ * their completion status (available, in_progress, completed).
+ */
+export const getActiveMissions = query({
+	args: {},
+	returns: v.array(
+		v.object({
+			id: v.string(),
+			title: v.string(),
+			synopsis: v.string(),
+			status: v.union(
+				v.literal("available"),
+				v.literal("in_progress"),
+				v.literal("completed"),
+			),
+		}),
+	),
+	handler: async (
+		ctx,
+	): Promise<
+		Array<{
+			id: string;
+			title: string;
+			synopsis: string;
+			status: "available" | "in_progress" | "completed";
+		}>
+	> => {
+		const identity = await requireAuth(ctx);
+		const gameState = await ctx.db
+			.query("gameState")
+			.withIndex("by_player", (q) => q.eq("playerId", identity.subject))
+			.order("desc")
+			.first();
+
+		if (!gameState) {
+			return [];
+		}
+
+		const missionsWithProgress: Array<{
+			id: string;
+			title: string;
+			synopsis: string;
+			status: "available" | "in_progress" | "completed";
+			progressId?: Id<"missionProgress">;
+		}> = await ctx.runQuery(internal.missions.getMissionsWithProgress, {
+			playerId: identity.subject,
+			roomId: gameState.currentRoom,
+		});
+
+		// Strip progressId before returning to client
+		return missionsWithProgress.map(({ progressId: _unused, ...mission }) => {
+			void _unused;
+			return mission;
+		});
 	},
 });

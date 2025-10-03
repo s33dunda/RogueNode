@@ -71,4 +71,31 @@ export default defineSchema({
 	})
 		.index("by_command_target_hash", ["command", "target", "gameStateHash"])
 		.index("by_timestamp", ["timestamp"]),
+
+	// Mission progress tracking for PDDL-driven validation
+	missionProgress: defineTable({
+		playerId: v.string(),
+		gameStateId: v.id("gameState"),
+		missionId: v.string(),
+		currentStepIndex: v.number(),
+		completedSteps: v.array(
+			v.object({
+				stepIndex: v.number(),
+				playerCommand: v.string(),
+				expectedAction: v.string(),
+				matched: v.boolean(),
+				timestamp: v.number(),
+			}),
+		),
+		status: v.union(
+			v.literal("not_started"),
+			v.literal("in_progress"),
+			v.literal("completed"),
+			v.literal("failed"),
+		),
+		startedAt: v.number(),
+		completedAt: v.optional(v.number()),
+	})
+		.index("by_player_mission", ["playerId", "missionId"])
+		.index("by_gameState", ["gameStateId"]),
 });

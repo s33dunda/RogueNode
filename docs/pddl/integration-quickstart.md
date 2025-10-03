@@ -20,7 +20,7 @@ derived-from: packages/domain-spec/data.ts
 
 ---
 
-## 🚀 Quick Start (5 Steps)
+## 🚀 Quick Start (7 Steps)
 
 ### Step 1: Create Runtime Loader (30 min)
 
@@ -43,27 +43,50 @@ console.log(getMissionById("ping-tutorial")); // Should return mission object
 
 ---
 
-### Step 2: Update GameData.ts (15 min)
+### Step 2: Sync to Convex (5 min)
 
-**File**: `utils/GameData.ts`
+**Important**: Convex functions cannot import from outside `convex/` directory.
+
+**Solution**: Copy domain-spec files to `convex/domainSpec/`
+
+```bash
+# Run the sync script
+pnpm sync:domain
+```
+
+**What it does**:
+
+- Copies `packages/domain-spec/{data,schema,runtime}.ts` to `convex/domainSpec/`
+- Copies `packages/domain-spec/generated/` to `convex/domainSpec/generated/`
+
+**Automation**: This runs automatically before `pnpm dev`
+
+**Documentation**: See `convex/domainSpec/README.md`
+
+---
+
+### Step 3: Create Backend Game Data (15 min)
+
+**File**: `convex/gameData.ts`
 
 **Changes**:
 
-- Replace direct imports with `runtime` imports
-- Add mission helper functions
+- Create backend-only game data module
+- Import from `convex/domainSpec/` (not `packages/`)
+- Replace old `utils/GameData.ts`
 
 **Copy code from**: `docs/pddl-integration-implementation.md` → Step 2
 
 **Test**:
 
 ```bash
-pnpm dev:frontend
-# Check browser console - no import errors
+pnpm dev
+# Check Convex compilation - no import errors
 ```
 
 ---
 
-### Step 3: Add Schema Migration (10 min)
+### Step 4: Add Schema Migration (10 min)
 
 **File**: `convex/schema.ts`
 
@@ -104,7 +127,7 @@ pnpm dev:backend
 
 ---
 
-### Step 4: Create Mission Functions (2 hours)
+### Step 5: Create Mission Functions (2 hours)
 
 **File**: `convex/missions.ts` (new file)
 
@@ -129,7 +152,7 @@ touch convex/missions.ts
 
 ---
 
-### Step 5: Add Public API (1 hour)
+### Step 6: Add Public API (1 hour)
 
 **File**: `convex/gameActions.ts`
 
@@ -149,7 +172,7 @@ touch convex/missions.ts
 
 ---
 
-### Step 6: Integrate Validation (1 hour)
+### Step 7: Integrate Validation (1 hour)
 
 **File**: `convex/gameActions.ts`
 
@@ -193,20 +216,19 @@ After each step, verify:
 
 ### Issue: Import errors in Convex
 
-**Symptom**: `Cannot find module 'packages/domain-spec/runtime'`
+**Symptom**: `Cannot find module '../packages/domain-spec/runtime'`
 
-**Fix**: Ensure `packages/domain-spec/runtime.ts` is in TypeScript path
+**Cause**: Convex functions cannot import from outside `convex/` directory
 
-```json
-// convex/tsconfig.json
-{
-  "compilerOptions": {
-    "paths": {
-      "@/*": ["../*"]
-    }
-  }
-}
+**Fix**: Run the sync script to copy files
+
+```bash
+pnpm sync:domain
 ```
+
+**Verify**: Check that `convex/domainSpec/` exists with copied files
+
+**Note**: This runs automatically before `pnpm dev`, but you may need to run it manually after editing `packages/domain-spec/`
 
 ---
 
