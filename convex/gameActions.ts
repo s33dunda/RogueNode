@@ -522,15 +522,22 @@ function docToGameState(doc: Doc<"gameState">): GameState {
 }
 
 /**
- * Handle a synchronous in-game command and produce terminal output lines and a success flag.
+ * Execute a built-in synchronous game command and produce terminal lines with a success flag.
  *
- * Supports the built-in synchronous commands: `help`, `look`, and `tools`. For `help` returns a
- * static list of supported client commands; for `look` returns a deterministic environment scan
- * derived from the supplied `gameState`; for `tools` returns the available command-line tools.
+ * @param args.commandType - The normalized command name to execute (e.g., "look", "help", "tools").
+ * @param args.gameState - The authenticated player's current game state (read-only) used to generate command output; caller must supply the latest game state for meaningful results.
+ * @returns An object with `outputLines` containing terminal display lines and `success` set to `true` if the command completed successfully, `false` otherwise.
  *
- * @param args.commandType - The normalized command name to execute (e.g., `"look"`, `"help"`, `"tools"`).
- * @param args.gameState - The player's current game state used to build command-specific output (read-only).
- * @returns An object with `outputLines` containing the lines to display in the terminal and `success` indicating whether the command succeeded (`true`) or not (`false`).
+ * @example
+ * // Example usage within an authenticated mutation:
+ * // processSyncCommand({ commandType: "look", gameState: playerGameState })
+ *
+ * @example
+ * // Typical return for unknown command:
+ * // {
+ * //   outputLines: ["Command 'foo' is not yet available on the server.", "Type 'help' to review supported commands."],
+ * //   success: false
+ * // }
  */
 function processSyncCommand({
 	commandType,
