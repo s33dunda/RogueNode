@@ -7,14 +7,9 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..");
-const generatedProblemsDir = path.resolve(
-	repoRoot,
-	"packages/domain-spec/generated/problems",
-);
-const generatedDomainsDir = path.resolve(
-	repoRoot,
-	"packages/domain-spec/generated/domains",
-);
+const pddlProblemsDir = path.resolve(repoRoot, "pddl/generated/problems");
+const pddlDomainsDir = path.resolve(repoRoot, "pddl/generated/domains");
+const convexPlanDir = path.resolve(repoRoot, "convex/domainSpec/pddl/problems");
 
 function findDevboxRoot(startDir) {
 	let current = startDir;
@@ -47,10 +42,10 @@ function resolveAbsolute(base, relOrAbs) {
 
 const domainOutInput =
 	process.env.PDDL_DOMAIN_OUT ??
-	"./packages/domain-spec/generated/domains/rogue-devops-poc-domain.pddl";
+	"./pddl/generated/domains/rogue-devops-poc-domain.pddl";
 const problemOutInput =
 	process.env.PDDL_PROBLEM_OUT ??
-	"./packages/domain-spec/generated/problems/poc-reachability/problem.pddl";
+	"./pddl/generated/problems/poc-reachability/problem.pddl";
 
 const domainOutAbs = resolveAbsolute(repoRoot, domainOutInput);
 const problemOutAbs = resolveAbsolute(repoRoot, problemOutInput);
@@ -149,14 +144,23 @@ async function copyPlanJson(problemPddlAbs) {
 		_meta: meta,
 	};
 
-	await fs.mkdir(problemDir, { recursive: true });
-	await fs.writeFile(planSource, JSON.stringify(enriched, null, 2), "utf8");
-	console.log(`Synced plan JSON to ${path.relative(repoRoot, planSource)}`);
+	// Write to Convex directory (for runtime import)
+	const convexPlanTarget = path.join(convexPlanDir, problemSlug, "plan.json");
+	await fs.mkdir(path.dirname(convexPlanTarget), { recursive: true });
+	await fs.writeFile(
+		convexPlanTarget,
+		JSON.stringify(enriched, null, 2),
+		"utf8",
+	);
+	console.log(
+		`✅ Plan JSON written to ${path.relative(repoRoot, convexPlanTarget)}`,
+	);
 }
 
 async function main() {
-	await fs.mkdir(generatedDomainsDir, { recursive: true });
-	await fs.mkdir(generatedProblemsDir, { recursive: true });
+	await fs.mkdir(pddlDomainsDir, { recursive: true });
+	await fs.mkdir(pddlProblemsDir, { recursive: true });
+	await fs.mkdir(convexPlanDir, { recursive: true });
 	await runStep(
 		"Generating PDDL via LLM",
 		"devbox",

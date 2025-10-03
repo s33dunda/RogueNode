@@ -1,15 +1,15 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 
-# CodeRabbit Configuration for RogueNode - PoC/MVP Mode
-# DevOps Adventure Game + Visual Service Topology Manager
-# Focus: Essential security with rapid prototyping for educational game development
+# CodeRabbit Configuration for RogueNode - POV Mode
+# DevOps Adventure Game with PDDL-Driven Mission System
+# Focus: Essential security, Convex backend patterns, and PDDL integration validation
 
 # =============================================================================
 # GLOBAL SETTINGS
 # =============================================================================
 
 language: "en-US"
-tone_instructions: "Focus on critical security issues (Convex auth, Clerk integration, game state integrity) while being permissive on code style and documentation. Prioritize unblocking development during PoC/MVP game feature iteration."
+tone_instructions: "Focus on security (auth, game state) and architecture (PDDL, backend consolidation). POV mode: prioritize clean architecture, no backwards compatibility."
 early_access: true
 enable_free_tier: true
 
@@ -62,26 +62,28 @@ reviews:
       instructions: "Apply when changes involve Convex auth, Clerk integration, game state integrity, or secrets handling."
     - label: "game-mechanics"
       instructions: "Apply for adventure game logic, command parsing, inventory system, room navigation, or enemy interactions."
-    - label: "topology-visual"
-      instructions: "Apply for ReactFlow canvas, service nodes, drag-and-drop, visual topology editor, or canvas interactions."
+    - label: "pddl-integration"
+      instructions: "Apply for PDDL planner integration, mission validation, plan generation, or domain-spec changes."
     - label: "convex-backend"
       instructions: "Apply when changes touch Convex schema, queries, mutations, actions, auth config, or internal APIs."
     - label: "clerk-auth"
       instructions: "Apply for Clerk authentication flows, user management, session handling, or auth middleware."
     - label: "terminal-ui"
       instructions: "Apply for game terminal interface, CRT styling, command input/output, or retro terminal aesthetics."
-    - label: "devops-education"
-      instructions: "Apply for educational command-line tools, game content, DevOps scenarios, or learning materials."
+    - label: "domain-spec"
+      instructions: "Apply for changes to packages/domain-spec (data.ts, schema.ts, runtime.ts, or generated artifacts)."
+    - label: "architecture"
+      instructions: "Apply for structural changes, backend consolidation, file migrations, or architectural refactoring."
     - label: "performance"
-      instructions: "Apply for game responsiveness, visual topology rendering, Convex optimization, or real-time updates."
+      instructions: "Apply for game responsiveness, Convex optimization, real-time updates, or query performance."
     - label: "ui-components"
       instructions: "Apply for React component changes, Tailwind CSS styling, Next.js 15 patterns, or component behavior."
     - label: "testing"
-      instructions: "Apply when adding/improving tests for game mechanics, topology features, or component behavior."
+      instructions: "Apply when adding/improving tests for game mechanics, mission validation, or component behavior."
     - label: "documentation"
-      instructions: "Apply for README/docs changes, game guides, API documentation, or code comments."
+      instructions: "Apply for README/docs changes, game guides, API documentation, or code comments. Ensure YAML front-matter."
     - label: "breaking"
-      instructions: "Apply for breaking changes to game state, Convex schema, or component APIs requiring migrations."
+      instructions: "Apply for breaking changes to game state, Convex schema, or component APIs. POV mode: no backwards compatibility needed."
 
   # Path-specific filters (exclude generated files and build artifacts)
   path_filters:
@@ -89,11 +91,11 @@ reviews:
     - "!node_modules/**"
     - "!.next/**"
     - "!coverage/**"
-    - "!convex/_generated/**"
+    - "!convex/_generated/**"  # Convex runtime codegen only
     - "app/**"
     - "components/**"
-    - "utils/**"
     - "convex/**"
+    - "packages/**"  # Include domain-spec package AND generated artifacts
     - "docs/**"
     - "*.md"
     - "*.json"
@@ -101,40 +103,65 @@ reviews:
     - "*.yml"
     - "*.ts"
     - "*.tsx"
+    - "*.pddl"  # Include PDDL domain/problem files
 
   # RogueNode path-specific review instructions
   path_instructions:
     - path: "convex/**"
       instructions: |
-        Essential Convex review (PoC/MVP mode):
+        Essential Convex review (POV mode):
         - Check authentication and authorization with Clerk (critical)
         - Verify no secrets are exposed (critical)
         - Ensure new function syntax with args/returns validators
-        - Allow rapid iteration on schema and game state functions
+        - Verify internal vs public function separation
+        - Check proper use of convex/gameData.ts (not utils/GameData.ts)
+        - Validate mission progress tracking and PDDL integration
+        - No v.any() types - use proper Convex validators
+
+    - path: "convex/gameData.ts"
+      instructions: |
+        Backend game data module review:
+        - Verify imports from packages/domain-spec/runtime
+        - Ensure single source of truth for game data
+        - Check type safety with proper Room/Enemy/Mission types
+        - No client-side imports (backend only)
+
+    - path: "packages/domain-spec/**"
+      instructions: |
+        Domain specification review (PDDL integration):
+        - Validate schema.ts changes for game entities
+        - Check data.ts for mission definitions and optimal plans
+        - Verify runtime.ts helper functions are type-safe
+        - Review generated/ artifacts (committed to VCS, not runtime codegen)
+        - Validate PDDL domain/problem file syntax
+        - Check generated plan.json files for correctness
+        - Ensure generated artifacts match source data.ts
+
+    - path: "packages/domain-spec/generated/**"
+      instructions: |
+        Generated PDDL artifacts review:
+        - Verify PDDL domain files are syntactically correct
+        - Check problem files match mission definitions
+        - Validate plan.json contains valid action sequences
+        - Ensure generated files are committed (not gitignored)
+        - Flag if generated artifacts are out of sync with data.ts
+        - These are source files, not runtime codegen
 
     - path: "components/**"
       instructions: |
-        Game and topology component review (PoC/MVP mode):
-        - Focus on functionality over perfect patterns
-        - Game terminal vs topology components distinction
-        - Basic TypeScript safety (any is OK during prototyping)
-        - Allow component iteration for game mechanics
-
-    - path: "utils/**"
-      instructions: |
-        Game logic and utilities review:
-        - Game command parsing and state management
-        - Educational DevOps content accuracy
-        - Basic error handling for game scenarios
-        - Allow rapid iteration on game mechanics
+        Game component review (POV mode):
+        - Focus on functionality and clean architecture
+        - Game terminal command integration with missions
+        - TypeScript safety (avoid any types)
+        - Proper Convex query/mutation usage
 
     - path: "app/**"
       instructions: |
-        Next.js App Router review (PoC/MVP mode):
+        Next.js App Router review (POV mode):
         - Convex integration with preloadQuery patterns
         - Clerk auth middleware and route protection
-        - Basic functionality over perfect architecture
-        - Allow experimental routing during development
+        - Clean architecture patterns
+        - Proper TypeScript usage
 
     - path: "convex/auth.config.ts"
       instructions: |
@@ -144,27 +171,39 @@ reviews:
         - No exposed auth secrets
         - Proper session management
 
+    - path: "convex/missions.ts"
+      instructions: |
+        Mission validation system review:
+        - Verify PDDL plan validation logic
+        - Check mission progress tracking
+        - Ensure proper skill point awards
+        - Validate feedback messages for players
+        - Type safety with proper validators
+
     - path: "components/GameTerminal.tsx"
       instructions: |
         Game terminal essentials:
         - Command parsing security (prevent injection)
+        - Mission feedback integration
         - Game state integrity
         - Terminal UI functionality
-        - Allow styling iteration during development
 
     - path: "**/*.test.*"
       instructions: |
-        Testing basics (PoC/MVP mode):
-        - Basic test functionality for game mechanics
+        Testing review (POV mode):
+        - Test coverage for mission validation
         - Security scenarios for auth and game state
-        - Allow minimal coverage during rapid prototyping
+        - PDDL integration test cases
+        - Storage architecture tests
 
     - path: "docs/**"
       instructions: |
-        Documentation basics (PoC/MVP mode):
-        - Basic accuracy for game guides
-        - Allow incomplete documentation during development
-        - Focus on security and setup instructions
+        Documentation review (POV mode):
+        - Verify YAML front-matter (ssot-area, owner, derived-from)
+        - Check accuracy for PDDL integration guides
+        - Validate architecture diagrams and examples
+        - Ensure migration guides are clear
+        - No dead code references (e.g., utils/GameData.ts)
 
   abort_on_close: true
   disable_cache: false
@@ -202,23 +241,27 @@ reviews:
     issue_assessment:
       mode: "warning"
 
-    # RogueNode custom checks for PoC/MVP development
+    # RogueNode custom checks for POV development (max 5 checks)
     custom_checks:
-      - name: "Critical Security Check"
+      - name: "Critical Security"
         mode: "error"
-        instructions: "CRITICAL: Verify no hardcoded API keys, tokens, or secrets are present. Ensure Clerk auth is properly configured and game state integrity is maintained."
+        instructions: "Verify no hardcoded secrets. Ensure Clerk auth and game state integrity."
 
-      - name: "Convex Function Standards"
-        mode: "warning"
-        instructions: "Review Convex functions for new syntax with args/returns validators, auth checks, and basic patterns. Allow flexibility during game development iteration."
+      - name: "Convex Standards"
+        mode: "error"
+        instructions: "New syntax with validators, auth checks, internal vs public separation. No v.any()."
 
-      - name: "Game State Integrity"
-        mode: "warning"
-        instructions: "Ensure game commands and state changes are validated to prevent cheating or manipulation. Focus on core game mechanics security."
+      - name: "Backend Consolidation"
+        mode: "error"
+        instructions: "Import from convex/domainSpec/ (copied from packages/). No dead code."
 
-      - name: "Component Architecture"
+      - name: "PDDL Integration"
         mode: "warning"
-        instructions: "Review separation between game terminal and topology components. Ensure proper TypeScript usage but allow rapid prototyping patterns."
+        instructions: "Validate missions have plans. Check generated artifacts match source data."
+
+      - name: "Documentation"
+        mode: "warning"
+        instructions: "YAML front-matter required. No references to removed files."
 
   # Essential tooling for RogueNode PoC/MVP development
   tools:
@@ -284,6 +327,8 @@ knowledge_base:
       - ".github/**/*.md"
       - "**/README.md"
       - "**/.cursorrules"
+      - ".augment/rules/**/*.md"
+      - "packages/domain-spec/README.md"
 
   learnings:
     scope: "local"
@@ -315,21 +360,21 @@ code_generation:
     language: "en-US"
     path_instructions:
       - path: "convex/**"
-        instructions: "Generate JSDoc comments for Convex functions including parameter types, return types, and game-specific usage examples. Focus on auth requirements and game state considerations."
+        instructions: "Generate JSDoc comments for Convex functions including parameter types, return types, mission validation logic, and PDDL integration notes. Focus on auth requirements, internal vs public distinction, and game state considerations."
+
+      - path: "packages/domain-spec/**"
+        instructions: "Generate JSDoc comments for runtime utilities, mission helpers, and validation functions. Include PDDL plan structure details and mission lookup examples."
 
       - path: "components/**"
-        instructions: "Generate TSDoc comments for React components including prop descriptions, game mechanics usage, and component behavior notes. Distinguish between game terminal and topology components."
-
-      - path: "utils/**"
-        instructions: "Generate documentation for game logic functions, command parsers, and educational content. Include game state and command validation details."
+        instructions: "Generate TSDoc comments for React components including prop descriptions, mission feedback integration, and game mechanics usage. Focus on command parsing and mission display."
 
   unit_tests:
     path_instructions:
       - path: "convex/**"
-        instructions: "Generate tests for Convex functions including game state scenarios, auth conditions, and basic security cases. Focus on game mechanics and data integrity."
+        instructions: "Generate tests for Convex functions including mission validation, PDDL plan checking, auth conditions, and security cases. Focus on mission progress tracking and game state integrity."
+
+      - path: "packages/domain-spec/**"
+        instructions: "Generate tests for runtime utilities, mission helpers, and validation logic. Test PDDL plan parsing and mission lookup functions."
 
       - path: "components/**"
-        instructions: "Generate React Testing Library tests focusing on game terminal interactions, topology canvas behavior, and component functionality. Test game command parsing and visual node interactions."
-
-      - path: "utils/**"
-        instructions: "Generate tests for game logic, command parsing, and DevOps educational content. Focus on game state management and command validation."
+        instructions: "Generate React Testing Library tests focusing on game terminal interactions, mission feedback display, and component functionality. Test command parsing with mission validation."

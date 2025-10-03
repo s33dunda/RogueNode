@@ -5,6 +5,7 @@ import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { api } from "../convex/_generated/api";
 import { useCommandProcessor } from "../lib/hooks/useCommandProcessor";
 import CRTEffects from "./CRTEffects";
+import MissionPanel from "./MissionPanel";
 import TerminalInput from "./TerminalInput";
 import TerminalNav from "./TerminalNav";
 import TerminalOutput from "./TerminalOutput";
@@ -27,6 +28,7 @@ const GameTerminal = () => {
 
 	const [input, setInput] = useState("");
 	const [isNavVisible, setIsNavVisible] = useState(false);
+	const [isMissionPanelVisible, setIsMissionPanelVisible] = useState(false);
 	const [gameStateInitialized, setGameStateInitialized] = useState(false);
 
 	const terminalRef = useRef<HTMLDivElement>(null);
@@ -138,11 +140,25 @@ const GameTerminal = () => {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+
+		// Check for mission command
+		if (input.trim().toLowerCase() === "missions") {
+			setIsMissionPanelVisible(true);
+			setInput("");
+			return;
+		}
+
 		await processCommand(input);
 		setInput("");
 	};
 
 	const executeCommand = async (command: string) => {
+		// Check for mission command
+		if (command.trim().toLowerCase() === "missions") {
+			setIsMissionPanelVisible(true);
+			return;
+		}
+
 		await processCommand(command);
 	};
 
@@ -174,6 +190,12 @@ const GameTerminal = () => {
 
 			{/* CRT effect overlays */}
 			<CRTEffects />
+
+			{/* Mission panel overlay */}
+			<MissionPanel
+				isVisible={isMissionPanelVisible}
+				onClose={() => setIsMissionPanelVisible(false)}
+			/>
 		</nav>
 	);
 };

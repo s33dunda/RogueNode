@@ -1,8 +1,8 @@
 # Generated Planner Artifacts
 
 This directory is automatically populated via `pnpm planning:refresh`.
-Files inside are derived from the canonical schema/data (`packages/domain-spec/schema.ts`,
-`packages/domain-spec/data.ts`, `packages/domain-spec/planning.ts`).
+Files inside are derived from the canonical schema/data (`convex/domain-spec/schema.ts`,
+`convex/domain-spec/data.ts`, `convex/domain-spec/planning.ts`).
 
 - `domains/` – PDDL domain files used by the planner (derived).
 - `problems/<mission>/problem.pddl` – PDDL problem file (derived).
