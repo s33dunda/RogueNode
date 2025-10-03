@@ -1,3 +1,4 @@
+// todo: This is for POC; in the future we should load these plans dynamically
 import planPocReachability from "./generated/problems/poc-reachability/plan.json";
 import { domainBundleSchema, missionSchema } from "./schema";
 

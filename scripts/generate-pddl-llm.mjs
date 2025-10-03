@@ -12,9 +12,9 @@ const promptTemplate = await fs.readFile(promptTemplatePath, "utf8");
 const repoRoot = path.resolve(__dirname, "..");
 
 const defaultContextFiles = [
-	"packages/domain-spec/planning.ts",
-	"packages/domain-spec/schema.ts",
-	"packages/domain-spec/data.ts",
+	"pddl/planning.ts",
+	"convex/domainSpec/schema.ts",
+	"convex/domainSpec/data.ts",
 ];
 
 function parseArgs(argv) {

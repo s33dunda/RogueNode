@@ -1,8 +1,10 @@
 import { z } from "zod";
 
 /**
- * RogueNode MVP domain schema
- * ---------------------------
+ * RogueNode MVP domain schema - CANONICAL SOURCE
+ * -----------------------------------------------
+ *
+ * This is the single source of truth for domain entity schemas.
  *
  * Describes the minimal game entities we rely on today:
  * - rooms form the navigable map
@@ -10,8 +12,8 @@ import { z } from "zod";
  * - enemies gate progress and reference required items
  * - missions stitch rooms + plans into playable experiences
  *
- * Runtime code (`utils/GameData.ts`, `convex/gameActions.ts`) should import
- * these validators/types instead of re-declaring shapes inline. This keeps the
+ * Runtime code (`convex/gameData.ts`, `convex/gameActions.ts`) and scripts
+ * should import these validators/types from this module. This keeps the
  * canonical definitions in one place while we bootstrap generators.
  */
 
