@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
 import { getMissionPlan, matchesStep } from "./domainSpec";
 import { getMissionsForRoom } from "./domainSpec/runtime";
+import { missionProgressEntry, missionStepValidationResult } from "./types";
 
 /**
  * Internal query: Get all active missions for a player
@@ -16,33 +17,7 @@ export const getActiveMissions = internalQuery({
 	args: {
 		playerId: v.string(),
 	},
-	returns: v.array(
-		v.object({
-			_id: v.id("missionProgress"),
-			playerId: v.string(),
-			gameStateId: v.id("gameState"),
-			missionId: v.string(),
-			currentStepIndex: v.number(),
-			completedSteps: v.array(
-				v.object({
-					stepIndex: v.number(),
-					playerCommand: v.string(),
-					expectedAction: v.string(),
-					matched: v.boolean(),
-					timestamp: v.number(),
-				}),
-			),
-			status: v.union(
-				v.literal("not_started"),
-				v.literal("in_progress"),
-				v.literal("completed"),
-				v.literal("failed"),
-			),
-			startedAt: v.number(),
-			completedAt: v.optional(v.number()),
-			_creationTime: v.number(),
-		}),
-	),
+	returns: v.array(missionProgressEntry),
 	handler: async (ctx, { playerId }) => {
 		return await ctx.db
 			.query("missionProgress")
@@ -67,34 +42,7 @@ export const getMissionProgress = internalQuery({
 		playerId: v.string(),
 		missionId: v.string(),
 	},
-	returns: v.union(
-		v.object({
-			_id: v.id("missionProgress"),
-			playerId: v.string(),
-			gameStateId: v.id("gameState"),
-			missionId: v.string(),
-			currentStepIndex: v.number(),
-			completedSteps: v.array(
-				v.object({
-					stepIndex: v.number(),
-					playerCommand: v.string(),
-					expectedAction: v.string(),
-					matched: v.boolean(),
-					timestamp: v.number(),
-				}),
-			),
-			status: v.union(
-				v.literal("not_started"),
-				v.literal("in_progress"),
-				v.literal("completed"),
-				v.literal("failed"),
-			),
-			startedAt: v.number(),
-			completedAt: v.optional(v.number()),
-			_creationTime: v.number(),
-		}),
-		v.null(),
-	),
+	returns: v.union(missionProgressEntry, v.null()),
 	handler: async (ctx, { playerId, missionId }) => {
 		return await ctx.db
 			.query("missionProgress")
@@ -159,13 +107,7 @@ export const validateMissionStep = internalMutation({
 		missionId: v.string(),
 		playerCommand: v.string(),
 	},
-	returns: v.object({
-		matched: v.boolean(),
-		expectedAction: v.string(),
-		feedback: v.array(v.string()),
-		missionComplete: v.boolean(),
-		skillGained: v.number(),
-	}),
+	returns: missionStepValidationResult,
 	handler: async (ctx, { playerId, missionId, playerCommand }) => {
 		const progress = await ctx.db
 			.query("missionProgress")

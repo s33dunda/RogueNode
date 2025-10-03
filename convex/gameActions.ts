@@ -13,7 +13,7 @@ import { getMissionById } from "./domainSpec/runtime";
 import { commandLineTools, enemies, rooms } from "./gameData";
 import { requireAuth } from "./lib/auth";
 import type { GameState } from "./types";
-import { enemy, item } from "./types";
+import { enemy, item, terminalOutputEntry } from "./types";
 import { generateCacheKey } from "./utils/cacheUtils";
 
 // Initialize game state for a new player
@@ -781,7 +781,7 @@ function buildToolsOutput() {
 
 export const getTerminalOutput = query({
 	args: {},
-	returns: v.any(),
+	returns: v.array(terminalOutputEntry),
 	handler: async (ctx) => {
 		const identity = await requireAuth(ctx);
 		const outputs = await ctx.db
