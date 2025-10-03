@@ -9,7 +9,9 @@
 		"predev": "convex dev --until-success && convex dashboard",
 		"build": "next build",
 		"start": "next start",
-		"lint": "eslint ."
+		"lint": "eslint .",
+		"planning:prompt": "node scripts/generate-pddl-llm.mjs",
+		"planning:refresh": "node scripts/run-planning.mjs"
 	},
 	"dependencies": {
 		"@ai-sdk/openai": "^2.0.32",

@@ -1,0 +1,15 @@
+{
+	"status": "OK",
+	"plan": ["ping main-server"],
+	"actions": ["ping main-server"],
+	"raw": "SequentialPlan:\n    ping(main-server)",
+	"domain_file": "packages/domain-spec/generated/domains/rogue-devops-poc-domain.pddl",
+	"problem_file": "packages/domain-spec/generated/problems/poc-reachability/problem.pddl",
+	"domain_sha256": "0e1fdefc7ce840a7a50a95ec784da55b54ae052871b865ef44bd2342e7e37c15",
+	"problem_sha256": "a1a6a99d48bce43440de1fab0a0cc899dfea392f2de5f691404cd085d5c2bc0c",
+	"_meta": {
+		"derivedBy": "pnpm planning:refresh",
+		"problemRef": "poc-reachability",
+		"timestamp": "2025-10-03T15:30:24.427Z"
+	}
+}

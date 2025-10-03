@@ -40,6 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# generated prompt sessions
+docs/prompts/sessions/
+
 # clerk configuration (can include secrets)
 /.clerk/
 convex/_generated
