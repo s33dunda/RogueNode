@@ -116,21 +116,19 @@ export const sendCommand = mutation({
 					},
 				);
 
-				const missionFeedback: string[] = [];
+				let missionFeedback: string[] = [];
 				let totalMissionSkillGained = 0;
-				for (const mission of activeMissions) {
-					const validation = await ctx.runMutation(
-						internal.missions.validateMissionStep,
+				if (activeMissions.length > 0) {
+					const aggregated = await ctx.runMutation(
+						internal.missions.validateAllMissionSteps,
 						{
 							playerId: identity.subject,
-							missionId: mission.missionId,
+							missionIds: activeMissions.map((mission) => mission.missionId),
 							playerCommand: command,
 						},
 					);
-					if (validation.feedback.length > 0) {
-						missionFeedback.push(...validation.feedback);
-					}
-					totalMissionSkillGained += validation.skillGained;
+					missionFeedback = aggregated.feedback;
+					totalMissionSkillGained = aggregated.totalSkillGained;
 				}
 
 				// Combine cached output with mission feedback
@@ -271,21 +269,19 @@ export const executeAsyncCommand = internalAction({
 					);
 
 					// Validate command against all active missions
-					const missionFeedback: string[] = [];
+					let missionFeedback: string[] = [];
 					let totalMissionSkillGained = 0;
-					for (const mission of activeMissions) {
-						const validation = await ctx.runMutation(
-							internal.missions.validateMissionStep,
+					if (activeMissions.length > 0) {
+						const aggregated = await ctx.runMutation(
+							internal.missions.validateAllMissionSteps,
 							{
 								playerId: args.playerId,
-								missionId: mission.missionId,
+								missionIds: activeMissions.map((mission) => mission.missionId),
 								playerCommand: args.command,
 							},
 						);
-						if (validation.feedback.length > 0) {
-							missionFeedback.push(...validation.feedback);
-						}
-						totalMissionSkillGained += validation.skillGained;
+						missionFeedback = aggregated.feedback;
+						totalMissionSkillGained = aggregated.totalSkillGained;
 					}
 
 					// Combine command output with mission feedback

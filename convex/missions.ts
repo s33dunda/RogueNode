@@ -1,8 +1,111 @@
 import { v } from "convex/values";
-import { internalMutation, internalQuery } from "./_generated/server";
+import {
+	internalMutation,
+	internalQuery,
+	type MutationCtx,
+} from "./_generated/server";
 import { getMissionPlan, matchesStep } from "./domainSpec";
 import { getMissionsForRoom } from "./domainSpec/runtime";
-import { missionProgressEntry, missionStepValidationResult } from "./types";
+import {
+	missionProgressEntry,
+	missionStepValidationResult,
+	type MissionStepValidationResult,
+} from "./types";
+
+async function validateMissionStepInternal(
+	ctx: MutationCtx,
+	playerId: string,
+	missionId: string,
+	playerCommand: string,
+): Promise<MissionStepValidationResult> {
+	const progress = await ctx.db
+		.query("missionProgress")
+		.withIndex("by_player_mission", (q) =>
+			q.eq("playerId", playerId).eq("missionId", missionId),
+		)
+		.first();
+
+	// Validate ownership: ensure the progress record belongs to the requesting player
+	if (progress && progress.playerId !== playerId) {
+		throw new Error("Unauthorized: Cannot access another player's mission");
+	}
+
+	if (!progress || progress.status !== "in_progress") {
+		return {
+			matched: false,
+			expectedAction: "",
+			feedback: ["No active mission found. Start a mission first."],
+			missionComplete: false,
+			skillGained: 0,
+		};
+	}
+
+	const plan = getMissionPlan(missionId);
+	if (plan.length === 0) {
+		return {
+			matched: false,
+			expectedAction: "",
+			feedback: ["Mission has no validation plan."],
+			missionComplete: false,
+			skillGained: 0,
+		};
+	}
+
+	const currentStep = plan[progress.currentStepIndex];
+	if (!currentStep) {
+		return {
+			matched: false,
+			expectedAction: "",
+			feedback: ["Mission already complete."],
+			missionComplete: true,
+			skillGained: 0,
+		};
+	}
+
+	const matched = matchesStep(playerCommand, currentStep);
+	const nextStepIndex = matched
+		? progress.currentStepIndex + 1
+		: progress.currentStepIndex;
+	const missionComplete = matched && nextStepIndex >= plan.length;
+
+	await ctx.db.patch(progress._id, {
+		currentStepIndex: nextStepIndex,
+		completedSteps: [
+			...progress.completedSteps,
+			{
+				stepIndex: progress.currentStepIndex,
+				playerCommand,
+				expectedAction: currentStep.action,
+				matched,
+				timestamp: Date.now(),
+			},
+		],
+		status: missionComplete ? "completed" : "in_progress",
+		...(missionComplete ? { completedAt: Date.now() } : {}),
+	});
+
+	const feedback = matched
+		? [
+				`✓ Correct! ${currentStep.description}`,
+				missionComplete
+					? "Mission complete! Well done."
+					: `Next step: ${plan[nextStepIndex]?.description ?? "Unknown"}`,
+			]
+		: [
+				`✗ Not quite. Expected: ${currentStep.action} ${
+					currentStep.target ?? ""
+				}`,
+				`Hint: ${currentStep.description}`,
+			];
+
+	return {
+		matched,
+		expectedAction: `${currentStep.action} ${currentStep.target ?? ""}`.trim(),
+		feedback,
+		missionComplete,
+		skillGained: matched ? 10 : 0,
+	};
+}
 
 /**
  * Internal query: Get all active missions for a player
@@ -109,92 +212,45 @@ export const validateMissionStep = internalMutation({
 	},
 	returns: missionStepValidationResult,
 	handler: async (ctx, { playerId, missionId, playerCommand }) => {
-		const progress = await ctx.db
-			.query("missionProgress")
-			.withIndex("by_player_mission", (q) =>
-				q.eq("playerId", playerId).eq("missionId", missionId),
-			)
-			.first();
+		return await validateMissionStepInternal(
+			ctx,
+			playerId,
+			missionId,
+			playerCommand,
+		);
+	},
+});
 
-		// Validate ownership: ensure the progress record belongs to the requesting player
-		if (progress && progress.playerId !== playerId) {
-			throw new Error("Unauthorized: Cannot access another player's mission");
+export const validateAllMissionSteps = internalMutation({
+	args: {
+		playerId: v.string(),
+		missionIds: v.array(v.string()),
+		playerCommand: v.string(),
+	},
+	returns: v.object({
+		feedback: v.array(v.string()),
+		totalSkillGained: v.number(),
+	}),
+	handler: async (ctx, { playerId, missionIds, playerCommand }) => {
+		const aggregatedFeedback: string[] = [];
+		let totalSkillGained = 0;
+
+		for (const missionId of missionIds) {
+			const result = await validateMissionStepInternal(
+				ctx,
+				playerId,
+				missionId,
+				playerCommand,
+			);
+			if (result.feedback.length > 0) {
+				aggregatedFeedback.push(...result.feedback);
+			}
+			totalSkillGained += result.skillGained;
 		}
-
-		if (!progress || progress.status !== "in_progress") {
-			return {
-				matched: false,
-				expectedAction: "",
-				feedback: ["No active mission found. Start a mission first."],
-				missionComplete: false,
-				skillGained: 0,
-			};
-		}
-
-		const plan = getMissionPlan(missionId);
-		if (plan.length === 0) {
-			return {
-				matched: false,
-				expectedAction: "",
-				feedback: ["Mission has no validation plan."],
-				missionComplete: false,
-				skillGained: 0,
-			};
-		}
-
-		const currentStep = plan[progress.currentStepIndex];
-		if (!currentStep) {
-			return {
-				matched: false,
-				expectedAction: "",
-				feedback: ["Mission already complete."],
-				missionComplete: true,
-				skillGained: 0,
-			};
-		}
-
-		const matched = matchesStep(playerCommand, currentStep);
-		const nextStepIndex = matched
-			? progress.currentStepIndex + 1
-			: progress.currentStepIndex;
-		const missionComplete = matched && nextStepIndex >= plan.length;
-
-		// Record step attempt
-		await ctx.db.patch(progress._id, {
-			currentStepIndex: nextStepIndex,
-			completedSteps: [
-				...progress.completedSteps,
-				{
-					stepIndex: progress.currentStepIndex,
-					playerCommand,
-					expectedAction: currentStep.action,
-					matched,
-					timestamp: Date.now(),
-				},
-			],
-			status: missionComplete ? "completed" : "in_progress",
-			...(missionComplete ? { completedAt: Date.now() } : {}),
-		});
-
-		const feedback = matched
-			? [
-					`✓ Correct! ${currentStep.description}`,
-					missionComplete
-						? "Mission complete! Well done."
-						: `Next step: ${plan[nextStepIndex]?.description ?? "Unknown"}`,
-				]
-			: [
-					`✗ Not quite. Expected: ${currentStep.action} ${currentStep.target ?? ""}`,
-					`Hint: ${currentStep.description}`,
-				];
 
 		return {
-			matched,
-			expectedAction:
-				`${currentStep.action} ${currentStep.target ?? ""}`.trim(),
-			feedback,
-			missionComplete,
-			skillGained: matched ? 10 : 0,
+			feedback: aggregatedFeedback,
+			totalSkillGained,
 		};
 	},
 });
