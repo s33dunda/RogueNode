@@ -1,7 +1,7 @@
 ---
 ssot-area: pddl-integration
 owner: runtime-team
-derived-from: packages/domain-spec/data.ts
+derived-from: convex/domainSpec/data.ts
 ---
 
 # PDDL Integration - Developer Quickstart
@@ -20,45 +20,41 @@ derived-from: packages/domain-spec/data.ts
 
 ---
 
-## 🚀 Quick Start (5 Steps)
+## 🚀 Quick Start (6 Steps)
 
-### Step 1: Create Runtime Loader (30 min)
+### Step 1: Verify Runtime Loader (5 min)
 
-**File**: `packages/domain-spec/runtime.ts`
+**File**: `convex/domainSpec/runtime.ts` (canonical source)
 
-```bash
-# Create the file
-touch packages/domain-spec/runtime.ts
-```
-
-**Copy code from**: `docs/pddl-integration-implementation.md` → Step 1
+**Important**: `convex/domainSpec/` is the canonical source for domain specifications. Convex functions import directly from this location.
 
 **Test**:
 
 ```typescript
-import { runtime, getMissionById, matchesStep } from "./packages/domain-spec/runtime";
+import { runtime, getMissionById, matchesStep } from "./convex/domainSpec/runtime";
 console.log(runtime.missions); // Should show mission list
 console.log(getMissionById("ping-tutorial")); // Should return mission object
 ```
 
 ---
 
-### Step 2: Update GameData.ts (15 min)
+### Step 2: Create Backend Game Data (15 min)
 
-**File**: `utils/GameData.ts`
+**File**: `convex/gameData.ts`
 
 **Changes**:
 
-- Replace direct imports with `runtime` imports
-- Add mission helper functions
+- Create backend-only game data module
+- Import from `convex/domainSpec/` (not `packages/`)
+- Replace old `utils/GameData.ts`
 
 **Copy code from**: `docs/pddl-integration-implementation.md` → Step 2
 
 **Test**:
 
 ```bash
-pnpm dev:frontend
-# Check browser console - no import errors
+pnpm dev
+# Check Convex compilation - no import errors
 ```
 
 ---
@@ -173,8 +169,8 @@ touch convex/missions.ts
 
 After each step, verify:
 
-- [ ] **Step 1**: Runtime exports work in both Node and browser
-- [ ] **Step 2**: No import errors in frontend
+- [ ] **Step 1**: Runtime exports work in Convex functions
+- [ ] **Step 2**: `convex/gameData.ts` imports from `convex/domainSpec/` successfully
 - [ ] **Step 3**: `missionProgress` table appears in Convex dashboard
 - [ ] **Step 4**: Can create mission progress via internal functions
 - [ ] **Step 5**: Can start mission via public API (with auth)
@@ -193,20 +189,18 @@ After each step, verify:
 
 ### Issue: Import errors in Convex
 
-**Symptom**: `Cannot find module 'packages/domain-spec/runtime'`
+**Symptom**: `Cannot find module './domainSpec/runtime'`
 
-**Fix**: Ensure `packages/domain-spec/runtime.ts` is in TypeScript path
+**Cause**: Missing or incorrect import path
 
-```json
-// convex/tsconfig.json
-{
-  "compilerOptions": {
-    "paths": {
-      "@/*": ["../*"]
-    }
-  }
-}
+**Fix**: Ensure imports use the correct path from `convex/domainSpec/`
+
+```typescript
+// Correct import in Convex functions
+import { runtime, getMissionById } from "./domainSpec/runtime";
 ```
+
+**Verify**: Check that `convex/domainSpec/` exists with all required files
 
 ---
 
@@ -306,4 +300,4 @@ Once all steps complete:
 3. Verify skill points awarded
 4. Check Convex dashboard for errors
 
-**Next**: Add more missions by editing `packages/domain-spec/data.ts` and running `pnpm planning:refresh`
+**Next**: Add more missions by editing `convex/domainSpec/data.ts` and running `pnpm planning:refresh`

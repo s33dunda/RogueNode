@@ -10,6 +10,7 @@
 		"build": "next build",
 		"start": "next start",
 		"lint": "eslint .",
+		"lint:fix": "eslint . --fix && biome check --write .",
 		"planning:prompt": "node scripts/generate-pddl-llm.mjs",
 		"planning:refresh": "node scripts/run-planning.mjs"
 	},

@@ -6,10 +6,10 @@ This slim index tracks the minimum artifacts we must keep in sync while we shape
 
 ### 1. Domain Verbs & State
 
-- **Canonical artifact:** `packages/domain-spec/schema.ts` (Zod validators for rooms, items, enemies, missions) with the parsed data + tool catalog in `packages/domain-spec/data.ts`.
-- **Derived runtime data:** `utils/GameData.ts` re-exports the parsed bundle for Convex usage.
-- **Used by:** Convex action handlers (`convex/gameActions.ts`) and client processors (`lib/hooks/useCommandProcessor.ts`).
-- **How to update:** extend the schema first (new fields, mission hooks, plan metadata), then adjust `GameData.ts` and downstream code to satisfy the updated contracts.
+- **Canonical artifact:** `convex/domainSpec/schema.ts` (Zod validators for rooms, items, enemies, missions) with the parsed data + tool catalog in `convex/domainSpec/data.ts`.
+- **Runtime data:** `convex/gameData.ts` imports from `convex/domainSpec/` for backend usage.
+- **Used by:** Convex action handlers (`convex/gameActions.ts`) and mission validation (`convex/missions.ts`).
+- **How to update:** extend the schema first (new fields, mission hooks, plan metadata), then adjust `gameData.ts` and downstream code to satisfy the updated contracts.
 
 ### 2. Scenario Seeds & Plans
 
