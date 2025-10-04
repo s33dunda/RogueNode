@@ -12,7 +12,7 @@ import {
 	missionStepValidationResult,
 } from "./types";
 
-async function validateMissionStepInternal(
+export async function validateMissionStepInternal(
 	ctx: MutationCtx,
 	playerId: string,
 	missionId: string,

@@ -394,14 +394,16 @@ export const processGameCommand = action({
 ```
 
 **Example Thread Timeline** (what gets saved):
+
 ```
 1. [Player] "> ping 192.168.1.1"
-2. [User] "Process command: ping 192.168.1.1 in ServerRoom with current threats: firewall_misconfigured"  
+2. [User] "Process command: ping 192.168.1.1 in ServerRoom with current threats: firewall_misconfigured"
 3. [Assistant] "🔍 Executing ping to 192.168.1.1... PING failed: Network unreachable. This suggests the firewall is blocking ICMP traffic. Try: sudo iptables -L to examine firewall rules..."
 4. [GameSystem] {"type": "state_change", "commandExecuted": "ping 192.168.1.1", "skillsLearned": ["firewall_troubleshooting"], "threatsResolved": []}
 ```
 
 **Why Both Matter**:
+
 - **Manual messages**: Audit trail, game analytics, player progress tracking, metadata-rich context
 - **Auto messages**: Natural LLM conversation flow with contextual prompts and educational responses
 - **Context retrieval**: Future `generateText()` calls search ALL messages for relevant educational content and game state
