@@ -5,7 +5,8 @@
 		"claude-code@latest",
 		"python@latest",
 		"codex@latest",
-		"nodejs@latest"
+		"nodejs@latest",
+		"biome@latest"
 	],
 	"shell": {
 		"init_hook": ["projectDir=$PWD", ". $VENV_DIR/bin/activate"]

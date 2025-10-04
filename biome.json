@@ -1,6 +1,15 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.1.2/schema.json",
 	"files": {
-		"experimentalScannerIgnores": ["convex/_generated/**", "node_modules/**"]
+		"includes": ["app/**", "convex/**", "components/**", "utils/**"],
+		"experimentalScannerIgnores": [
+			"_generated",
+			"node_modules",
+			".next",
+			"out",
+			"dist",
+			"build",
+			".convex"
+		]
 	}
 }

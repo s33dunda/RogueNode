@@ -7,9 +7,9 @@ import {
 import { getMissionPlan, matchesStep } from "./domainSpec";
 import { getMissionsForRoom } from "./domainSpec/runtime";
 import {
+	type MissionStepValidationResult,
 	missionProgressEntry,
 	missionStepValidationResult,
-	type MissionStepValidationResult,
 } from "./types";
 
 async function validateMissionStepInternal(
@@ -24,11 +24,6 @@ async function validateMissionStepInternal(
 			q.eq("playerId", playerId).eq("missionId", missionId),
 		)
 		.first();
-
-	// Validate ownership: ensure the progress record belongs to the requesting player
-	if (progress && progress.playerId !== playerId) {
-		throw new Error("Unauthorized: Cannot access another player's mission");
-	}
 
 	if (!progress || progress.status !== "in_progress") {
 		return {
@@ -201,8 +196,7 @@ export const startMission = internalMutation({
  * Compares the player's command against the expected next step in the mission plan.
  * Records the attempt, updates progress, and returns feedback for the player.
  *
- * @security This function validates ownership by checking that the progress record
- * belongs to the requesting player. Throws an error if ownership validation fails.
+ * @security Ownership is enforced by querying with playerId index filter.
  */
 export const validateMissionStep = internalMutation({
 	args: {
