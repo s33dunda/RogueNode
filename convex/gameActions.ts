@@ -108,37 +108,15 @@ export const sendCommand = mutation({
 					cacheId: cached._id,
 				});
 
-				// Validate against active missions even for cached commands
-				const activeMissions: Array<{ missionId: string }> = await ctx.runQuery(
-					internal.missions.getActiveMissions,
-					{
-						playerId: identity.subject,
-					},
-				);
-
-				let missionFeedback: string[] = [];
-				let totalMissionSkillGained = 0;
-				if (activeMissions.length > 0) {
-					const aggregated = await ctx.runMutation(
-						internal.missions.validateAllMissionSteps,
-						{
-							playerId: identity.subject,
-							missionIds: activeMissions.map((mission) => mission.missionId),
-							playerCommand: command,
-						},
-					);
-					missionFeedback = aggregated.feedback;
-					totalMissionSkillGained = aggregated.totalSkillGained;
-				}
+				const {
+					appendLines: missionProgressLines,
+					totalSkillGained: missionSkillGained,
+				} = await collectMissionFeedback(ctx, identity.subject, command);
 
 				// Combine cached output with mission feedback
 				const outputLines: string[] = [
 					...cached.output,
-					...(missionFeedback.length > 0
-						? ["", "=== Mission Progress ===", ...missionFeedback]
-						: activeMissions.length === 0
-							? []
-							: []),
+					...missionProgressLines,
 				];
 
 				const outputId: Id<"terminalOutput"> = await ctx.db.insert(
@@ -156,7 +134,7 @@ export const sendCommand = mutation({
 				await ctx.runMutation(internal.gameActions.persistCommandGameState, {
 					gameStateId: gameState._id,
 					skillDelta: cached.success
-						? cached.skillGained + totalMissionSkillGained
+						? cached.skillGained + missionSkillGained
 						: 0,
 					toolSessionId: cached.threadId ?? normalizedState.toolSessionId,
 				});
@@ -260,43 +238,15 @@ export const executeAsyncCommand = internalAction({
 						},
 					);
 
-					// Get all active missions for this player
-					const activeMissions = await ctx.runQuery(
-						internal.missions.getActiveMissions,
-						{
-							playerId: args.playerId,
-						},
-					);
-
-					// Validate command against all active missions
-					let missionFeedback: string[] = [];
-					let totalMissionSkillGained = 0;
-					if (activeMissions.length > 0) {
-						const aggregated = await ctx.runMutation(
-							internal.missions.validateAllMissionSteps,
-							{
-								playerId: args.playerId,
-								missionIds: activeMissions.map((mission) => mission.missionId),
-								playerCommand: args.command,
-							},
-						);
-						missionFeedback = aggregated.feedback;
-						totalMissionSkillGained = aggregated.totalSkillGained;
-					}
+					const {
+						appendLines: missionProgressLines,
+						totalSkillGained: missionSkillGained,
+					} = await collectMissionFeedback(ctx, args.playerId, args.command, {
+						includeNoMissionMessage: true,
+					});
 
 					// Combine command output with mission feedback
-					const outputLines = [
-						...result.output,
-						...(missionFeedback.length > 0
-							? ["", "=== Mission Progress ===", ...missionFeedback]
-							: activeMissions.length === 0
-								? [
-										"",
-										"=== Mission Progress ===",
-										"No active mission found. Start a mission first.",
-									]
-								: []),
-					];
+					const outputLines = [...result.output, ...missionProgressLines];
 
 					await ctx.runMutation(internal.gameActions.writeCommandOutput, {
 						playerId: args.playerId,
@@ -311,7 +261,7 @@ export const executeAsyncCommand = internalAction({
 					await ctx.runMutation(internal.gameActions.persistCommandGameState, {
 						gameStateId: args.gameStateId,
 						skillDelta: result.success
-							? result.skillGained + totalMissionSkillGained
+							? result.skillGained + missionSkillGained
 							: 0,
 						toolSessionId: result.threadId ?? gameState.toolSessionId,
 					});
@@ -575,6 +525,61 @@ type ProcessSyncCommandArgs = {
 };
 
 const ASYNC_COMMANDS = new Set(["ping"]);
+
+type MissionFeedbackContext = Pick<MutationCtx, "runQuery" | "runMutation">;
+
+type MissionFeedbackOptions = {
+	includeNoMissionMessage?: boolean;
+};
+
+type MissionFeedbackResult = {
+	appendLines: string[];
+	totalSkillGained: number;
+};
+
+async function collectMissionFeedback(
+	ctx: MissionFeedbackContext,
+	playerId: string,
+	playerCommand: string,
+	options: MissionFeedbackOptions = {},
+): Promise<MissionFeedbackResult> {
+	const activeMissions: Array<{ missionId: string }> = await ctx.runQuery(
+		internal.missions.getActiveMissions,
+		{
+			playerId,
+		},
+	);
+
+	if (activeMissions.length === 0) {
+		return {
+			appendLines: options.includeNoMissionMessage
+				? [
+						"",
+						"=== Mission Progress ===",
+						"No active mission found. Start a mission first.",
+					]
+				: [],
+			totalSkillGained: 0,
+		};
+	}
+
+	const aggregated = await ctx.runMutation(
+		internal.missions.validateAllMissionSteps,
+		{
+			playerId,
+			missionIds: activeMissions.map((mission) => mission.missionId),
+			playerCommand,
+		},
+	);
+
+	return {
+		appendLines:
+			aggregated.feedback.length > 0
+				? ["", "=== Mission Progress ===", ...aggregated.feedback]
+				: [],
+		totalSkillGained: aggregated.totalSkillGained,
+	};
+}
 
 /**
  * Extracts the command type and target from a raw command string.

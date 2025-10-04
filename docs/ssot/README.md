@@ -23,6 +23,7 @@ This slim index tracks the minimum artifacts we must keep in sync while we shape
 - **Canonical artifact:** the Convex + Next.js glue that exposes problems to players: `convex/gameActions.ts`, `lib/hooks/useCommandProcessor.ts`, and UI state under `app/`.
 - **Used by:** Player sessions—these files are the runtime truth for how missions show up and how commands execute.
 - **How to update:** keep these files aligned with the domain data and imported plan outputs; test via the local app (`pnpm dev`).
+- **Implementation patterns:** `docs/player-action-howtos/` contains HOWTOs for adding synchronous commands, async commands, and AI-driven commands. Follow these guides when implementing new terminal commands to maintain consistent patterns.
 
 ## Working Loop
 
