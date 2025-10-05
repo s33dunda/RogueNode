@@ -2,14 +2,19 @@
 ssot-area: runtime-performance
 owner: runtime-team
 derived-from: convex/gameActions.ts
+status: revised
+revision-date: 2025-01-05
+revision-reason: Fixed critical atomicity violation in original plan
 ---
 
 # Story: Atomic Cache Hit Mutation
 
 **Epic**: Performance & Cost Optimization
 **Priority**: High
-**Estimated Effort**: 4-6 hours
-**Cost Savings**: $6-10/month at 1M cache hits/month (43-71% reduction)
+**Estimated Effort**: 2-3 hours (reduced - simpler than original plan)
+**Cost Savings**: $8-12/month at 1M cache hits/month (60-80% reduction)
+
+> **⚠️ CRITICAL REVISION**: Original plan proposed using `ctx.runMutation(internal.gameActions.handleCacheHit, ...)` which would create sub-transactions and violate atomicity. Revised plan inlines all operations directly in `sendCommand` mutation for true atomicity. See CLAUDE.md:123-131 for Convex best practices.
 
 ## Problem Statement
 
@@ -30,12 +35,13 @@ The current cache hit path in `gameActions.ts:106-142` breaks transaction atomic
 
 ## Success Criteria
 
-- [ ] Cache hit path reduced to 1-2 function calls (down from 5+)
-- [ ] All cache hit operations are atomic (single transaction)
-- [ ] Cost reduced by 43-71% ($6-10/month savings at 1M cache hits)
+- [ ] Cache hit path has ZERO `ctx.runMutation` calls (all operations inline)
+- [ ] All cache hit operations are atomic (single transaction, no sub-transactions)
+- [ ] Cost reduced by 60-80% ($8-12/month savings at 1M cache hits)
 - [ ] Latency reduced by 50-100ms per cache hit
 - [ ] All existing tests pass
 - [ ] No regression in mission validation or game state updates
+- [ ] Code review confirms alignment with CLAUDE.md best practices
 
 ## Technical Design
 
@@ -70,134 +76,177 @@ if (cached) {
 ```typescript
 // gameActions.ts:106-142
 if (cached) {
-  // Single atomic mutation - all operations in one transaction
-  const { outputId } = await ctx.runMutation(
-    internal.gameActions.handleCacheHit,
-    {
-      playerId: identity.subject,
-      gameStateId: gameState._id,
-      command,
-      commandType,
-      cached: {
-        output: cached.output,
-        success: cached.success,
-        skillGained: cached.skillGained,
-        threadId: cached.threadId,
-      },
-      toolSessionId: normalizedState.toolSessionId,
+  // ✅ ALL OPERATIONS INLINE - TRULY ATOMIC (no ctx.runMutation!)
+
+  // 1. Get active missions (inline query - same transaction)
+  const activeMissions = await ctx.db
+    .query("missionProgress")
+    .withIndex("by_player_status", (q) =>
+      q.eq("playerId", identity.subject).eq("status", "in_progress")
+    )
+    .collect();
+
+  // 2. Validate mission steps (inline - same transaction)
+  let missionSkillGained = 0;
+  const missionFeedback: string[] = [];
+
+  if (activeMissions.length > 0) {
+    for (const mission of activeMissions) {
+      const result = await validateMissionStepInternal(
+        ctx,
+        identity.subject,
+        mission.missionId,
+        command
+      );
+      if (result.feedback.length > 0) {
+        missionFeedback.push(...result.feedback);
+      }
+      missionSkillGained += result.skillGained;
     }
-  );
+  }
+
+  // 3. Combine output with mission feedback
+  const outputLines = [
+    ...cached.output,
+    ...(missionFeedback.length > 0
+      ? ["", "=== Mission Progress ===", ...missionFeedback]
+      : []),
+  ];
+
+  // 4. Insert terminal output (same transaction)
+  const outputId = await ctx.db.insert("terminalOutput", {
+    playerId: identity.subject,
+    gameStateId: gameState._id,
+    commandInput: command,
+    outputLines,
+    commandType,
+    success: cached.success,
+  });
+
+  // 5. Update game state (same transaction)
+  const totalSkillGained = cached.success
+    ? cached.skillGained + missionSkillGained
+    : 0;
+
+  if (totalSkillGained > 0 || cached.threadId) {
+    await ctx.db.patch(gameState._id, {
+      ...(totalSkillGained > 0
+        ? { skillPoints: (gameState.skillPoints ?? 0) + totalSkillGained }
+        : {}),
+      ...(cached.threadId
+        ? { toolSessionId: cached.threadId }
+        : {}),
+    });
+  }
+
+  // Optional: Async analytics (doesn't block transaction)
+  // await ctx.scheduler.runAfter(0, internal.analytics.recordCacheHit, { ... });
 
   return { outputId };
 }
 ```
 
-**Cost**: 1 function call × $2/million = $2/month at 1M cache hits
+**Cost**: 0 additional function calls (all inline) = $0/month overhead at 1M cache hits
+**Atomicity**: ✅ TRUE - All operations in single transaction (no sub-transactions)
 
-### New Mutation: `handleCacheHit`
+### Implementation Approach: Inline Operations
+
+**Key Principle**: All operations must be inlined directly in the `sendCommand` mutation to ensure true atomicity. Using `ctx.runMutation` creates sub-transactions that break atomicity guarantees.
+
+**Reference**: See `CLAUDE.md` sections on "Transaction Boundaries & Atomicity" and Convex best practices documentation on avoiding sequential mutations.
 
 ```typescript
-// convex/gameActions.ts
-export const handleCacheHit = internalMutation({
-  args: v.object({
-    playerId: v.string(),
-    gameStateId: v.id("gameState"),
-    command: v.string(),
-    commandType: v.string(),
-    cached: v.object({
-      output: v.array(v.string()),
-      success: v.boolean(),
-      skillGained: v.number(),
-      threadId: v.optional(v.string()),
-    }),
-    toolSessionId: v.optional(v.string()),
-  }),
-  returns: v.object({
-    outputId: v.id("terminalOutput"),
-  }),
-  handler: async (ctx, args) => {
-    // All operations in single transaction - atomic!
+// convex/gameActions.ts - Import the helper function
+import { validateMissionStepInternal } from "./missions";
 
-    // 1. Get active missions (inline query - same transaction)
-    const activeMissions = await ctx.db
-      .query("missionProgress")
-      .withIndex("by_player_status", (q) =>
-        q.eq("playerId", args.playerId).eq("status", "in_progress")
-      )
-      .collect();
+// In sendCommand mutation, replace lines 106-142 with:
+if (cached) {
+  // ✅ ALL OPERATIONS INLINE - TRULY ATOMIC
 
-    // 2. Validate mission steps (inline - same transaction)
-    let missionSkillGained = 0;
-    const missionFeedback: string[] = [];
+  // 1. Get active missions (inline query - same transaction)
+  const activeMissions = await ctx.db
+    .query("missionProgress")
+    .withIndex("by_player_status", (q) =>
+      q.eq("playerId", identity.subject).eq("status", "in_progress")
+    )
+    .collect();
 
-    if (activeMissions.length > 0) {
-      for (const mission of activeMissions) {
-        const result = await validateMissionStepInternal(
-          ctx,
-          args.playerId,
-          mission.missionId,
-          args.command
-        );
-        if (result.feedback.length > 0) {
-          missionFeedback.push(...result.feedback);
-        }
-        missionSkillGained += result.skillGained;
+  // 2. Validate mission steps (inline - same transaction)
+  let missionSkillGained = 0;
+  const missionFeedback: string[] = [];
+
+  if (activeMissions.length > 0) {
+    for (const mission of activeMissions) {
+      const result = await validateMissionStepInternal(
+        ctx,
+        identity.subject,
+        mission.missionId,
+        command
+      );
+      if (result.feedback.length > 0) {
+        missionFeedback.push(...result.feedback);
       }
+      missionSkillGained += result.skillGained;
     }
+  }
 
-    // 3. Combine output with mission feedback
-    const outputLines = [
-      ...args.cached.output,
-      ...(missionFeedback.length > 0
-        ? ["", "=== Mission Progress ===", ...missionFeedback]
-        : []),
-    ];
+  // 3. Combine output with mission feedback
+  const outputLines = [
+    ...cached.output,
+    ...(missionFeedback.length > 0
+      ? ["", "=== Mission Progress ===", ...missionFeedback]
+      : []),
+  ];
 
-    // 4. Insert terminal output (same transaction)
-    const outputId = await ctx.db.insert("terminalOutput", {
-      playerId: args.playerId,
-      gameStateId: args.gameStateId,
-      commandInput: args.command,
-      outputLines,
-      commandType: args.commandType,
-      success: args.cached.success,
+  // 4. Insert terminal output (same transaction)
+  const outputId = await ctx.db.insert("terminalOutput", {
+    playerId: identity.subject,
+    gameStateId: gameState._id,
+    commandInput: command,
+    outputLines,
+    commandType,
+    success: cached.success,
+  });
+
+  // 5. Update game state (same transaction)
+  const totalSkillGained = cached.success
+    ? cached.skillGained + missionSkillGained
+    : 0;
+
+  if (totalSkillGained > 0 || cached.threadId) {
+    await ctx.db.patch(gameState._id, {
+      ...(totalSkillGained > 0
+        ? { skillPoints: (gameState.skillPoints ?? 0) + totalSkillGained }
+        : {}),
+      ...(cached.threadId
+        ? { toolSessionId: cached.threadId }
+        : {}),
     });
+  }
 
-    // 5. Update game state (same transaction)
-    const gameState = await ctx.db.get(args.gameStateId);
-    if (gameState) {
-      const totalSkillGained = args.cached.success
-        ? args.cached.skillGained + missionSkillGained
-        : 0;
+  // Optional: Async analytics (doesn't block transaction)
+  // await ctx.scheduler.runAfter(0, internal.analytics.recordCacheHit, { ... });
 
-      if (totalSkillGained > 0 || args.cached.threadId) {
-        await ctx.db.patch(args.gameStateId, {
-          ...(totalSkillGained > 0
-            ? { skillPoints: (gameState.skillPoints ?? 0) + totalSkillGained }
-            : {}),
-          ...(args.cached.threadId
-            ? { toolSessionId: args.cached.threadId }
-            : {}),
-        });
-      }
-    }
-
-    // Optional: Async analytics (doesn't block transaction)
-    // await ctx.scheduler.runAfter(0, internal.analytics.recordCacheHit, { ... });
-
-    return { outputId };
-  },
-});
+  return { outputId };
+}
 ```
+
+**Why This Approach**:
+
+- ✅ True atomicity - all operations in single transaction
+- ✅ No sub-transaction overhead from `ctx.runMutation`
+- ✅ No validation/context creation overhead
+- ✅ Aligns with Convex best practices (see CLAUDE.md:123-131)
+- ✅ Follows "Single mutation with batch operation" pattern (CLAUDE.md:161-167)
 
 ## Implementation Steps
 
-### Step 1: Create Helper Function (30 min)
+### Step 1: Export Helper Function (15 min)
 
-Move `validateMissionStepInternal` to be importable from `gameActions.ts`:
+Ensure `validateMissionStepInternal` is exported from `missions.ts`:
 
 ```typescript
-// convex/missions.ts - make this exportable
+// convex/missions.ts - verify this is exported
 export async function validateMissionStepInternal(
   ctx: MutationCtx,
   playerId: string,
@@ -208,47 +257,38 @@ export async function validateMissionStepInternal(
 }
 ```
 
-### Step 2: Create `handleCacheHit` Mutation (2 hours)
+**Status**: ✅ Already exported (line 15 in missions.ts)
 
-1. Create new mutation in `gameActions.ts` (see design above)
-2. Import `validateMissionStepInternal` from `missions.ts`
-3. Inline all operations into single transaction
-4. Add proper error handling
+### Step 2: Inline Cache Hit Operations (1.5 hours)
 
-### Step 3: Update `sendCommand` (30 min)
+1. Add import at top of `gameActions.ts`:
 
-Replace cache hit path with single mutation call:
+   ```typescript
+   import { validateMissionStepInternal } from "./missions";
+   ```
 
-```typescript
-// gameActions.ts:106-142
-if (cached) {
-  const { outputId } = await ctx.runMutation(
-    internal.gameActions.handleCacheHit,
-    {
-      playerId: identity.subject,
-      gameStateId: gameState._id,
-      command,
-      commandType,
-      cached: {
-        output: cached.output,
-        success: cached.success,
-        skillGained: cached.skillGained,
-        threadId: cached.threadId,
-      },
-      toolSessionId: normalizedState.toolSessionId,
-    }
-  );
-  return { outputId };
-}
-```
+2. Replace lines 106-142 in `sendCommand` mutation with inline operations (see "Implementation Approach" section above)
 
-### Step 4: Remove/Deprecate Old Functions (1 hour)
+3. Remove the following calls:
+   - ❌ `ctx.runMutation(internal.utils.cacheUtils.incrementCacheHit, ...)`
+   - ❌ `collectMissionFeedback(ctx, ...)`
+   - ❌ `ctx.runMutation(internal.gameActions.persistCommandGameState, ...)`
 
-- Remove `incrementCacheHit` mutation (or make async)
-- Keep `collectMissionFeedback` for non-cache paths (or refactor)
-- Update `persistCommandGameState` usage in other places
+4. Add inline operations:
+   - ✅ Direct `ctx.db.query("missionProgress")` call
+   - ✅ Loop with `validateMissionStepInternal` calls
+   - ✅ Direct `ctx.db.insert("terminalOutput", ...)`
+   - ✅ Direct `ctx.db.patch(gameState._id, ...)`
 
-### Step 5: Testing (1-2 hours)
+**Key**: All operations must be directly in `sendCommand` - NO `ctx.runMutation` calls!
+
+### Step 3: Optional Cleanup (30 min)
+
+- Remove `incrementCacheHit` mutation (or move to async via `ctx.scheduler.runAfter`)
+- Keep `collectMissionFeedback` for non-cache paths (still used elsewhere)
+- Keep `persistCommandGameState` for non-cache paths (still used elsewhere)
+
+### Step 4: Testing (1-2 hours)
 
 - [ ] Test cache hit with no active missions
 - [ ] Test cache hit with 1 active mission
@@ -258,59 +298,69 @@ if (cached) {
 - [ ] Verify skill points update correctly
 - [ ] Verify terminal output includes mission feedback
 - [ ] Verify toolSessionId updates correctly
+- [ ] Verify NO `ctx.runMutation` calls in cache hit path (code review)
+- [ ] Verify all operations execute in single transaction (Convex dashboard logs)
 - [ ] Load test: 1000 cache hits in parallel
 
 ## Rollout Plan
 
 **Phase 1: Implementation**
 
-1. Create `handleCacheHit` mutation
-2. Update `sendCommand` to use new mutation
-3. Deploy to development environment
-4. Run integration tests
+1. Verify `validateMissionStepInternal` is exported from `missions.ts`
+2. Inline all cache hit operations directly in `sendCommand` mutation
+3. Remove all `ctx.runMutation` calls from cache hit path
+4. Deploy to development environment
+5. Run integration tests
 
 **Phase 2: Validation**
 
 1. Monitor function call metrics in Convex dashboard
-2. Verify cost reduction (should see 43% drop in cache hit costs)
+2. Verify cost reduction (should see 60-80% drop in cache hit costs)
 3. Check latency improvements (50-100ms faster)
 4. Ensure no errors in logs
+5. Code review: Confirm NO `ctx.runMutation` in cache hit path
+6. Verify transaction atomicity in Convex dashboard logs
 
 **Phase 3: Cleanup**
 
-1. Remove `incrementCacheHit` mutation (or move to async analytics)
-2. Refactor `collectMissionFeedback` if no longer needed
-3. Update documentation
+1. Remove `incrementCacheHit` mutation (or move to async via `ctx.scheduler.runAfter`)
+2. Keep `collectMissionFeedback` for non-cache paths (still used elsewhere)
+3. Update documentation with reference to CLAUDE.md best practices
 
 ## Metrics to Track
 
 **Before** (baseline):
 
-- Function calls per cache hit: 5+
+- Function calls per cache hit: 5+ (separate mutations/queries)
 - Cost per 1M cache hits: $10-14/month
 - Average cache hit latency: 150-250ms
+- Transaction atomicity: ❌ Broken (sub-transactions)
 
 **After** (target):
 
-- Function calls per cache hit: 1
-- Cost per 1M cache hits: $2-4/month
+- Function calls per cache hit: 0 additional (all inline in parent mutation)
+- Cost per 1M cache hits: $2/month (just the parent mutation)
 - Average cache hit latency: 50-100ms
+- Transaction atomicity: ✅ TRUE (single transaction, no sub-transactions)
 
 **Success Indicators**:
 
-- ✅ 43-71% cost reduction
+- ✅ 60-80% cost reduction ($8-12/month savings)
 - ✅ 50-100ms latency improvement
 - ✅ Zero atomicity errors
 - ✅ All tests passing
+- ✅ Zero `ctx.runMutation` calls in cache hit path
+- ✅ Code review confirms Convex best practices alignment
 
 ## Risks & Mitigations
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| Breaking mission validation | High | Comprehensive testing, feature flag |
-| Increased mutation complexity | Medium | Clear code comments, helper functions |
+| Breaking mission validation | High | Comprehensive testing, code review |
+| Increased mutation complexity | Medium | Clear code comments, inline documentation |
 | Regression in skill points | High | Integration tests, manual QA |
 | Performance degradation | Low | Inline operations are faster than separate calls |
+| Accidentally using `ctx.runMutation` | High | Code review checklist, reference CLAUDE.md |
 
 ## Future Enhancements
 
@@ -323,8 +373,10 @@ After this story is complete, consider:
 
 ## References
 
-- Convex Zen Principle #1: Transaction Boundaries & Atomicity
-- Convex Pricing: $2 per 1M function calls
-- Current implementation: `convex/gameActions.ts:106-142`
-- Related story: `docs/feature-requests/optimize-cache-hit-mission-validation.md`
-- Documentation: `docs/player-action-howtos/ai-commands.md:139-180`
+- **CLAUDE.md:123-131** - Transaction Boundaries & Atomicity (Convex Paradigm Shift #1)
+- **CLAUDE.md:161-167** - Action Orchestration (avoiding sequential mutations)
+- **Convex Documentation** - Mutation sub-transactions and atomicity guarantees
+- **Convex Pricing**: $2 per 1M function calls
+- **Current implementation**: `convex/gameActions.ts:106-142`
+- **Related story**: `docs/feature-requests/optimize-cache-hit-mission-validation.md`
+- **Documentation**: `docs/player-action-howtos/ai-commands.md:139-180`

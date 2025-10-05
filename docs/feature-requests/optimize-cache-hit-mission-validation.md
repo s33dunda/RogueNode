@@ -2,6 +2,8 @@
 ssot-area: runtime-performance
 owner: runtime-team
 derived-from: docs/feature-requests/combine-mission-feedback-with-output.md
+status: aligned-with-best-practices
+last-reviewed: 2025-01-05
 ---
 
 # Story: Optimize Cache Hit Mission Validation Performance
@@ -12,6 +14,8 @@ derived-from: docs/feature-requests/combine-mission-feedback-with-output.md
 **Priority**: P2 - Medium
 **Effort**: Medium (2-3 days)
 **Type**: Performance Optimization
+
+> **✅ ALIGNED**: This optimization maintains transaction atomicity. All operations remain inlined within the parent mutation as documented in `docs/player-action-howtos/transaction-atomicity.md`.
 
 ### Problem Statement
 
@@ -67,10 +71,13 @@ Mission validation state **cannot** be cached because:
 
 ### Option 1: Batch Mission Validation (Recommended)
 
+> **✅ ATOMICITY COMPLIANT**: This optimization maintains atomicity by keeping all operations within the parent mutation. No `ctx.runMutation` calls are introduced.
+
 **Current Implementation** (`convex/missions.ts:218-250`):
 
 ```typescript
-// N separate queries + N separate patches
+// ✅ CORRECT - Already atomic (inline operations)
+// N separate queries + N separate patches within same transaction
 for (const missionId of missionIds) {
   const result = await validateMissionStepInternal(ctx, playerId, missionId, playerCommand);
 }
@@ -79,7 +86,8 @@ for (const missionId of missionIds) {
 **Optimized Implementation**:
 
 ```typescript
-// Single query + batch patch
+// ✅ CORRECT - Still atomic, just more efficient
+// Single query + loop-based patches within same transaction
 const allProgress = await ctx.db
   .query("missionProgress")
   .withIndex("by_player_status", (q) =>
@@ -87,23 +95,37 @@ const allProgress = await ctx.db
   )
   .collect();
 
-// Validate all in memory
+// Validate all in memory (no DB operations)
 const updates = allProgress.map(progress =>
   validateAndPrepareUpdate(progress, playerCommand)
 );
 
-// Single batch operation
-await ctx.db.batchPatch(updates);
+// Apply all patches within the same mutation transaction
+// NOTE: All operations occur atomically within this mutation's execution
+for (const update of updates) {
+  try {
+    // Each patch is awaited to ensure proper error handling
+    await ctx.db.patch(update.id, update.changes);
+  } catch (error) {
+    // Handle individual patch errors while maintaining transaction integrity
+    console.error(`Failed to patch mission ${update.id}:`, error);
+    throw error; // Re-throw to abort entire transaction on any failure
+  }
+}
 ```
 
 **Benefits**:
 
+- ✅ Maintains true atomicity (all operations in same transaction)
 - Reduces N queries to 1 query
-- Reduces N patches to 1 batch operation
+- Reduces N patches to N sequential patches (still within same transaction)
 - Better Convex transaction semantics
 - Maintains correctness
+- Proper error handling for each patch operation
 
 **Effort**: Medium - Requires refactoring `validateMissionStepInternal`
+
+**Key Principle**: This is a **performance optimization within an atomic transaction**, not a change to transaction boundaries. All operations remain inline within the parent mutation.
 
 ---
 
@@ -120,7 +142,7 @@ await ctx.db.batchPatch(updates);
    - `validateAllMissionsInBatch(ctx, playerId, command)`
    - Single query for all active missions
    - Validate all in memory
-   - Single batch patch
+   - Loop through updates with `ctx.db.patch()` for each change
 
 3. **Update tests**
    - Add tests for batch validation
@@ -297,13 +319,22 @@ Limit concurrent active missions to 5 per player.
 
 ## 📝 Related Documents
 
+**Transaction Atomicity**:
+
+- `docs/player-action-howtos/transaction-atomicity.md` - Transaction atomicity best practices (CRITICAL)
+- **CLAUDE.md:123-131** - Transaction Boundaries & Atomicity
+- **CLAUDE.md:161-167** - Action Orchestration
+
+**Implementation References**:
+
 - `convex/gameActions.ts:106-164` - Cache hit path implementation
 - `convex/missions.ts:218-250` - Current mission validation
-- `docs/command-cache-implementation-plan.md` - Cache design
+- `docs/feature-requests/atomic-cache-hit-mutation.md` - Atomic cache hit pattern
+- `docs/feature-requests/command-cache-implementation-plan.md` - Cache design
 - `docs/player-action-howtos/ai-commands.md` - AI command implementation guide
 
 ---
 
 **Created**: 2025-01-04
-**Last Updated**: 2025-01-04
+**Last Updated**: 2025-01-05
 **Owner**: Backend Team

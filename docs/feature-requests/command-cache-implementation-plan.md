@@ -1,8 +1,17 @@
+---
+ssot-area: runtime-performance
+owner: runtime-team
+status: needs-atomicity-review
+last-reviewed: 2025-01-05
+---
+
 # Command Line Agent Output Caching Implementation Plan
 
 ## 🎯 **Objective**
 
 Implement intelligent caching for command line agent outputs to avoid regenerating responses when similar game states have executed the same command before.
+
+> **⚠️ IMPORTANT**: This plan predates transaction atomicity best practices. Before implementing, review `docs/player-action-howtos/transaction-atomicity.md` and `docs/feature-requests/atomic-cache-hit-mutation.md` for the correct atomic cache hit pattern.
 
 ## 📋 **Implementation Strategy**
 
@@ -76,7 +85,12 @@ Update `convex/agents/pingAgent.ts`:
 
 #### **Pre-execution Cache Check**
 
+> **⚠️ ATOMICITY WARNING**: The pattern below violates transaction atomicity best practices. See the corrected pattern in `docs/feature-requests/atomic-cache-hit-mutation.md`.
+
 ```typescript
+// ❌ ANTI-PATTERN - DO NOT IMPLEMENT AS SHOWN
+// This creates sub-transactions and breaks atomicity
+
 // 1. Generate cache key from normalized game state
 const cacheKey = generateCacheKey(command, target, gameState);
 
@@ -85,6 +99,7 @@ const cachedResult = await checkCache(ctx, cacheKey);
 
 // 3. Return cached result if found
 if (cachedResult && cachedResult.confidence > 0.85) {
+  // ❌ WRONG - This creates a sub-transaction
   await incrementCacheHit(ctx, cachedResult.id);
   return {
     output: cachedResult.output,
@@ -95,6 +110,8 @@ if (cachedResult && cachedResult.confidence > 0.85) {
   };
 }
 ```
+
+**✅ CORRECT PATTERN**: See `docs/feature-requests/atomic-cache-hit-mutation.md` for the proper implementation that inlines all operations within the parent mutation.
 
 #### **Post-execution Cache Storage**
 
@@ -276,3 +293,18 @@ function calculateSimilarity(state1: NormalizedGameState, state2: NormalizedGame
 - Cost savings from reduced AI API calls
 
 This comprehensive plan provides a robust foundation for implementing intelligent caching while maintaining the dynamic nature of the game experience.
+
+---
+
+## 📚 **References**
+
+**CRITICAL - Read Before Implementation**:
+
+- `docs/player-action-howtos/transaction-atomicity.md` - Transaction atomicity best practices
+- `docs/feature-requests/atomic-cache-hit-mutation.md` - Correct atomic cache hit implementation
+- **CLAUDE.md:123-131** - Transaction Boundaries & Atomicity
+- **CLAUDE.md:161-167** - Action Orchestration
+
+**Related Documentation**:
+
+- `docs/player-action-howtos/ai-commands.md` - AI command patterns with cache hit guidance

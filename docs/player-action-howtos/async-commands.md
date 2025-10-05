@@ -75,7 +75,9 @@ Follow this pattern when a terminal command needs background processing—networ
    - ✅ Atomic transaction (no partial updates)
    - ✅ 50% cost reduction (2 function calls vs 4)
    - ✅ 30-50ms faster
-   - ✅ Follows Convex Zen principles
+   - ✅ Follows Convex Zen principles (see CLAUDE.md:123-131)
+
+   **Why This Works**: The `finalizeCommandOutput` mutation inlines all operations (mission validation, output update, game state update) directly within a single mutation. This avoids sub-transactions created by calling `ctx.runMutation` multiple times.
 
 5. **🔧 Legacy Pattern (Being Phased Out)**
 
@@ -149,16 +151,64 @@ Follow this pattern when a terminal command needs background processing—networ
 7. **Optional: Command-Specific Storage**
    - If the command produces data needed later (logs, artifacts), insert into dedicated tables inside the async branch.
 
+## ⚠️ Transaction Atomicity Principles
+
+**CRITICAL**: Async command finalization must be atomic. **NEVER call multiple mutations sequentially** - this creates sub-transactions that break atomicity.
+
+### Quick Summary
+
+**Anti-pattern** (4+ function calls, broken atomicity):
+
+```typescript
+// ❌ WRONG - Multiple mutations break atomicity
+const { appendLines } = await collectMissionFeedback(ctx, ...);
+await ctx.runMutation(internal.gameActions.writeCommandOutput, { ... });
+await ctx.runMutation(internal.gameActions.persistCommandGameState, { ... });
+```
+
+**Correct pattern** (1 function call, true atomicity):
+
+```typescript
+// ✅ CORRECT - Single mutation with all operations inline
+await ctx.runMutation(internal.gameActions.finalizeCommandOutput, {
+  commandResult: result,
+  // Mutation inlines: mission validation + output update + game state update
+});
+```
+
+### Implementation Note
+
+The `finalizeCommandOutput` mutation must inline all operations:
+
+- Mission validation via `validateMissionStepInternal` helper
+- Output update via direct `ctx.db.patch`
+- Game state update via direct `ctx.db.patch`
+- **NO `ctx.runMutation` or `ctx.runQuery` calls within the mutation**
+
+### Full Documentation
+
+See **`docs/player-action-howtos/transaction-atomicity.md`** for:
+
+- Complete anti-pattern vs correct pattern examples
+- Full `finalizeCommandOutput` implementation
+- Detailed explanation of sub-transaction problems
+- Implementation guidelines and checklist
+- References to CLAUDE.md best practices
+
+---
+
 ## Verification Checklist
 
 - [ ] Verb is listed in `ASYNC_COMMANDS` and omitted from the sync switch.
 - [ ] `sendCommand` inserts a placeholder output and schedules the internal action.
 - [ ] ⭐ **Async branch uses `finalizeCommandOutput` for atomic completion** (recommended).
+- [ ] `finalizeCommandOutput` inlines all operations (NO `ctx.runMutation` within it).
 - [ ] Mission validation runs and appends feedback on success.
 - [ ] Errors are logged and surfaced with actionable messaging.
 - [ ] Error paths use `writeCommandOutput` with friendly output, `success: false`.
 - [ ] Any new tables or indexes are documented and covered by schema tests.
 - [ ] Function call count is minimized (2 calls: action + finalize mutation).
+- [ ] Code review confirms zero `ctx.runMutation` in finalization mutation.
 
 ## Related References
 

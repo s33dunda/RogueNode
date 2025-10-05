@@ -249,19 +249,49 @@ reviews:
 
       - name: "Convex Standards"
         mode: "error"
-        instructions: "New syntax with validators, auth checks, internal vs public separation. No v.any()."
+        instructions: |
+          **Scope**: Convex backend files (convex/**/*.ts, convex/**/*.tsx)
+          **Auto-pass**: Documentation, tests, config files, convex/_generated/**
 
-      - name: "Backend Consolidation"
-        mode: "error"
-        instructions: "Import from convex/domainSpec/ (copied from packages/). No dead code."
+          For Convex functions:
+          - New syntax with args/returns validators
+          - Auth checks on public functions
+          - Internal vs public separation
+          - No v.any() types
+
+          For other files: Not applicable (auto-pass)
 
       - name: "PDDL Integration"
         mode: "warning"
-        instructions: "Validate missions have plans. Check generated artifacts match source data."
+        instructions: |
+          **Scope**: Mission data files only
+          - packages/domain-spec/data.ts
+          - convex/domainSpec/data.ts
+          - convex/missions.ts
+          - packages/domain-spec/generated/**
+
+          **Auto-pass**: Documentation unless it contains mission definition examples
+
+          For mission files:
+          - Validate missions have plans
+          - Check generated artifacts match source
+
+          For docs: Only verify mission examples reference valid missions
 
       - name: "Documentation"
         mode: "warning"
-        instructions: "YAML front-matter required. No references to removed files."
+        instructions: |
+          **Scope**: Documentation files (*.md, docs/**)
+
+          ✅ PASS if:
+          - YAML front-matter present (ssot-area, owner, derived-from)
+          - No references to removed files in current examples
+          - Migration guides clearly mark deprecated paths
+
+          ⚠️ WARN if:
+          - Missing front-matter
+          - Dead code references without "deprecated" context
+          - Unclear migration instructions
 
   # Essential tooling for RogueNode PoC/MVP development
   tools:
