@@ -87,7 +87,7 @@ for (const missionId of missionIds) {
 
 ```typescript
 // ✅ CORRECT - Still atomic, just more efficient
-// Single query + batch patch within same transaction
+// Single query + loop-based patches within same transaction
 const allProgress = await ctx.db
   .query("missionProgress")
   .withIndex("by_player_status", (q) =>
@@ -100,17 +100,28 @@ const updates = allProgress.map(progress =>
   validateAndPrepareUpdate(progress, playerCommand)
 );
 
-// Single batch operation (still in same transaction)
-await ctx.db.batchPatch(updates);
+// Apply all patches within the same mutation transaction
+// NOTE: All operations occur atomically within this mutation's execution
+for (const update of updates) {
+  try {
+    // Each patch is awaited to ensure proper error handling
+    await ctx.db.patch(update.id, update.changes);
+  } catch (error) {
+    // Handle individual patch errors while maintaining transaction integrity
+    console.error(`Failed to patch mission ${update.id}:`, error);
+    throw error; // Re-throw to abort entire transaction on any failure
+  }
+}
 ```
 
 **Benefits**:
 
 - ✅ Maintains true atomicity (all operations in same transaction)
 - Reduces N queries to 1 query
-- Reduces N patches to 1 batch operation
+- Reduces N patches to N sequential patches (still within same transaction)
 - Better Convex transaction semantics
 - Maintains correctness
+- Proper error handling for each patch operation
 
 **Effort**: Medium - Requires refactoring `validateMissionStepInternal`
 
@@ -131,7 +142,7 @@ await ctx.db.batchPatch(updates);
    - `validateAllMissionsInBatch(ctx, playerId, command)`
    - Single query for all active missions
    - Validate all in memory
-   - Single batch patch
+   - Loop through updates with `ctx.db.patch()` for each change
 
 3. **Update tests**
    - Add tests for batch validation
