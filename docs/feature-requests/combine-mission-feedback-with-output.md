@@ -2,6 +2,8 @@
 ssot-area: runtime-performance
 owner: runtime-team
 derived-from: docs/feature-requests/atomic-cache-hit-mutation.md
+status: aligned-with-best-practices
+last-reviewed: 2025-01-05
 ---
 
 # Story: Combine Mission Feedback with Terminal Output
@@ -11,6 +13,8 @@ derived-from: docs/feature-requests/atomic-cache-hit-mutation.md
 **Estimated Effort**: 2-3 hours
 **Cost Savings**: $2/month at 1M operations (14% additional reduction)
 **Depends On**: `atomic-cache-hit-mutation.md` (should be implemented first)
+
+> **✅ ALIGNED**: This story follows transaction atomicity best practices documented in `docs/player-action-howtos/transaction-atomicity.md`. The `finalizeCommandOutput` mutation inlines all operations to ensure true atomicity.
 
 ## Problem Statement
 
@@ -356,9 +360,11 @@ After this story is complete, consider:
 
 ## References
 
-- Convex Zen Principle #1: Transaction Boundaries & Atomicity
+- **Transaction Atomicity Best Practices**: `docs/player-action-howtos/transaction-atomicity.md` (CRITICAL - read first)
+- **CLAUDE.md:123-131**: Transaction Boundaries & Atomicity (Convex Paradigm Shift #1)
+- **CLAUDE.md:161-167**: Action Orchestration (Convex Paradigm Shift #4)
 - Convex Pricing: $2 per 1M function calls
 - Current implementation: `convex/gameActions.ts:228-267`
 - Related story: `docs/feature-requests/atomic-cache-hit-mutation.md` (prerequisite)
 - Related story: `docs/feature-requests/optimize-cache-hit-mission-validation.md`
-- Documentation: `docs/player-action-howtos/ai-commands.md:139-180`
+- Documentation: `docs/player-action-howtos/async-commands.md` (async command patterns)

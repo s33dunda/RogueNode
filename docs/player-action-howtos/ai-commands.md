@@ -142,48 +142,58 @@ export const executePingCommand = internalAction({
 
 ---
 
-## ⚠️ Cache Hit Side Effects Warning
+## ⚠️ Transaction Atomicity & Cache Hit Best Practices
 
-**Principle**: Minimize side effects on cache hits. Every database operation costs **money** and **latency**.
+**CRITICAL**: Cache hit operations must be atomic. **NEVER use `ctx.runMutation` or `ctx.runQuery` within the cache hit path** - these create sub-transactions that break atomicity guarantees.
 
-### Current Cache Hit Path (see `sendCommand` in `gameActions.ts`)
+### Quick Summary
 
-On every cache hit, the system performs:
+**Anti-pattern** (5+ function calls, broken atomicity):
 
-1. ✅ **Mission validation** - NECESSARY (updates progress, awards points)
-2. ✅ **Terminal output insert** - NECESSARY (player sees output)
-3. ✅ **Game state update** - NECESSARY (skill points, session state)
-4. ⚠️ **Cache hit counter** - DEBATABLE (analytics only, not core functionality)
+```typescript
+// ❌ WRONG - Sequential mutations break atomicity
+await ctx.runMutation(internal.utils.cacheUtils.incrementCacheHit, ...);
+const { appendLines } = await collectMissionFeedback(ctx, ...);
+await ctx.runMutation(internal.gameActions.persistCommandGameState, ...);
+```
 
-### Cost Analysis (Convex Pricing)
+**Correct pattern** (0 additional calls, true atomicity):
 
-Convex charges **$2 per 1 million function calls**. Every query, mutation, and insert counts as a function call.
+```typescript
+// ✅ CORRECT - All operations inline in single transaction
+const activeMissions = await ctx.db.query("missionProgress")...
+for (const mission of activeMissions) {
+  const result = await validateMissionStepInternal(ctx, ...);
+}
+await ctx.db.insert("terminalOutput", ...);
+await ctx.db.patch(gameState._id, ...);
+```
 
-**Current cache hit cost**: 5+ function calls (more with multiple missions)
+### Cost Impact
 
-- `incrementCacheHit` mutation: 1 call
-- `getActiveMissions` query: 1 call
-- `validateAllMissionSteps` mutation: 1 + N calls (N = active missions)
-- `terminalOutput` insert: 1 call
-- `persistCommandGameState` mutation: 1 call
+- **Before**: 5+ function calls = $10-14/month at 1M cache hits
+- **After**: 0 additional calls = $2/month at 1M cache hits
+- **Savings**: $8-12/month (60-80% reduction) + 50-100ms latency improvement
 
-**Example**: 1M cache hits/month with 2 active missions = 7M function calls = **$14/month**
+### Implementation Requirements
 
-**Optimized** (remove counter, batch validation): 4M function calls = **$8/month** → **$6 saved (43% reduction)**
+- [ ] All operations inlined directly in mutation (NO `ctx.runMutation`)
+- [ ] Use `validateMissionStepInternal` helper (not `collectMissionFeedback`)
+- [ ] Direct `ctx.db` operations only
+- [ ] Code review confirms zero sub-transactions
 
-### Question Every Side Effect
+### Full Documentation
 
-Before adding operations to the cache hit path, ask:
+See **`docs/player-action-howtos/transaction-atomicity.md`** for:
 
-- **Is this absolutely necessary for correctness?**
-- **Can this be deferred or batched?**
-- **Does this scale with player count or mission count?**
-- **Is this analytics/metrics that could be async?**
-- **What does this cost at scale?** (function calls × $2 per million)
+- Complete anti-pattern vs correct pattern examples
+- Detailed explanation of sub-transaction problems
+- Full implementation guidelines and checklist
+- References to CLAUDE.md best practices
 
-**Example**: The cache hit counter (`incrementCacheHit`) costs $2 per million cache hits purely for analytics. Consider: Could this be batched? Async? Removed entirely?
+### Related Stories
 
-**Rule of Thumb**: If removing it wouldn't break game functionality, it probably shouldn't be in the cache hit path.
+- `docs/feature-requests/atomic-cache-hit-mutation.md` — Implementation plan for cache hit optimization
 
 ---
 
