@@ -12,6 +12,7 @@ import {
 import { getMissionById } from "./domainSpec/runtime";
 import { commandLineTools, enemies, rooms } from "./gameData";
 import { requireAuth } from "./lib/auth";
+import { validateMissionStepInternal } from "./missions";
 import type { GameState } from "./types";
 import { enemy, item, terminalOutputEntry } from "./types";
 import { generateCacheKey } from "./utils/cacheUtils";
@@ -104,21 +105,44 @@ export const sendCommand = mutation({
 				.first();
 
 			if (cached) {
-				await ctx.runMutation(internal.utils.cacheUtils.incrementCacheHit, {
-					cacheId: cached._id,
-				});
+				// ✅ ALL OPERATIONS INLINE - TRULY ATOMIC (no ctx.runMutation!)
 
-				const {
-					appendLines: missionProgressLines,
-					totalSkillGained: missionSkillGained,
-				} = await collectMissionFeedback(ctx, identity.subject, command);
+				// 1. Get active missions (inline query - same transaction)
+				const activeMissions = await ctx.db
+					.query("missionProgress")
+					.withIndex("by_player_status", (q) =>
+						q.eq("playerId", identity.subject).eq("status", "in_progress"),
+					)
+					.collect();
 
-				// Combine cached output with mission feedback
-				const outputLines: string[] = [
+				// 2. Validate mission steps (inline - same transaction)
+				let missionSkillGained = 0;
+				const missionFeedback: string[] = [];
+
+				if (activeMissions.length > 0) {
+					for (const mission of activeMissions) {
+						const result = await validateMissionStepInternal(
+							ctx,
+							identity.subject,
+							mission.missionId,
+							command,
+						);
+						if (result.feedback.length > 0) {
+							missionFeedback.push(...result.feedback);
+						}
+						missionSkillGained += result.skillGained;
+					}
+				}
+
+				// 3. Combine output with mission feedback
+				const outputLines = [
 					...cached.output,
-					...missionProgressLines,
+					...(missionFeedback.length > 0
+						? ["", "=== Mission Progress ===", ...missionFeedback]
+						: []),
 				];
 
+				// 4. Insert terminal output (same transaction)
 				const outputId: Id<"terminalOutput"> = await ctx.db.insert(
 					"terminalOutput",
 					{
@@ -131,13 +155,19 @@ export const sendCommand = mutation({
 					},
 				);
 
-				await ctx.runMutation(internal.gameActions.persistCommandGameState, {
-					gameStateId: gameState._id,
-					skillDelta: cached.success
-						? cached.skillGained + missionSkillGained
-						: 0,
-					toolSessionId: cached.threadId ?? normalizedState.toolSessionId,
-				});
+				// 5. Update game state (same transaction)
+				const totalSkillGained = cached.success
+					? cached.skillGained + missionSkillGained
+					: 0;
+
+				if (totalSkillGained > 0 || cached.threadId) {
+					await ctx.db.patch(gameState._id, {
+						...(totalSkillGained > 0
+							? { skillPoints: (gameState.skillPoints ?? 0) + totalSkillGained }
+							: {}),
+						...(cached.threadId ? { toolSessionId: cached.threadId } : {}),
+					});
+				}
 
 				return { outputId };
 			}
