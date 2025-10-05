@@ -395,7 +395,7 @@ export const processGameCommand = action({
 
 **Example Thread Timeline** (what gets saved):
 
-```
+```shell
 1. [Player] "> ping 192.168.1.1"
 2. [User] "Process command: ping 192.168.1.1 in ServerRoom with current threats: firewall_misconfigured"
 3. [Assistant] "🔍 Executing ping to 192.168.1.1... PING failed: Network unreachable. This suggests the firewall is blocking ICMP traffic. Try: sudo iptables -L to examine firewall rules..."
