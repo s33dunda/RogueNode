@@ -439,7 +439,6 @@ export const finalizeCommandOutput = internalMutation({
 		if (activeMissions.length === 0 && args.includeNoMissionMessage) {
 			missionFeedback.push(
 				"",
-				"=== Mission Progress ===",
 				"No active mission found. Start a mission first.",
 			);
 		} else {
@@ -464,7 +463,6 @@ export const finalizeCommandOutput = internalMutation({
 				? ["", "=== Mission Progress ===", ...missionFeedback]
 				: []),
 		];
-
 		// 4. Update terminal output (same transaction)
 		await ctx.db.patch(args.outputId, {
 			outputLines,
