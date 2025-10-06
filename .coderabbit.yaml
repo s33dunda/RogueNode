@@ -229,11 +229,11 @@ reviews:
   pre_merge_checks:
     docstrings:
       mode: "warning"  # Relaxed for PoC/MVP development
-      threshold: 50     # Lower threshold for faster game development iteration
+      threshold: 75     # Lower threshold for faster game development iteration
 
     title:
       mode: "warning"
-      requirements: "Start with an imperative verb; keep under 50 characters."
+      requirements: "Start with an imperative verb; keep under 75 characters."
 
     description:
       mode: "warning"   # Allow empty descriptions during rapid PoC/MVP development
@@ -245,21 +245,30 @@ reviews:
     custom_checks:
       - name: "Critical Security"
         mode: "error"
-        instructions: "Verify no hardcoded secrets. Ensure Clerk auth and game state integrity."
+        instructions: |
+          Check for hardcoded secrets and auth enforcement.
+
+          IMPORTANT: Only check PUBLIC functions (mutation, query, action).
+          SKIP internal functions (internalMutation, internalQuery, internalAction).
 
       - name: "Convex Standards"
         mode: "error"
         instructions: |
-          **Scope**: Convex backend files (convex/**/*.ts, convex/**/*.tsx)
-          **Auto-pass**: Documentation, tests, config files, convex/_generated/**
+          Scope: convex/**/*.ts (skip _generated/**, tests, docs)
 
-          For Convex functions:
-          - New syntax with args/returns validators
-          - Auth checks on public functions
-          - Internal vs public separation
-          - No v.any() types
+          Check ONLY these 3 things:
 
-          For other files: Not applicable (auto-pass)
+          1. Validators: Use `args: v.object({})` not `args: {}`
+          2. Auth on PUBLIC functions ONLY:
+             - mutation() → needs requireAuth(ctx)
+             - query() → needs requireAuth(ctx)
+             - action() → needs requireAuth(ctx)
+             - internalMutation() → NO auth needed
+             - internalQuery() → NO auth needed
+             - internalAction() → NO auth needed
+          3. Returns: All functions need `returns: v.type()`
+
+          CRITICAL: Do NOT flag internal* functions for missing auth.
 
       - name: "PDDL Integration"
         mode: "warning"

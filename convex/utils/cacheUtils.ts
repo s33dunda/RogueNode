@@ -141,7 +141,7 @@ export const incrementCacheHit = internalMutation({
 
 // Clean up old cache entries (older than 24 hours)
 export const cleanupOldCacheEntries = internalMutation({
-	args: {},
+	args: v.object({}),
 	returns: v.number(),
 	handler: async (ctx) => {
 		const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
@@ -161,7 +161,7 @@ export const cleanupOldCacheEntries = internalMutation({
 
 // Get all cache entries for stats (internal use)
 export const getAllCacheEntries = internalQuery({
-	args: {},
+	args: v.object({}),
 	returns: v.array(
 		v.object({
 			_id: v.id("commandOutputCache"),
