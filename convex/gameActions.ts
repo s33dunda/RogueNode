@@ -424,6 +424,31 @@ export const finalizeCommandOutput = internalMutation({
 	handler: async (ctx, args) => {
 		// All operations in single transaction - atomic!
 
+		// 0. Defensive validation - verify ownership (same transaction)
+		// NOTE: This is an internal mutation called from executeAsyncCommand,
+		// which validates ownership via requireAuth(ctx). These checks provide
+		// defense-in-depth against logic bugs passing incorrect IDs.
+		const [outputDoc, gameState] = await Promise.all([
+			ctx.db.get(args.outputId),
+			ctx.db.get(args.gameStateId),
+		]);
+
+		if (!outputDoc) {
+			throw new Error("terminalOutput not found");
+		}
+		if (outputDoc.playerId !== args.playerId) {
+			throw new Error("Unauthorized: output belongs to a different player");
+		}
+		if (outputDoc.gameStateId !== args.gameStateId) {
+			throw new Error("Output/gameState mismatch");
+		}
+		if (!gameState) {
+			throw new Error("Game state not found");
+		}
+		if (gameState.playerId !== args.playerId) {
+			throw new Error("Unauthorized: game state belongs to a different player");
+		}
+
 		// 1. Get active missions (inline query - same transaction)
 		const activeMissions = await ctx.db
 			.query("missionProgress")
@@ -470,23 +495,23 @@ export const finalizeCommandOutput = internalMutation({
 		});
 
 		// 5. Update game state (same transaction)
-		const gameState = await ctx.db.get(args.gameStateId);
-		if (gameState) {
-			const totalSkillGained = args.commandResult.success
-				? args.commandResult.skillGained + missionSkillGained
-				: 0;
+		const totalSkillGained = args.commandResult.success
+			? args.commandResult.skillGained + missionSkillGained
+			: 0;
 
-			const updates: Partial<Doc<"gameState">> = {};
-			if (totalSkillGained > 0) {
-				updates.skillPoints = (gameState.skillPoints ?? 0) + totalSkillGained;
-			}
-			if (args.commandResult.threadId) {
-				updates.toolSessionId = args.commandResult.threadId;
-			}
+		const updates: Partial<Doc<"gameState">> = {};
+		if (totalSkillGained > 0) {
+			updates.skillPoints = (gameState.skillPoints ?? 0) + totalSkillGained;
+		}
 
-			if (Object.keys(updates).length > 0) {
-				await ctx.db.patch(args.gameStateId, updates);
-			}
+		// Use threadId from command result, fallback to provided toolSessionId
+		const nextToolSessionId = args.commandResult.threadId ?? args.toolSessionId;
+		if (nextToolSessionId) {
+			updates.toolSessionId = nextToolSessionId;
+		}
+
+		if (Object.keys(updates).length > 0) {
+			await ctx.db.patch(args.gameStateId, updates);
 		}
 
 		return null;
