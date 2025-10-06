@@ -356,37 +356,29 @@ export const validateMissionStep = internalMutation({
 	},
 });
 
+/**
+ * Internal mutation: Validate all mission steps (DEPRECATED - use batch function)
+ *
+ * This mutation is kept for API compatibility but delegates to the optimized
+ * batch validation function. The missionIds parameter is ignored in favor of
+ * querying all active missions directly.
+ *
+ * @deprecated Use validateAllMissionsInBatch directly for better performance
+ */
 export const validateAllMissionSteps = internalMutation({
 	args: {
 		playerId: v.string(),
-		missionIds: v.array(v.string()),
+		missionIds: v.array(v.string()), // Ignored - kept for API compatibility
 		playerCommand: v.string(),
 	},
 	returns: v.object({
 		feedback: v.array(v.string()),
 		totalSkillGained: v.number(),
 	}),
-	handler: async (ctx, { playerId, missionIds, playerCommand }) => {
-		const aggregatedFeedback: string[] = [];
-		let totalSkillGained = 0;
-
-		for (const missionId of missionIds) {
-			const result = await validateMissionStepInternal(
-				ctx,
-				playerId,
-				missionId,
-				playerCommand,
-			);
-			if (result.feedback.length > 0) {
-				aggregatedFeedback.push(...result.feedback);
-			}
-			totalSkillGained += result.skillGained;
-		}
-
-		return {
-			feedback: aggregatedFeedback,
-			totalSkillGained,
-		};
+	handler: async (ctx, { playerId, playerCommand }) => {
+		// Delegate to optimized batch function
+		// Note: missionIds parameter is ignored - we query all active missions instead
+		return await validateAllMissionsInBatch(ctx, playerId, playerCommand);
 	},
 });
 
