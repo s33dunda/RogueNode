@@ -136,16 +136,16 @@ export function validateAndPrepareUpdate(
 }
 
 /**
- * Validate all in-progress missions for a player and apply any resulting progress updates.
+ * Validate every in-progress mission for a player using a single read and apply any resulting progress updates atomically.
  *
- * Performs a single query to load all active mission progress records, validates each in memory, and applies any required patches sequentially within the same mutation transaction to maintain atomicity.
+ * Performs one query to load all "in_progress" missionProgress records for `playerId`, runs in-memory validation for each step, and applies necessary patches sequentially within the same mutation transaction so updates are atomic for this mutation. Intended for internal/server-side use on behalf of the authenticated `playerId`.
  *
- * @param ctx - Mutation context used to perform the server-side query and patches; should represent an authenticated/internal call operating on behalf of `playerId`
- * @param playerId - Identifier of the player whose active missions will be validated
- * @param playerCommand - Player's input/action to validate against each mission's current step
- * @returns An object containing:
+ * @param ctx - Mutation context used to query and patch the database; must represent an authenticated/internal call executing on behalf of `playerId`
+ * @param playerId - The player whose active missions will be validated
+ * @param playerCommand - The player's input/action to validate against each mission's current step
+ * @returns An object with:
  *   - `feedback`: Aggregated feedback messages produced by validating each mission step
- *   - `totalSkillGained`: Sum of skill gained across all validated missions (points awarded for matched steps)
+ *   - `totalSkillGained`: Sum of skill points awarded across all validated missions (points granted only for matched steps)
  */
 export async function validateAllMissionsInBatch(
 	ctx: MutationCtx,
@@ -200,10 +200,11 @@ export async function validateAllMissionsInBatch(
 }
 
 /**
- * Validate a single mission step for a player and persist any resulting progress updates.
+ * Validate a player's command against a specific mission's current step and persist any resulting progress updates.
  *
- * This internal, legacy compatibility function looks up the player's active mission progress, performs in-memory validation, applies database patches when the step advances, and returns the validation outcome. Callers must ensure the caller is authorized to act on behalf of `playerId` (this function does not perform authentication checks). For batch validation prefer `validateAllMissionsInBatch`.
+ * Internal legacy wrapper that looks up the player's active mission progress, performs pure in-memory validation via validateAndPrepareUpdate, and applies database patches when the progress should change. This function does not perform authorization checks — the caller must ensure it is allowed to act on behalf of `playerId`. For validating multiple active missions in one operation, prefer `validateAllMissionsInBatch`.
  *
+ * @param ctx - Mutation context providing database access and execution environment
  * @param playerId - Identifier of the player whose mission progress will be validated
  * @param missionId - Identifier of the mission to validate against
  * @param playerCommand - The player's submitted command to validate for the current mission step
