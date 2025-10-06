@@ -12,7 +12,7 @@ import {
 import { getMissionById } from "./domainSpec/runtime";
 import { commandLineTools, enemies, rooms } from "./gameData";
 import { requireAuth } from "./lib/auth";
-import { validateMissionStepInternal } from "./missions";
+import { validateAllMissionsInBatch } from "./missions";
 import type { GameState } from "./types";
 import { enemy, item, terminalOutputEntry } from "./types";
 import { generateCacheKey } from "./utils/cacheUtils";
@@ -106,35 +106,15 @@ export const sendCommand = mutation({
 
 			if (cached) {
 				// ✅ ALL OPERATIONS INLINE - TRULY ATOMIC (no ctx.runMutation!)
+				// ✅ OPTIMIZED: Batch validation reduces N queries to 1 query
 
-				// 1. Get active missions (inline query - same transaction)
-				const activeMissions = await ctx.db
-					.query("missionProgress")
-					.withIndex("by_player_status", (q) =>
-						q.eq("playerId", identity.subject).eq("status", "in_progress"),
-					)
-					.collect();
+				// 1. Validate all missions in batch (single query + in-memory validation)
+				const {
+					feedback: missionFeedback,
+					totalSkillGained: missionSkillGained,
+				} = await validateAllMissionsInBatch(ctx, identity.subject, command);
 
-				// 2. Validate mission steps (inline - same transaction)
-				let missionSkillGained = 0;
-				const missionFeedback: string[] = [];
-
-				if (activeMissions.length > 0) {
-					for (const mission of activeMissions) {
-						const result = await validateMissionStepInternal(
-							ctx,
-							identity.subject,
-							mission.missionId,
-							command,
-						);
-						if (result.feedback.length > 0) {
-							missionFeedback.push(...result.feedback);
-						}
-						missionSkillGained += result.skillGained;
-					}
-				}
-
-				// 3. Combine output with mission feedback
+				// 2. Combine output with mission feedback
 				const outputLines = [
 					...cached.output,
 					...(missionFeedback.length > 0
@@ -142,7 +122,7 @@ export const sendCommand = mutation({
 						: []),
 				];
 
-				// 4. Insert terminal output (same transaction)
+				// 3. Insert terminal output (same transaction)
 				const outputId: Id<"terminalOutput"> = await ctx.db.insert(
 					"terminalOutput",
 					{
@@ -155,7 +135,7 @@ export const sendCommand = mutation({
 					},
 				);
 
-				// 5. Update game state (same transaction)
+				// 4. Update game state (same transaction)
 				const totalSkillGained = cached.success
 					? cached.skillGained + missionSkillGained
 					: 0;
@@ -449,43 +429,22 @@ export const finalizeCommandOutput = internalMutation({
 			throw new Error("Unauthorized: game state belongs to a different player");
 		}
 
-		// 1. Get active missions (inline query - same transaction)
-		const activeMissions = await ctx.db
-			.query("missionProgress")
-			.withIndex("by_player_status", (q) =>
-				q.eq("playerId", args.playerId).eq("status", "in_progress"),
-			)
-			.collect();
+		// 1. Validate all missions in batch (single query + in-memory validation)
+		// ✅ OPTIMIZED: Batch validation reduces N queries to 1 query
+		const { feedback: missionFeedback, totalSkillGained: missionSkillGained } =
+			await validateAllMissionsInBatch(ctx, args.playerId, args.commandInput);
 
-		// 2. Validate mission steps (inline - same transaction)
-		let missionSkillGained = 0;
-		const missionFeedback: string[] = [];
-
-		if (activeMissions.length === 0 && args.includeNoMissionMessage) {
-			missionFeedback.push(
-				"",
-				"No active mission found. Start a mission first.",
-			);
-		} else {
-			for (const mission of activeMissions) {
-				const result = await validateMissionStepInternal(
-					ctx,
-					args.playerId,
-					mission.missionId,
-					args.commandInput,
-				);
-				if (result.feedback.length > 0) {
-					missionFeedback.push(...result.feedback);
-				}
-				missionSkillGained += result.skillGained;
-			}
-		}
+		// 2. Handle no active missions case
+		const finalMissionFeedback =
+			missionFeedback.length === 0 && args.includeNoMissionMessage
+				? ["", "No active mission found. Start a mission first."]
+				: missionFeedback;
 
 		// 3. Combine output with mission feedback
 		const outputLines = [
 			...args.commandResult.output,
-			...(missionFeedback.length > 0
-				? ["", "=== Mission Progress ===", ...missionFeedback]
+			...(finalMissionFeedback.length > 0
+				? ["", "=== Mission Progress ===", ...finalMissionFeedback]
 				: []),
 		];
 		// 4. Update terminal output (same transaction)
