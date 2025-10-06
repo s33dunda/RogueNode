@@ -14,12 +14,22 @@ import {
 } from "./types";
 
 /**
- * Pure validation function - no database operations
+ * Validate a player's command against a mission progress document and produce any required progress updates.
  *
- * Takes a mission progress document and validates the player command against it.
- * Returns the validation result and any database changes needed.
+ * This is a pure function with no side effects; it computes whether the provided command matches the current mission step,
+ * assembles user-facing feedback, computes skill gained, and prepares a partial document patch suitable for persistence.
  *
- * This is a pure function with no side effects, enabling batch validation.
+ * @param progress - The missionProgress document representing the player's current mission state
+ * @param playerCommand - The raw command/string issued by the player to validate against the current step
+ * @returns An object containing:
+ *  - `id`: the missionProgress document id
+ *  - `changes`: a Partial missionProgress patch to apply to the database, or `null` when no change is applicable
+ *  - `result`: a MissionStepValidationResult with fields:
+ *      - `matched`: `true` if the command satisfied the current step, `false` otherwise
+ *      - `expectedAction`: a short string describing the expected action/target
+ *      - `feedback`: an array of user-facing feedback messages
+ *      - `missionComplete`: `true` if the match completed the mission, `false` otherwise
+ *      - `skillGained`: numeric skill points awarded for this validation (zero when not matched)
  */
 export function validateAndPrepareUpdate(
 	progress: Doc<"missionProgress">,
@@ -126,14 +136,16 @@ export function validateAndPrepareUpdate(
 }
 
 /**
- * Batch validation function - optimized for cache hits
+ * Validate all in-progress missions for a player and apply any resulting progress updates.
  *
- * Validates all active missions for a player in a single transaction:
- * 1. Single query to get all active missions
- * 2. In-memory validation using pure function
- * 3. Sequential patches within same transaction
+ * Performs a single query to load all active mission progress records, validates each in memory, and applies any required patches sequentially within the same mutation transaction to maintain atomicity.
  *
- * This maintains atomicity while reducing query count from O(N) to O(1).
+ * @param ctx - Mutation context used to perform the server-side query and patches; should represent an authenticated/internal call operating on behalf of `playerId`
+ * @param playerId - Identifier of the player whose active missions will be validated
+ * @param playerCommand - Player's input/action to validate against each mission's current step
+ * @returns An object containing:
+ *   - `feedback`: Aggregated feedback messages produced by validating each mission step
+ *   - `totalSkillGained`: Sum of skill gained across all validated missions (points awarded for matched steps)
  */
 export async function validateAllMissionsInBatch(
 	ctx: MutationCtx,
@@ -188,10 +200,14 @@ export async function validateAllMissionsInBatch(
 }
 
 /**
- * Legacy function - kept for backward compatibility
+ * Validate a single mission step for a player and persist any resulting progress updates.
  *
- * This function performs a single mission validation with database operations.
- * For batch operations, use validateAllMissionsInBatch instead.
+ * This internal, legacy compatibility function looks up the player's active mission progress, performs in-memory validation, applies database patches when the step advances, and returns the validation outcome. Callers must ensure the caller is authorized to act on behalf of `playerId` (this function does not perform authentication checks). For batch validation prefer `validateAllMissionsInBatch`.
+ *
+ * @param playerId - Identifier of the player whose mission progress will be validated
+ * @param missionId - Identifier of the mission to validate against
+ * @param playerCommand - The player's submitted command to validate for the current mission step
+ * @returns The mission step validation result containing whether the step matched, the expected action, feedback messages, whether the mission completed, and skill gained
  */
 export async function validateMissionStepInternal(
 	ctx: MutationCtx,
