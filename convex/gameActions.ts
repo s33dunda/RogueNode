@@ -846,7 +846,7 @@ function buildToolsOutput() {
 }
 
 export const getTerminalOutput = query({
-	args: {},
+	args: v.object({}),
 	returns: v.array(terminalOutputEntry),
 	handler: async (ctx) => {
 		const identity = await requireAuth(ctx);
@@ -937,7 +937,7 @@ export const startMission = mutation({
  * their completion status (available, in_progress, completed).
  */
 export const getActiveMissions = query({
-	args: {},
+	args: v.object({}),
 	returns: v.array(
 		v.object({
 			id: v.string(),
