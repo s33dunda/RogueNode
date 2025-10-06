@@ -359,16 +359,14 @@ export const validateMissionStep = internalMutation({
 /**
  * Internal mutation: Validate all mission steps (DEPRECATED - use batch function)
  *
- * This mutation is kept for API compatibility but delegates to the optimized
- * batch validation function. The missionIds parameter is ignored in favor of
- * querying all active missions directly.
+ * Delegates to the optimized batch validation function which queries all active
+ * missions directly and validates them in a single transaction.
  *
  * @deprecated Use validateAllMissionsInBatch directly for better performance
  */
 export const validateAllMissionSteps = internalMutation({
 	args: {
 		playerId: v.string(),
-		missionIds: v.array(v.string()), // Ignored - kept for API compatibility
 		playerCommand: v.string(),
 	},
 	returns: v.object({
@@ -377,7 +375,6 @@ export const validateAllMissionSteps = internalMutation({
 	}),
 	handler: async (ctx, { playerId, playerCommand }) => {
 		// Delegate to optimized batch function
-		// Note: missionIds parameter is ignored - we query all active missions instead
 		return await validateAllMissionsInBatch(ctx, playerId, playerCommand);
 	},
 });
