@@ -13,7 +13,7 @@ type CleanupResult = Infer<typeof cleanupResult>;
 
 // Internal action for cache cleanup (used by cron jobs)
 export const cleanupCacheEntriesInternal = internalAction({
-	args: {},
+	args: v.object({}),
 	returns: cleanupResult,
 	handler: async (ctx): Promise<CleanupResult> => {
 		try {
@@ -56,7 +56,7 @@ type StatsResult = Infer<typeof statsResult>;
 
 // Admin-only action for cache cleanup (requires admin privileges)
 export const cleanupCacheEntries = action({
-	args: {},
+	args: v.object({}),
 	returns: cleanupResult,
 	handler: async (ctx): Promise<CleanupResult> => {
 		// Ensure user is an admin
@@ -83,7 +83,7 @@ export const cleanupCacheEntries = action({
 
 // Admin-only action to get cache stats (for debugging)
 export const getCacheStats = action({
-	args: {},
+	args: v.object({}),
 	returns: statsResult,
 	handler: async (ctx): Promise<StatsResult> => {
 		// Ensure user is an admin
