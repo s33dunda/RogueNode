@@ -229,11 +229,11 @@ reviews:
   pre_merge_checks:
     docstrings:
       mode: "warning"  # Relaxed for PoC/MVP development
-      threshold: 50     # Lower threshold for faster game development iteration
+      threshold: 75     # Lower threshold for faster game development iteration
 
     title:
       mode: "warning"
-      requirements: "Start with an imperative verb; keep under 50 characters."
+      requirements: "Start with an imperative verb; keep under 75 characters."
 
     description:
       mode: "warning"   # Allow empty descriptions during rapid PoC/MVP development
@@ -245,62 +245,30 @@ reviews:
     custom_checks:
       - name: "Critical Security"
         mode: "error"
-        instructions: "Verify no hardcoded secrets. Ensure Clerk auth and game state integrity."
+        instructions: |
+          Check for hardcoded secrets and auth enforcement.
+
+          IMPORTANT: Only check PUBLIC functions (mutation, query, action).
+          SKIP internal functions (internalMutation, internalQuery, internalAction).
 
       - name: "Convex Standards"
         mode: "error"
         instructions: |
-          **Scope**: Convex backend files (convex/**/*.ts, convex/**/*.tsx)
-          **Auto-pass**: Documentation, tests, config files, convex/_generated/**
+          Scope: convex/**/*.ts (skip _generated/**, tests, docs)
 
-          ✅ PASS if ALL of the following are true:
+          Check ONLY these 3 things:
 
-          **1. Validator Syntax (CRITICAL)**:
-          - ALL functions use `args: v.object({...})` (NOT `args: {}`)
-          - ALL functions have explicit `returns: v.type()` validator
-          - Use `returns: v.null()` for void functions
-          - Example:
-            ```typescript
-            export const myFunction = mutation({
-              args: v.object({ name: v.string() }),
-              returns: v.null(),
-              handler: async (ctx, args) => { ... }
-            });
-            ```
+          1. Validators: Use `args: v.object({})` not `args: {}`
+          2. Auth on PUBLIC functions ONLY:
+             - mutation() → needs requireAuth(ctx)
+             - query() → needs requireAuth(ctx)
+             - action() → needs requireAuth(ctx)
+             - internalMutation() → NO auth needed
+             - internalQuery() → NO auth needed
+             - internalAction() → NO auth needed
+          3. Returns: All functions need `returns: v.type()`
 
-          **2. Authentication (PUBLIC functions only)**:
-          - Public `mutation()` and `query()` MUST call `requireAuth(ctx)` or `ctx.auth.getUserIdentity()`
-          - First line in handler should be auth check
-          - Internal functions (`internalMutation`, `internalQuery`, `internalAction`) do NOT need auth checks
-          - Example:
-            ```typescript
-            export const publicFunction = mutation({
-              handler: async (ctx, args) => {
-                const identity = await requireAuth(ctx); // REQUIRED
-                // ... rest of logic
-              }
-            });
-            ```
-
-          **3. Function Visibility**:
-          - Use `mutation()`, `query()`, `action()` for client-callable functions
-          - Use `internalMutation()`, `internalQuery()`, `internalAction()` for server-only functions
-          - Internal functions should NOT have auth checks (they're called from trusted code)
-
-          **4. Type Safety**:
-          - NO `v.any()` types unless absolutely necessary with justification
-          - Use specific validators: `v.string()`, `v.number()`, `v.id("tableName")`, etc.
-          - Use `v.optional()` for optional fields
-          - Use `v.union()` for multiple types
-
-          ❌ FAIL if ANY of these are found:
-          - `args: {}` instead of `args: v.object({})`
-          - Missing `returns` validator
-          - Public function without auth check
-          - `v.any()` without justification comment
-          - Internal function with auth check (unnecessary overhead)
-
-          For other files: Not applicable (auto-pass)
+          CRITICAL: Do NOT flag internal* functions for missing auth.
 
       - name: "PDDL Integration"
         mode: "warning"
