@@ -854,7 +854,7 @@ export const getTerminalOutput = query({
  * tracker and returns mission details for UI display.
  */
 export const startMission = mutation({
-	args: { missionId: v.string() },
+	args: v.object({ missionId: v.string() }),
 	returns: v.object({
 		missionProgressId: v.id("missionProgress"),
 		mission: v.object({

@@ -184,7 +184,7 @@ await ctx.db.patch(gameState._id, ...);
 
 ### Full Documentation
 
-See **`docs/player-action-howtos/transaction-atomicity.md`** for:
+See **`docs/convex-howtos/transaction-atomicity.md`** for:
 
 - Complete anti-pattern vs correct pattern examples
 - Detailed explanation of sub-transaction problems
