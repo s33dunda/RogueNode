@@ -10,10 +10,5 @@
   "domain_file": "pddl/generated/domains/rogue-devops-poc-domain.pddl",
   "problem_file": "pddl/generated/problems/poc-reachability/problem.pddl",
   "domain_sha256": "3b38c1762faddd977652554121390a04dd19e134d1488dda3e5457ece0eb3473",
-  "problem_sha256": "82e647ff1b1675429c783babefc83675ed92f7aa0b6a15b441bbbb3903d70fbe",
-  "_meta": {
-    "derivedBy": "pnpm planning:refresh",
-    "problemRef": "poc-reachability",
-    "timestamp": "2025-10-07T15:24:34.213Z"
-  }
+  "problem_sha256": "82e647ff1b1675429c783babefc83675ed92f7aa0b6a15b441bbbb3903d70fbe"
 }

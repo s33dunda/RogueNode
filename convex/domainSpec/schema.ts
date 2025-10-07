@@ -31,23 +31,6 @@ export const roomSchema = z.object({
 	}),
 });
 
-export const itemSchema = z.object({
-	id: z.string(),
-	name: z.string(),
-	description: z.string(),
-	location: z.string(),
-	taken: z.boolean().default(false),
-	aliases: z.array(z.string()).default([]),
-	examineText: z.string().optional(),
-	onTake: z.string().optional(),
-	/**
-	 * Optional identifier pointing at a runtime effect handler. The handler lives
-	 * in the frontend for now, but this hook keeps the declarative spec aware of
-	 * the side effect entry point.
-	 */
-	useEffectId: z.string().optional(),
-});
-
 export const enemySchema = z.object({
 	id: z.string(),
 	name: z.string(),
@@ -88,13 +71,11 @@ export const missionSchema = z.object({
 
 export const domainBundleSchema = z.object({
 	rooms: z.array(roomSchema),
-	items: z.array(itemSchema),
 	enemies: z.array(enemySchema).default([]),
 	missions: z.array(missionSchema).default([]),
 });
 
 export type RoomSpec = z.infer<typeof roomSchema>;
-export type ItemSpec = z.infer<typeof itemSchema>;
 export type EnemySpec = z.infer<typeof enemySchema>;
 export type PlanStepSpec = z.infer<typeof planStepSchema>;
 export type MissionSpec = z.infer<typeof missionSchema>;
@@ -106,7 +87,6 @@ export const domainSpec = {
 	version: domainSpecVersion,
 	schemas: {
 		room: roomSchema,
-		item: itemSchema,
 		enemy: enemySchema,
 		mission: missionSchema,
 		bundle: domainBundleSchema,

@@ -29,7 +29,7 @@ const generatorDevboxRoot = findDevboxRoot(repoRoot);
 const scenarioRoot = path.resolve(repoRoot, ".");
 const plannerDevboxRoot = findDevboxRoot(scenarioRoot);
 
-const provider = process.env.PDDL_PROVIDER ?? "claude";
+const provider = process.env.PDDL_PROVIDER ?? "codex";
 const model = process.env.PDDL_MODEL ?? null;
 
 function resolveAbsolute(base, relOrAbs) {

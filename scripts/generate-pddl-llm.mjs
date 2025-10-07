@@ -19,12 +19,12 @@ const defaultContextFiles = [
 
 function parseArgs(argv) {
 	const options = {
-		provider: null,
+		provider: "codex", // Default to Codex
 		model: null,
-		invoke: false,
+		invoke: true, // Default to invoking the provider
 		include: [],
-		domainOut: null,
-		problemOut: null,
+		domainOut: "pddl/generated/domains/rogue-devops-poc-domain.pddl",
+		problemOut: "pddl/generated/problems/poc-reachability/problem.pddl",
 		outputDir: path.join("docs", "prompts", "sessions"),
 	};
 
@@ -40,6 +40,9 @@ function parseArgs(argv) {
 				break;
 			case "--invoke":
 				options.invoke = true;
+				break;
+			case "--no-invoke":
+				options.invoke = false;
 				break;
 			case "--include":
 				options.include.push(args.shift());
@@ -67,7 +70,24 @@ function parseArgs(argv) {
 }
 
 function usage() {
-	return `Usage: devbox run -- node scripts/generate-pddl-llm.mjs [options]\n\nOptions:\n  --provider <openai|codex|claude|gemini>  Run the selected CLI after building the prompt\n  --model <name>                            Override the default model for the provider\n  --include <path>                         Extra file to append to the mission context (repeatable)\n  --domain-out <path>                      Write the first Lisp block into this file\n  --problem-out <path>                     Write the second Lisp block into this file\n  --output-dir <path>                      Where to store prompt/response snapshots (default docs/prompts/sessions)\n  --invoke                                 Actually call the provider CLI\n  -h, --help                               Show this help\n\nEnvironment overrides:\n  OPENAI_CLI, OPENAI_PDDL_MODEL\n  CLAUDE_CLI, CLAUDE_PDDL_MODEL\n  GEMINI_CLI, GEMINI_PDDL_MODEL\n`;
+	return `Usage: devbox run -- node scripts/generate-pddl-llm.mjs [options]
+
+Options:
+  --provider <openai|codex|claude|gemini>  Select provider CLI (default: codex)
+  --model <name>                            Override the default model for the provider
+  --include <path>                         Extra file to append to the mission context (repeatable)
+  --domain-out <path>                      Write the first Lisp block into this file
+  --problem-out <path>                     Write the second Lisp block into this file
+  --output-dir <path>                      Where to store prompt/response snapshots (default: docs/prompts/sessions)
+  --invoke                                 Call the provider CLI (default: true)
+  --no-invoke                              Skip calling the provider CLI
+  -h, --help                               Show this help
+
+Environment overrides:
+  CODEX_CLI, CODEX_PDDL_MODEL (default model: gpt-5-codex)
+  CLAUDE_CLI, CLAUDE_PDDL_MODEL (default model: claude-3-5-sonnet-20241022)
+  GEMINI_CLI, GEMINI_PDDL_MODEL (default model: gemini-1.5-pro)
+`;
 }
 
 async function readFileOrWarn(relPath) {
@@ -105,8 +125,18 @@ function buildPrompt(domainContext, missionContexts) {
 }
 
 function providerConfig(provider, model, promptPath) {
-	const normalized = provider === "codex" ? "openai" : provider;
-	switch (normalized) {
+	switch (provider) {
+		case "codex": {
+			const command = process.env.CODEX_CLI || "codex";
+			const chosenModel =
+				model || process.env.CODEX_PDDL_MODEL || "gpt-5-codex";
+			return {
+				command,
+				args: ["exec", "--model", chosenModel, "-"],
+				info: `Using Codex CLI (${command}) model ${chosenModel}`,
+				useStdin: true,
+			};
+		}
 		case "openai": {
 			const command = process.env.OPENAI_CLI || "openai";
 			const chosenModel =
@@ -201,12 +231,25 @@ async function runCommand(config, options, promptFile, sessionDir, promptText) {
 }
 
 function extractLispBlocks(text) {
+	// For Codex output, look for blocks after the model's response marker
+	// Codex includes the full prompt in its output, so we need to skip those blocks
+	const codexMarkerPattern = /\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\]\s+codex\s*$/gm;
+	const matches = Array.from(text.matchAll(codexMarkerPattern));
+
+	let searchText = text;
+	if (matches.length > 0) {
+		// Extract only the text after the last "codex" marker (not "thinking")
+		const lastMatch = matches[matches.length - 1];
+		const lastMarkerIndex = lastMatch.index + lastMatch[0].length;
+		searchText = text.substring(lastMarkerIndex);
+	}
+
 	const pattern = /```lisp\s*([\s\S]*?)```/g;
 	const blocks = [];
-	let match = pattern.exec(text);
+	let match = pattern.exec(searchText);
 	while (match !== null) {
 		blocks.push(match[1].trim());
-		match = pattern.exec(text);
+		match = pattern.exec(searchText);
 	}
 	return blocks;
 }
@@ -266,9 +309,6 @@ async function main() {
 	let responseText = null;
 
 	if (options.invoke) {
-		if (!options.provider) {
-			throw new Error("--provider is required when using --invoke");
-		}
 		const config = providerConfig(options.provider, options.model, promptPath);
 		responseText = await runCommand(
 			config,
@@ -279,7 +319,7 @@ async function main() {
 		);
 	} else {
 		console.log(
-			"--invoke not set; skipping provider call. Use --invoke --provider <name> to run automatically.",
+			"--invoke not set; skipping provider call. Use --invoke to run automatically.",
 		);
 	}
 

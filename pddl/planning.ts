@@ -19,45 +19,30 @@
  * - Missions require specific sequences of actions to complete
  *
  * PDDL Types:
- * - room: Navigable locations in the game world
- * - item: Objects that can be picked up and used
  * - enemy: Problems/obstacles that must be defeated
- * - server: Infrastructure components that can be interacted with
+ * - server: Infrastructure components that can be interacted when inside
  *
  * PDDL Predicates:
- * - (at-room ?r): Player is currently in room ?r
- * - (room-exit ?from ?to ?dir): Room ?from has exit to ?to in direction ?dir
- * - (item-at ?i ?r): Item ?i is located in room ?r
- * - (has-item ?i): Player has item ?i in inventory
  * - (enemy-at ?e ?r): Enemy ?e is in room ?r
  * - (enemy-defeated ?e): Enemy ?e has been defeated
- * - (requires-item ?e ?i): Enemy ?e requires item ?i to defeat
  * - (reachable ?s): Server ?s is reachable/online
  *
  * PDDL Actions:
  * - ping: Test server reachability
  * - ssh: Connect to a server
  * - restart: Restart a service
- * - move: Navigate between rooms
- * - take: Pick up an item
- * - use: Use an item (e.g., to defeat an enemy)
  */
 
 export const planningDomain = {
 	name: "rogue-node",
 	requirements: [":strips", ":typing"],
-	types: ["room", "item", "enemy", "server"],
+	types: ["room", "enemy", "server"],
 	predicates: [
-		"at-room",
-		"room-exit",
-		"item-at",
-		"has-item",
 		"enemy-at",
 		"enemy-defeated",
-		"requires-item",
 		"reachable",
 	],
-	actions: ["ping", "ssh", "restart", "move", "take", "use"],
+	actions: ["ping", "ssh", "restart"],
 };
 
 /**
