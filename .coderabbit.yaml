@@ -117,6 +117,7 @@ reviews:
         - Check proper use of convex/gameData.ts (not utils/GameData.ts)
         - Validate mission progress tracking and PDDL integration
         - No v.any() types - use proper Convex validators
+        - In Convex, helper functions that accept `MutationCtx` as a parameter should be exported as regular async functions (not registered with `internalMutation`). These helper functions are called directly within parent mutations to maintain transaction atomicity. Using `ctx.runMutation()` to call such functions would break atomicity by creating sub-transactions. Only top-level API entry points should be registered mutations.
 
     - path: "convex/gameData.ts"
       instructions: |
