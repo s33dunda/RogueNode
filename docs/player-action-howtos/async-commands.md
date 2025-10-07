@@ -187,7 +187,7 @@ The `finalizeCommandOutput` mutation must inline all operations:
 
 ### Full Documentation
 
-See **`docs/player-action-howtos/transaction-atomicity.md`** for:
+See **`docs/convex-howtos/transaction-atomicity.md`** for:
 
 - Complete anti-pattern vs correct pattern examples
 - Full `finalizeCommandOutput` implementation

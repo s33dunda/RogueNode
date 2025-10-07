@@ -14,9 +14,14 @@ This directory collects task-focused guides for the different ways players inter
 - [Async Commands](./async-commands.md) — Deferred operations that schedule background work before replying to the player.
 - [AI-Driven Commands](./ai-commands.md) — Agent-backed command flows that integrate caching, threading, and mission validation.
 
-## Best Practices
+## Backend Patterns
 
-- **[Transaction Atomicity](./transaction-atomicity.md)** — **CRITICAL**: How to ensure true atomicity in mutations. Avoid sub-transactions that break atomicity guarantees. Required reading before implementing any command with multiple database operations.
+These player action HOWTOs reference general Convex backend patterns:
+
+- **[Transaction Atomicity](../convex-howtos/transaction-atomicity.md)** — **CRITICAL**: How to ensure true atomicity in mutations. This is a core Convex pattern that applies to all backend development. Required reading before implementing any command with multiple database operations.
+- **[Batch Operations](../convex-howtos/batch-operations.md)** — Performance optimization pattern for processing multiple items efficiently while maintaining atomicity.
+
+See `docs/convex-howtos/` for all backend patterns.
 
 ## Getting Started
 

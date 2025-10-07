@@ -1,7 +1,9 @@
 ---
-ssot-area: player-actions
-owner: game-systems-team
-derived-from: convex-best-practices
+ssot-area: convex-patterns
+owner: backend-team
+derived-from: CLAUDE.md, convex-best-practices
+canonical-examples: convex/gameActions.ts:107-152, convex/gameActions.ts:432-449
+used-by: player-action-howtos/*, feature-requests/*
 ---
 
 # Transaction Atomicity Best Practices

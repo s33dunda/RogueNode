@@ -25,6 +25,19 @@ This slim index tracks the minimum artifacts we must keep in sync while we shape
 - **How to update:** keep these files aligned with the domain data and imported plan outputs; test via the local app (`pnpm dev`).
 - **Implementation patterns:** `docs/player-action-howtos/` contains HOWTOs for adding synchronous commands, async commands, and AI-driven commands. Follow these guides when implementing new terminal commands to maintain consistent patterns.
 
+### 4. Backend Patterns
+
+- **Canonical artifact:** `docs/convex-howtos/` - Reusable Convex backend patterns extracted from implementation stories and best practices.
+- **Derived from:** Convex best practices (CLAUDE.md), completed implementation stories (`feature-requests/`), canonical code (`convex/`).
+- **Used by:** All backend development - referenced by `player-action-howtos/` and new feature implementations.
+- **How to update:** Extract patterns from completed stories; link to canonical code examples; maintain front-matter metadata (`ssot-area: convex-patterns`, `derived-from:`, `canonical-examples:`).
+- **Owner:** backend-team
+- **Key patterns:**
+  - **Transaction Atomicity** (CRITICAL) - All mutations must inline operations to ensure atomicity
+  - **Batch Operations** - Query optimization pattern for processing multiple items efficiently
+  - **Pure Functions** - Separating validation logic from database operations (coming soon)
+  - **Query Optimization** - Using indexes effectively (coming soon)
+
 ## Working Loop
 
 1. **Shape the mission** by updating the schema if the model changes, then editing `GameData.ts` (rooms, tools, win conditions) to match.
