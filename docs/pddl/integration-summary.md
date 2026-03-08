@@ -76,7 +76,7 @@ A system that automatically validates player actions against AI-generated optima
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│ packages/domain-spec/                                       │
+│ convex/domainSpec/                                          │
 │ ├── data.ts              (Mission definitions)              │
 │ ├── schema.ts            (Zod validators)                   │
 │ └── runtime.ts           (NEW: Shared runtime loader)       │

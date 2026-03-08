@@ -2,6 +2,8 @@
 
 This slim index tracks the minimum artifacts we must keep in sync while we shape the MVP: define the game verbs, spin out solvable problems, surface them in the app. Start edits at the canonical source listed here, then manually sync downstream files until generators/CI land.
 
+Canonical package map: `docs/architecture/package-map.md`.
+
 ## Core Truths Today
 
 ### 1. Domain Verbs & State

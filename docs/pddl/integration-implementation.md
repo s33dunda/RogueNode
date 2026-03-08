@@ -1,7 +1,7 @@
 ---
 ssot-area: pddl-integration
 owner: runtime-team
-derived-from: packages/domain-spec/data.ts
+derived-from: convex/domainSpec/data.ts
 ---
 
 # PDDL Game Integration - Implementation Guide
@@ -15,7 +15,7 @@ derived-from: packages/domain-spec/data.ts
 
 ### Convex-Aligned Patterns
 
-1. **Helper Functions First**: Core logic in `packages/domain-spec/runtime.ts`, thin Convex wrappers
+1. **Helper Functions First**: Core logic in `convex/domainSpec/runtime.ts`, thin Convex wrappers
 2. **Internal Functions**: Use `internalQuery`/`internalMutation` for mission logic, public functions for auth
 3. **Batch Operations**: Single mutation for step validation (not sequential calls)
 4. **Type Safety**: All Convex functions use proper validators (eliminate `v.any()`)
@@ -56,7 +56,7 @@ missionProgress: defineTable({
 
 ### Step 1: Shared Runtime Loader
 
-**File**: `packages/domain-spec/runtime.ts`
+**File**: `convex/domainSpec/runtime.ts`
 
 **Purpose**: Single source of truth for game data + plan artifacts
 
@@ -118,7 +118,7 @@ export function matchesStep(
 **Changes**:
 
 ```typescript
-import { runtime } from "../packages/domain-spec/runtime";
+import { runtime } from "../convex/domainSpec/runtime";
 
 // Replace existing imports
 export const rooms: RoomsRecord = runtime.domain.rooms.reduce((acc, room) => {
@@ -148,7 +148,7 @@ export function getMissionForRoom(roomId: string) {
 ```typescript
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
-import { getMissionById, getMissionPlan, matchesStep } from "../packages/domain-spec/runtime";
+import { getMissionById, getMissionPlan, matchesStep } from "../convex/domainSpec/runtime";
 
 /**
  * Internal query: Get mission progress for player
@@ -518,7 +518,7 @@ case "ping": {
 
 ## Notes
 
-- All mission data flows from `packages/domain-spec/runtime.ts`
+- All mission data flows from `convex/domainSpec/runtime.ts`
 - Convex functions use proper validators (no `v.any()`)
 - Internal functions handle logic, public functions handle auth
 - Mission validation happens automatically during command execution

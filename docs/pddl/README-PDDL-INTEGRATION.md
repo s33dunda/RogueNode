@@ -78,6 +78,8 @@ derived-from: planner-integration-plan
 
 ## 📖 What This Is
 
+Historical note: this doc originally described `packages/domain-spec/`. The current canonical split is `convex/domainSpec/` for runtime imports and `pddl/generated/` for planner artifacts.
+
 A system that automatically validates player actions against AI-generated optimal solutions (PDDL plans).
 
 **Example Flow**:
@@ -94,10 +96,11 @@ A system that automatically validates player actions against AI-generated optima
 ## 🏗️ Architecture
 
 ```text
-packages/domain-spec/
+convex/domainSpec/
 ├── data.ts              # Mission definitions
 ├── schema.ts            # Zod validators
-└── runtime.ts           # NEW: Shared runtime loader
+├── runtime.ts           # Shared runtime loader
+└── pddl/problems/*/plan.json
                               ↓
                     ┌─────────┴─────────┐
                     ↓                   ↓
@@ -108,6 +111,10 @@ packages/domain-spec/
         │   (Public API)            (Display progress)
         └── schema.ts
             (missionProgress)
+
+pddl/generated/
+├── domains/*.pddl
+└── problems/*/problem.pddl
 ```
 
 ---
@@ -207,9 +214,9 @@ Key patterns used:
 
 ### PDDL Planning
 
-- Domain files: `packages/domain-spec/generated/domains/`
-- Problem files: `packages/domain-spec/generated/problems/`
-- Plan JSON: `packages/domain-spec/generated/problems/*/plan.json`
+- Domain files: `pddl/generated/domains/`
+- Problem files: `pddl/generated/problems/`
+- Plan JSON: `convex/domainSpec/pddl/problems/*/plan.json`
 
 ---
 
@@ -241,8 +248,8 @@ Key patterns used:
 
 ### For Developers New to PDDL
 
-1. Review `packages/domain-spec/generated/domains/*.pddl`
-2. Check `packages/domain-spec/generated/problems/*/problem.pddl`
+1. Review `pddl/generated/domains/*.pddl`
+2. Check `pddl/generated/problems/*/problem.pddl`
 3. Understand plan JSON structure in `plan.json` files
 
 ---
@@ -274,14 +281,14 @@ Key patterns used:
 
 ### Adding New Missions
 
-1. Edit `packages/domain-spec/data.ts`
+1. Edit `convex/domainSpec/data.ts`
 2. Add mission object with `optimalPlan` and `problemRef`
 3. Run `pnpm planning:refresh` to generate plan JSON
 4. Test mission flow in game
 
 ### Modifying Validation Logic
 
-1. Update `packages/domain-spec/runtime.ts` → `matchesStep` function
+1. Update `convex/domainSpec/runtime.ts` → `matchesStep` function
 2. Test with existing missions
 3. Update tests if needed
 

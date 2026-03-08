@@ -34,7 +34,7 @@ This POV has been reviewed against Convex best practices and expanded into detai
 
 ### 1. Shared Runtime Loader
 
-**File**: `packages/domain-spec/runtime.ts`
+**File**: `convex/domainSpec/runtime.ts`
 
 - Export parsed bundles: rooms, items, enemies, missions + generated plan JSON
 - Single source of truth for both Convex backend and Next.js client
@@ -46,7 +46,7 @@ This POV has been reviewed against Convex best practices and expanded into detai
 
 ### 2. Plan-Aware Mission Objects
 
-**Files**: Mission definitions in `packages/domain-spec/data.ts`
+**Files**: Mission definitions in `convex/domainSpec/data.ts`
 
 - Extend mission schema to include:
   - `problemRef`: Link to PDDL problem file
@@ -117,7 +117,7 @@ Document:
 
 - How missions reference plan files
 - How to add new scenarios:
-  1. Edit `packages/domain-spec/data.ts`
+  1. Edit `convex/domainSpec/data.ts`
   2. Run `pnpm planning:refresh`
   3. Verify plan JSON appears in output
 - How runtime code consumes planner output

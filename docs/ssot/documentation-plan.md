@@ -1,7 +1,7 @@
 # Documentation Plan
 
 Create docs/ssot/README.md as the aggregator: explains the SSOT concept, lists each canonical artifact (schema, contracts, runtime, planning, ops, intent), their owners, update rules, and generator commands.
-Establish canonical schema packages: packages/domain-spec/ for RogueNode game rules (Zod/TS), packages/scenario-schema/ for scenario content; both feed runtime code (convex/gameActions.ts, utils/GameData.ts) and generated docs.
+Establish canonical schema packages: `convex/domainSpec/` for RogueNode runtime game rules (Zod/TS + runtime plan imports) and `pddl/` for planner inputs/outputs; both feed runtime code (`convex/gameActions.ts`, `convex/gameData.ts`) and generated docs.
 Maintain contracts/ truth: shared API/event schemas (OpenAPI/GraphQL/JSON Schema) with scripts in tools/codegen/ to produce server stubs, clients, and their docs; CI enforces no drift.
 Document runtime truth: each code package (Next.js app, Convex functions, agents) is referenced with links to key files and the tests/CI checks that guard schema alignment.
 Capture planning truth: the canonical schema emits PDDL in ../RogueNodeScenarios/ plus regenerated README.md; planning scripts and smoke-tests run in CI to validate output.

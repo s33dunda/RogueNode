@@ -1,17 +1,7 @@
-export function buildAuthConfig(env: NodeJS.ProcessEnv = process.env) {
-	const domain = env.CLERK_JWT_ISSUER_DOMAIN;
-	if (!domain) {
-		throw new Error("CLERK_JWT_ISSUER_DOMAIN must be set for Convex auth");
-	}
+import { buildAuthConfig } from "./lib/authConfig";
 
-	return {
-		providers: [
-			{
-				domain,
-				applicationID: "convex",
-			},
-		],
-	};
-}
+// Convex loads this file as the auth bootstrap boundary.
+const authConfig = buildAuthConfig();
 
-export default buildAuthConfig();
+export { buildAuthConfig };
+export default authConfig;

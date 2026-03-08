@@ -30,8 +30,8 @@ Then:
 1. Open your app. There should be a "Claim your application" button from Clerk in the bottom right of your app.
 2. Follow the steps to claim your application and link it to this app.
 3. Follow step 3 in the [Convex Clerk onboarding guide](https://docs.convex.dev/auth/clerk#get-started) to create a Convex JWT template.
-4. Uncomment the Clerk provider in `convex/auth.config.ts`
-5. Paste the Issuer URL as `CLERK_JWT_ISSUER_DOMAIN` to your dev deployment environment variable settings on the Convex dashboard (see [docs](https://docs.convex.dev/auth/clerk#configuring-dev-and-prod-instances))
+4. Set `CLERK_JWT_ISSUER_DOMAIN` to your Clerk issuer URL for the local/dev Convex deployment.
+5. `convex/auth.config.ts` reads that variable and registers the Clerk provider for Convex (see [docs](https://docs.convex.dev/auth/clerk#configuring-dev-and-prod-instances)).
 
 If you want to sync Clerk user data via webhooks, check out this [example repo](https://github.com/thomasballinger/convex-clerk-users-table/).
 

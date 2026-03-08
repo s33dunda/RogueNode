@@ -1,12 +1,9 @@
 {
   "version": 8,
   "created": "2026-03-07T14:55:34+00:00",
-  "updated": "2026-03-08T21:04:09+00:00",
+  "updated": "2026-03-08T21:24:26+00:00",
   "queue_order": [
     "smells::convex/lib/auth.ts::todo_fixme",
-    "review::.::holistic::incomplete_migration::stale_migration_comment_in_gamedata::b9f0bfca",
-    "review::.::holistic::package_organization::domain_spec_path_ambiguity::8fc54d11",
-    "review::.::holistic::initialization_coupling::import_time_auth_env_binding::c87d9274",
     "subjective::authorization_consistency",
     "subjective::incomplete_migration",
     "subjective::initialization_coupling",
@@ -697,20 +694,20 @@
     "review::.::holistic::incomplete_migration::stale_migration_comment_in_gamedata::b9f0bfca": {
       "issue_id": "review::.::holistic::incomplete_migration::stale_migration_comment_in_gamedata::b9f0bfca",
       "created_at": "2026-03-07T16:33:45+00:00",
-      "cluster": "backend-contracts",
-      "updated_at": "2026-03-07T16:33:45+00:00"
+      "cluster": null,
+      "updated_at": "2026-03-08T21:04:09+00:00"
     },
     "review::.::holistic::package_organization::domain_spec_path_ambiguity::8fc54d11": {
       "issue_id": "review::.::holistic::package_organization::domain_spec_path_ambiguity::8fc54d11",
       "created_at": "2026-03-07T16:33:45+00:00",
-      "cluster": "backend-contracts",
-      "updated_at": "2026-03-07T16:33:45+00:00"
+      "cluster": null,
+      "updated_at": "2026-03-08T21:24:20+00:00"
     },
     "review::.::holistic::initialization_coupling::import_time_auth_env_binding::c87d9274": {
       "issue_id": "review::.::holistic::initialization_coupling::import_time_auth_env_binding::c87d9274",
       "created_at": "2026-03-07T16:33:45+00:00",
-      "cluster": "backend-contracts",
-      "updated_at": "2026-03-07T16:33:45+00:00"
+      "cluster": null,
+      "updated_at": "2026-03-08T21:24:21+00:00"
     },
     "review::.::holistic::contract_coherence::initial_room_type_promise_can_be_undefined::edbf2c9d": {
       "issue_id": "review::.::holistic::contract_coherence::initial_room_type_promise_can_be_undefined::edbf2c9d",
@@ -1422,10 +1419,7 @@
       "name": "backend-contracts",
       "description": "Missions/domainSpec/gameData/shared-type contract cleanup",
       "issue_ids": [
-        "smells::convex/lib/auth.ts::todo_fixme",
-        "review::.::holistic::incomplete_migration::stale_migration_comment_in_gamedata::b9f0bfca",
-        "review::.::holistic::package_organization::domain_spec_path_ambiguity::8fc54d11",
-        "review::.::holistic::initialization_coupling::import_time_auth_env_binding::c87d9274"
+        "smells::convex/lib/auth.ts::todo_fixme"
       ],
       "created_at": "2026-03-07T16:29:27+00:00",
       "updated_at": "2026-03-07T16:33:45+00:00",
@@ -2762,17 +2756,9 @@
     }
   },
   "promoted_ids": [
-    "smells::convex/lib/auth.ts::todo_fixme",
-    "review::.::holistic::incomplete_migration::stale_migration_comment_in_gamedata::b9f0bfca",
-    "review::.::holistic::package_organization::domain_spec_path_ambiguity::8fc54d11",
-    "review::.::holistic::initialization_coupling::import_time_auth_env_binding::c87d9274"
+    "smells::convex/lib/auth.ts::todo_fixme"
   ],
-  "plan_start_scores": {
-    "strict": 64.6,
-    "overall": 64.6,
-    "objective": 70.6,
-    "verified": 70.6
-  },
+  "plan_start_scores": {},
   "execution_log": [
     {
       "timestamp": "2026-03-07T14:55:34+00:00",
@@ -4397,6 +4383,70 @@
       "actor": "user",
       "note": "Reviewed convex/gameData.ts and removed the migration-era explanatory comment blocks; the file now documents current-state data wiring only and no longer references an old migration target.",
       "detail": {}
+    },
+    {
+      "timestamp": "2026-03-08T21:04:09+00:00",
+      "action": "resolve",
+      "issue_ids": [
+        "review::.::holistic::incomplete_migration::stale_migration_comment_in_gamedata::b9f0bfca"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "Reviewed convex/gameData.ts and removed the migration-era explanatory comment blocks; the file now documents current-state data wiring only and no longer references an old migration target.",
+      "detail": {
+        "status": "fixed",
+        "attestation": "I have actually Reviewed convex/gameData.ts and removed the migration-era explanatory comment blocks; the file now documents current-state data wiring only and no longer references an old migration target. and I am not gaming the score."
+      }
+    },
+    {
+      "timestamp": "2026-03-08T21:24:20+00:00",
+      "action": "done",
+      "issue_ids": [
+        "review::.::holistic::package_organization::domain_spec_path_ambiguity::8fc54d11"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "Added docs/architecture/package-map.md as the canonical path map, updated live README/SSOT/planning/integration docs to point runtime imports at convex/domainSpec and planner artifacts at pddl/generated, and left only explicitly historical references in archival docs.",
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-08T21:24:20+00:00",
+      "action": "resolve",
+      "issue_ids": [
+        "review::.::holistic::package_organization::domain_spec_path_ambiguity::8fc54d11"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "Added docs/architecture/package-map.md as the canonical path map, updated live README/SSOT/planning/integration docs to point runtime imports at convex/domainSpec and planner artifacts at pddl/generated, and left only explicitly historical references in archival docs.",
+      "detail": {
+        "status": "fixed",
+        "attestation": "I have actually Added docs/architecture/package-map.md as the canonical path map, updated live README/SSOT/planning/integration docs to point runtime imports at convex/domainSpec and planner artifacts at pddl/generated, and left only explicitly historical references in archival docs. and I am not gaming the score."
+      }
+    },
+    {
+      "timestamp": "2026-03-08T21:24:21+00:00",
+      "action": "done",
+      "issue_ids": [
+        "review::.::holistic::initialization_coupling::import_time_auth_env_binding::c87d9274"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "Isolated pure auth config construction into convex/lib/authConfig.ts with direct tests, and kept convex/auth.config.ts as the minimal Convex bootstrap boundary required by the framework's special-file loader. This makes env validation explicit and testable without spreading process.env reads through runtime modules.",
+      "detail": {}
+    },
+    {
+      "timestamp": "2026-03-08T21:24:21+00:00",
+      "action": "resolve",
+      "issue_ids": [
+        "review::.::holistic::initialization_coupling::import_time_auth_env_binding::c87d9274"
+      ],
+      "cluster_name": null,
+      "actor": "user",
+      "note": "Isolated pure auth config construction into convex/lib/authConfig.ts with direct tests, and kept convex/auth.config.ts as the minimal Convex bootstrap boundary required by the framework's special-file loader. This makes env validation explicit and testable without spreading process.env reads through runtime modules.",
+      "detail": {
+        "status": "fixed",
+        "attestation": "I have actually Isolated pure auth config construction into convex/lib/authConfig.ts with direct tests, and kept convex/auth.config.ts as the minimal Convex bootstrap boundary required by the framework's special-file loader. This makes env validation explicit and testable without spreading process.env reads through runtime modules. and I am not gaming the score."
+      }
     }
   ],
   "epic_triage_meta": {
@@ -4527,7 +4577,10 @@
     "review::.::holistic::test_strategy::mission_progress_logic_untested::521d45de",
     "review::.::holistic::test_strategy::time_dependent_progress_updates_hard_to_test::5296dc6e",
     "review::.::holistic::api_surface_coherence::mission_lookup_absence_contract_drift::27bd49c2",
-    "review::.::holistic::ai_generated_debt::docstring_bloat_on_trivial_helpers::0a14cc41"
+    "review::.::holistic::ai_generated_debt::docstring_bloat_on_trivial_helpers::0a14cc41",
+    "review::.::holistic::incomplete_migration::stale_migration_comment_in_gamedata::b9f0bfca",
+    "review::.::holistic::package_organization::domain_spec_path_ambiguity::8fc54d11",
+    "review::.::holistic::initialization_coupling::import_time_auth_env_binding::c87d9274"
   ],
   "commit_tracking_branch": null,
   "scan_count_at_plan_start": 6

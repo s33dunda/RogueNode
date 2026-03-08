@@ -22,7 +22,7 @@ The original plan is **well-structured and POV-appropriate**. After reviewing ag
 
 ### ✅ What Stayed the Same
 
-1. **Shared Runtime Loader** (`packages/domain-spec/runtime.ts`)
+1. **Shared Runtime Loader** (`convex/domainSpec/runtime.ts`)
    - Original concept: Single source of truth for game data
    - Refinement: Added helper functions (`getMissionById`, `matchesStep`) following Convex's "helper functions first" pattern
 
@@ -244,7 +244,7 @@ export const startMission = mutation({
 ### 📋 Prerequisites
 
 - [ ] Run schema migration to add `missionProgress` table
-- [ ] Verify `packages/domain-spec/runtime.ts` exports work in both Convex and Next.js
+- [ ] Verify `convex/domainSpec/runtime.ts` exports work in both Convex and Next.js
 - [ ] Test mission plan JSON parsing with existing `poc-reachability` data
 
 ### 🧪 Testing Strategy

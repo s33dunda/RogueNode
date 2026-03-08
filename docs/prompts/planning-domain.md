@@ -9,15 +9,15 @@ Run the helper script to assemble context, call an LLM CLI, and optionally persi
 ```bash
 devbox run -- node RogueNode/scripts/generate-pddl-llm.mjs \
   --provider claude --model claude-3-5-sonnet-20241022 --invoke \
-  --domain-out packages/domain-spec/generated/domains/rogue-devops-poc-domain.pddl \
-  --problem-out packages/domain-spec/generated/problems/poc-reachability/problem.pddl
+  --domain-out pddl/generated/domains/rogue-devops-poc-domain.pddl \
+  --problem-out pddl/generated/problems/poc-reachability/problem.pddl
 ```
 
 Flags of interest:
 
 - `--provider <openai|codex|claude|gemini>` – which CLI to call (must already be available in `devbox`).
 - `--model <name>` – optional override for the provider's model.
-- `--include <path>` – add extra files (repeatable) beyond the defaults (`packages/domain-spec/planning.ts`, `packages/domain-spec/schema.ts`, `packages/domain-spec/data.ts`).
+- `--include <path>` – add extra files (repeatable) beyond the defaults (`pddl/planning.ts`, `convex/domainSpec/schema.ts`, `convex/domainSpec/data.ts`).
 - `--domain-out`, `--problem-out` – write the first and second ```lisp``` blocks directly to the supplied paths.
 - `--invoke` – without it the script just builds the prompt and stores it under `docs/prompts/sessions/`.
 
@@ -31,9 +31,9 @@ If you prefer to run the CLI yourself, copy the prompt below and inject the rele
 
 ## Inputs to Gather
 
-- Current planning schema export from `packages/domain-spec/planning.ts` (especially new types, predicates, actions).
-- Mission data from `packages/domain-spec/data.ts` (rooms, missions, tool catalog).
-- Any existing generated artifacts (`packages/domain-spec/generated/domains/*.pddl`, `packages/domain-spec/generated/problems/*/problem.pddl`).
+- Current planning schema export from `pddl/planning.ts` (especially new types, predicates, actions).
+- Mission data from `convex/domainSpec/data.ts` (rooms, missions, tool catalog).
+- Any existing generated artifacts (`pddl/generated/domains/*.pddl`, `pddl/generated/problems/*/problem.pddl`).
 
 ## Prompt Template
 
@@ -73,7 +73,7 @@ Example format to imitate:
 Domain context (TypeScript schema excerpt):
 ```
 
-<copy relevant portion from packages/domain-spec/planning.ts>
+<copy relevant portion from pddl/planning.ts>
 
 ```
 
@@ -112,6 +112,7 @@ Return output as:
 
 ## Storage
 
-- Save the generated domain under `packages/domain-spec/generated/domains/<domain-name>.pddl`.
-- Save the problem under `packages/domain-spec/generated/problems/<mission-id>/problem.pddl` (create folder if needed) and ensure `plan.json` sits alongside it.
+- Save the generated domain under `pddl/generated/domains/<domain-name>.pddl`.
+- Save the problem under `pddl/generated/problems/<mission-id>/problem.pddl` (create folder if needed).
+- Ensure `plan.json` is synced under `convex/domainSpec/pddl/problems/<mission-id>/`.
 - Update `plan.json` via the planner run and commit it as part of the same change.

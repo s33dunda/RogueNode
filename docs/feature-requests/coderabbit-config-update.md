@@ -51,7 +51,7 @@ Updated `.coderabbit.yaml` to reflect current RogueNode architecture including P
 Added labels for current architecture:
 
 - **`pddl-integration`** - PDDL planner, mission validation, plan generation
-- **`domain-spec`** - Changes to packages/domain-spec
+- **`domain-spec`** - Changes to `convex/domainSpec/` and `pddl/`
 - **`architecture`** - Structural changes, backend consolidation, migrations
 
 Removed:
@@ -94,11 +94,11 @@ Removed:
 
 #### `convex/gameData.ts` (New)
 
-- Verify imports from packages/domain-spec/runtime
+- Verify imports from `convex/domainSpec/runtime`
 - Ensure single source of truth
 - Backend-only module validation
 
-#### `packages/domain-spec/**` (New)
+#### `convex/domainSpec/**` (New)
 
 - Validate schema.ts for game entities
 - Check data.ts for mission definitions
@@ -107,7 +107,7 @@ Removed:
 - Validate PDDL syntax
 - Ensure generated artifacts match source data
 
-#### `packages/domain-spec/generated/**` (New)
+#### `pddl/generated/**` (New)
 
 - Verify PDDL domain/problem files are syntactically correct
 - Check plan.json contains valid action sequences
@@ -156,7 +156,7 @@ Removed:
 
 ```yaml
 - ".augment/rules/**/*.md"
-- "packages/domain-spec/README.md"
+- "convex/domainSpec/README.md"
 ```
 
 **Purpose**: Include project-specific guidelines and domain-spec documentation
@@ -205,7 +205,8 @@ Removed:
 | `convex/**` | Auth, validators, internal/public separation | Critical |
 | `convex/gameData.ts` | Single source of truth, backend-only | Critical |
 | `convex/missions.ts` | PDDL validation, progress tracking | Important |
-| `packages/domain-spec/**` | Schema, runtime, PDDL syntax | Important |
+| `convex/domainSpec/**` | Runtime schema, data, plan imports | Important |
+| `pddl/generated/**` | Planner artifacts (`.pddl` problems/domains) | Important |
 | `components/**` | Mission feedback, command integration | Normal |
 | `docs/**` | YAML front-matter, no dead references | Important |
 | `**/*.test.*` | Mission validation, PDDL integration | Normal |
@@ -222,12 +223,12 @@ Removed:
 !convex/_generated/**  # Runtime codegen only
 ```
 
-**Rationale**: Only runtime-generated code is excluded. PDDL artifacts in `packages/domain-spec/generated/` are committed source files and should be reviewed.
+**Rationale**: Only runtime-generated code is excluded. PDDL artifacts in `pddl/generated/` are committed source files and should be reviewed.
 
 **Key Distinction**:
 
 - `convex/_generated/` = Runtime codegen (excluded)
-- `packages/domain-spec/generated/` = Committed PDDL artifacts (included)
+- `pddl/generated/` = Committed PDDL artifacts (included)
 
 ---
 
@@ -239,7 +240,7 @@ Removed:
 - **`game-mechanics`**: Command parsing, inventory, navigation
 - **`pddl-integration`**: Mission validation, plan generation
 - **`convex-backend`**: Schema, queries, mutations, actions
-- **`domain-spec`**: packages/domain-spec changes
+- **`domain-spec`**: `convex/domainSpec/` changes
 - **`architecture`**: File migrations, structural refactoring
 - **`documentation`**: Docs with YAML front-matter
 - **`breaking`**: Schema changes, API changes (no backwards compat)
