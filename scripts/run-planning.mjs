@@ -118,8 +118,7 @@ async function copyPlanJson(problemPddlAbs) {
 	try {
 		await fs.access(planSource);
 	} catch {
-		console.warn(`⚠️  No plan.json found at ${planSource}; skipping plan sync.`);
-		return;
+		throw new Error(`No plan.json found at ${planSource}`);
 	}
 
 	const problemSlug =
@@ -129,8 +128,16 @@ async function copyPlanJson(problemPddlAbs) {
 	try {
 		parsed = JSON.parse(raw);
 	} catch (error) {
-		console.warn(`⚠️  Failed to parse ${planSource} as JSON:`, error);
-		return;
+		throw new Error(`Failed to parse ${planSource} as JSON: ${error.message}`);
+	}
+
+	const planSteps = Array.isArray(parsed.plan)
+		? parsed.plan
+		: Array.isArray(parsed.actions)
+			? parsed.actions
+			: null;
+	if (!planSteps || planSteps.length === 0) {
+		throw new Error(`Planner output at ${planSource} does not contain any plan steps`);
 	}
 
 	const meta = {

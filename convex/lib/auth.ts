@@ -21,31 +21,6 @@ export async function requireAuth(ctx: QueryCtx | MutationCtx | ActionCtx) {
 }
 
 /**
- * Ensures the request is authenticated and the authenticated user's subject equals the provided playerId.
- *
- * @param ctx - Convex context (QueryCtx, MutationCtx, or ActionCtx)
- * @param playerId - Player ID expected to match the authenticated user's subject
- * @returns The authenticated user's identity object
- * @throws Error if no authenticated user is present or if the authenticated user's subject does not match `playerId`
- * @example
- * // In a mutation or action:
- * // const identity = await requireAuthWithPlayerId(ctx, playerId);
- */
-export async function requireAuthWithPlayerId(
-	ctx: QueryCtx | MutationCtx | ActionCtx,
-	playerId: string,
-) {
-	const identity = await requireAuth(ctx);
-
-	// Ensure the playerId matches the authenticated user's subject
-	if (identity.subject !== playerId) {
-		throw new Error("Player ID does not match authenticated user");
-	}
-
-	return identity;
-}
-
-/**
  * Ensure the request is from an administrator and return the authenticated identity.
  *
  * Admin status is determined by whether the authenticated identity's `subject` is listed

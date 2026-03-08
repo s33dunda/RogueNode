@@ -1,0 +1,76 @@
+{
+  "batch": "dependency_health",
+  "batch_index": 7,
+  "assessments": {
+    "dependency_health": 78.0
+  },
+  "dimension_notes": {
+    "dependency_health": {
+      "evidence": [
+        "Seed files use a focused runtime set (`convex`, `@clerk/nextjs`, `@ai-sdk/openai`, `@convex-dev/agent`, `zod`) without duplicate-purpose libraries in those paths (e.g., `components/GameTerminal.tsx`, `convex/agents/pingAgent.ts`).",
+        "No direct circular imports were visible across the seed dependency chain (`convex/gameActions.ts` -> `convex/missions.ts` / `convex/utils/cacheUtils.ts` / `convex/gameData.ts`, with no reverse imports found).",
+        "`@xyflow/react` is declared in `package.json` dependencies but not imported by TS/TSX/JS/MJS/CJS source files; only design markdown references it.",
+        "`@clerk/clerk-react` is declared in `package.json` dependencies but source imports use `@clerk/nextjs` instead (`app/layout.tsx`, `components/GameTerminal.tsx`, `components/ConvexClientProvider.tsx`, `middleware.ts`)."
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit",
+      "confidence": "high"
+    }
+  },
+  "issues": [
+    {
+      "dimension": "dependency_health",
+      "identifier": "unused_dep_xyflow_react",
+      "summary": "`@xyflow/react` appears unused in application source while kept as a production dependency.",
+      "related_files": [
+        "package.json",
+        "original-design.md"
+      ],
+      "evidence": [
+        "`package.json` lists `@xyflow/react` under `dependencies`.",
+        "Repository code search across `**/*.{ts,tsx,js,jsx,mjs,cjs}` found no imports of `@xyflow/react`.",
+        "References to `@xyflow/react` were found in `original-design.md` only."
+      ],
+      "suggestion": "Remove `@xyflow/react` from runtime dependencies, or move it to dev-only/docs context if it is retained for future work.",
+      "confidence": "high",
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "stale_feature_dependency"
+    },
+    {
+      "dimension": "dependency_health",
+      "identifier": "unused_dep_clerk_react_direct",
+      "summary": "`@clerk/clerk-react` is declared directly but code relies on `@clerk/nextjs` imports.",
+      "related_files": [
+        "package.json",
+        "app/layout.tsx",
+        "components/GameTerminal.tsx",
+        "components/ConvexClientProvider.tsx",
+        "middleware.ts"
+      ],
+      "evidence": [
+        "`package.json` includes `@clerk/clerk-react` in `dependencies`.",
+        "Auth/UI integration imports are from `@clerk/nextjs` and `@clerk/nextjs/server`; no direct `@clerk/clerk-react` imports were found in source files.",
+        "`@clerk/nextjs` already declares `@clerk/clerk-react` as its dependency in installed package metadata."
+      ],
+      "suggestion": "Drop direct `@clerk/clerk-react` from this app unless there is a planned direct import path that is currently missing from source.",
+      "confidence": "high",
+      "impact_scope": "codebase",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "redundant_direct_dependency"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Dependency list appears to retain packages from earlier experiments/design work.",
+      "Top-level dependency hygiene is not enforced by an automated unused-dependency check."
+    ],
+    "likely_symptoms": [
+      "Runtime dependency surface grows faster than actual import graph usage.",
+      "Lockfile churn and install footprint increase without runtime value."
+    ],
+    "possible_false_positives": [
+      "`ai` was not flagged because it is a peer dependency required by `@convex-dev/agent`."
+    ]
+  }
+}

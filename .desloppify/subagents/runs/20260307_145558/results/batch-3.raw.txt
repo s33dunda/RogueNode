@@ -1,0 +1,94 @@
+{
+  "batch": "convention_outlier",
+  "batch_index": 3,
+  "assessments": {
+    "convention_outlier": 78.4
+  },
+  "dimension_notes": {
+    "convention_outlier": {
+      "evidence": [
+        "Index naming in `convex/schema.ts` mixes snake_case and camelCase in the same table set (`by_player`, `by_gameState`, `by_player_tool`), and those mixed patterns are consumed downstream in queries in `convex/gameActions.ts` and `convex/missions.ts`.",
+        "Domain modeling follows two parallel style systems: Zod schemas in `convex/domainSpec/schema.ts` and Convex `v.object` validators for overlapping concepts in `convex/types.ts`/`convex/schema.ts`, creating a style island inside one backend package.",
+        "Import organization is inconsistent across sibling modules: most files import concrete module paths (for example `./domainSpec/runtime`), while others import via a barrel (`./domainSpec` in `convex/gameData.ts` and `convex/missions.ts`), so extension patterns differ by file."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "issues": [
+    {
+      "dimension": "convention_outlier",
+      "identifier": "mixed_index_naming_protocol",
+      "summary": "Database index names drift between snake_case and camelCase in the same Convex schema.",
+      "related_files": [
+        "convex/schema.ts",
+        "convex/gameActions.ts",
+        "convex/missions.ts"
+      ],
+      "evidence": [
+        "`convex/schema.ts` defines both `by_player` and `by_gameState` (also `by_player_tool`).",
+        "Callers must remember mixed styles when using `.withIndex(...)`, e.g. `by_player` and `by_player_status` in different flows."
+      ],
+      "suggestion": "Standardize index identifiers to one convention (prefer snake_case for all index names in Convex schema), rename existing indexes consistently, and update all `.withIndex(...)` call sites in one migration pass.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "backend_convention_drift"
+    },
+    {
+      "dimension": "convention_outlier",
+      "identifier": "parallel_type_system_island",
+      "summary": "Overlapping domain entities use mixed schema systems without a clear enforced boundary.",
+      "related_files": [
+        "convex/domainSpec/schema.ts",
+        "convex/types.ts",
+        "convex/schema.ts",
+        "convex/gameData.ts"
+      ],
+      "evidence": [
+        "Rooms/enemies/missions are defined in Zod (`domainSpec/schema.ts`) while overlapping game entities and persistence validators are separately defined with Convex `v.object` in `types.ts` and used in `schema.ts`.",
+        "`gameData.ts` bridges these systems via casting/mapping (`room as Room`), indicating convention mismatch at module boundaries."
+      ],
+      "suggestion": "Document and enforce one boundary rule (for example: Zod only in `domainSpec`, Convex validators only in persistence layer generated from domain definitions), then remove duplicated entity definitions or generate one from the other.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change",
+      "root_cause_cluster": "backend_convention_drift"
+    },
+    {
+      "dimension": "convention_outlier",
+      "identifier": "mixed_barrel_vs_direct_imports",
+      "summary": "Sibling modules use inconsistent import organization (barrel imports vs direct module imports).",
+      "related_files": [
+        "convex/domainSpec/index.ts",
+        "convex/gameData.ts",
+        "convex/missions.ts"
+      ],
+      "evidence": [
+        "`convex/gameData.ts` imports `runtime, toolCatalog` from `./domainSpec` (barrel), while `convex/missions.ts` imports from `./domainSpec` and `./domainSpec/runtime` in the same file.",
+        "This creates inconsistent extension and navigation expectations for developers adding new domainSpec exports."
+      ],
+      "suggestion": "Pick one import protocol for `domainSpec` consumers (all barrel or all direct-path imports), codify it in lint/docs, and normalize existing imports across Convex modules.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "backend_convention_drift"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Backend conventions evolved in parallel during feature additions without a single enforced style contract for naming and module boundaries.",
+      "Domain and persistence layers were both allowed to own schema conventions, causing drift at integration points."
+    ],
+    "likely_symptoms": [
+      "by_gameState",
+      "by_player",
+      "runtime/toolCatalog barrel imports",
+      "room as Room casts"
+    ],
+    "possible_false_positives": [
+      "Some config files (`auth.config.ts`, `convex.config.ts`) intentionally use framework-driven naming and may not indicate harmful drift."
+    ]
+  }
+}

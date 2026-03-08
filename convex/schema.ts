@@ -1,6 +1,11 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { gameState } from "./types";
+import {
+	commandOutputCacheFields,
+	gameState,
+	missionProgressFields,
+	terminalOutputFields,
+} from "./types";
 
 // The schema is entirely optional.
 // You can delete this file (schema.ts) and the
@@ -13,14 +18,7 @@ export default defineSchema({
 
 	gameState: defineTable(gameState).index("by_player", ["playerId"]),
 
-	terminalOutput: defineTable({
-		playerId: v.string(),
-		gameStateId: v.id("gameState"),
-		commandInput: v.string(),
-		outputLines: v.array(v.string()),
-		commandType: v.string(),
-		success: v.boolean(),
-	})
+	terminalOutput: defineTable(terminalOutputFields)
 		.index("by_player", ["playerId"])
 		.index("by_gameState", ["gameStateId"]),
 
@@ -57,45 +55,12 @@ export default defineSchema({
 	}).index("by_room", ["roomId"]),
 
 	// Command output cache for agent responses (shared across players for same game states)
-	commandOutputCache: defineTable({
-		command: v.string(), // "ping", "ssh", etc.
-		target: v.string(), // Command target (e.g., "database-01")
-		gameStateHash: v.string(), // Hashed game state for matching
-		output: v.array(v.string()), // Cached agent output
-		skillGained: v.number(), // Skill points from command
-		success: v.boolean(), // Command success status
-		playerId: v.string(), // Player who originally generated this (for analytics only)
-		timestamp: v.number(), // When cached
-		hitCount: v.number(), // How many times used across all players
-		threadId: v.optional(v.string()), // Thread context from original generation
-	})
+	commandOutputCache: defineTable(commandOutputCacheFields)
 		.index("by_command_target_hash", ["command", "target", "gameStateHash"])
 		.index("by_timestamp", ["timestamp"]),
 
 	// Mission progress tracking for PDDL-driven validation
-	missionProgress: defineTable({
-		playerId: v.string(),
-		gameStateId: v.id("gameState"),
-		missionId: v.string(),
-		currentStepIndex: v.number(),
-		completedSteps: v.array(
-			v.object({
-				stepIndex: v.number(),
-				playerCommand: v.string(),
-				expectedAction: v.string(),
-				matched: v.boolean(),
-				timestamp: v.number(),
-			}),
-		),
-		status: v.union(
-			v.literal("not_started"),
-			v.literal("in_progress"),
-			v.literal("completed"),
-			v.literal("failed"),
-		),
-		startedAt: v.number(),
-		completedAt: v.optional(v.number()),
-	})
+	missionProgress: defineTable(missionProgressFields)
 		.index("by_player_mission", ["playerId", "missionId"])
 		.index("by_player_status", ["playerId", "status"])
 		.index("by_gameState", ["gameStateId"]),

@@ -1,0 +1,97 @@
+{
+  "batch": "type_safety",
+  "batch_index": 19,
+  "assessments": {
+    "type_safety": 78.4
+  },
+  "dimension_notes": {
+    "type_safety": {
+      "evidence": [
+        "convex/gameData.ts uses `room as Room` while building `rooms`, which suppresses structural checking between domain data and `Room`.",
+        "convex/gameData.ts declares `initialRoom: Room` from an indexed lookup (`rooms[...]`) that can evaluate to `undefined` when the key is missing.",
+        "convex/missions.ts builds `const result = []` in `getMissionsWithProgress`, causing `any[]` inference and weakening compile-time guarantees for returned object shape.",
+        "convex/agents/pingAgent.ts indexes `roomNetworkProfiles` via `sourceRoom as keyof typeof roomNetworkProfiles`, which bypasses key safety and relies on runtime fallback."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "issues": [
+    {
+      "dimension": "type_safety",
+      "identifier": "unsafe_room_cast_in_reduce",
+      "summary": "Room map construction uses an assertion that bypasses shape checking",
+      "related_files": [
+        "convex/gameData.ts"
+      ],
+      "evidence": [
+        "`rooms` is built with `acc[room.id] = room as Room;`, so mismatches between `runtime.domain.rooms` and `Room` are hidden from the type system."
+      ],
+      "suggestion": "Type `runtime.domain.rooms` at the source to match `Room` (or use a runtime validator) and remove `as Room` so assignment is type-checked directly.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "assertion_overuse"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "initial_room_declared_nonnullable",
+      "summary": "initialRoom is typed as Room even though indexed lookup may be undefined",
+      "related_files": [
+        "convex/gameData.ts"
+      ],
+      "evidence": [
+        "`initialRoom: Room = rooms[runtime.domain.rooms[0]?.id ?? \"server-room\"];` assumes the lookup always succeeds, but record indexing can produce `undefined`."
+      ],
+      "suggestion": "Either guarantee existence with an explicit guard/throw before assignment, or type as `Room | undefined` and handle the missing-room path at call sites.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "assertion_overuse"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "any_array_in_mission_query_result",
+      "summary": "Mission query accumulator is inferred as any[]",
+      "related_files": [
+        "convex/missions.ts"
+      ],
+      "evidence": [
+        "`const result = [];` in `getMissionsWithProgress` creates an `any[]`, so malformed pushes would not be caught until runtime."
+      ],
+      "suggestion": "Declare `result` with an explicit element type matching the returned validator shape (including optional `progressId`) before pushing entries.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "implicit_any_collections"
+    },
+    {
+      "dimension": "type_safety",
+      "identifier": "keyof_assertion_masks_invalid_room_keys",
+      "summary": "Network profile lookup uses key assertion instead of key narrowing",
+      "related_files": [
+        "convex/agents/pingAgent.ts"
+      ],
+      "evidence": [
+        "`roomNetworkProfiles[sourceRoom as keyof typeof roomNetworkProfiles]` forces compatibility for arbitrary strings, masking invalid key usage."
+      ],
+      "suggestion": "Introduce a typed key guard (e.g., `if (sourceRoom in roomNetworkProfiles)`) and narrow before indexing, avoiding `as keyof` assertions.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "assertion_overuse"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Frequent use of type assertions to bridge domain/runtime data instead of proving type compatibility.",
+      "Reliance on inference defaults (`[]`) in exported query paths."
+    ],
+    "likely_symptoms": [
+      "assertion_overuse",
+      "implicit_any_collections"
+    ],
+    "possible_false_positives": []
+  }
+}

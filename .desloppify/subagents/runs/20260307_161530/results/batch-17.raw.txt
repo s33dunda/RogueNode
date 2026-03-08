@@ -1,0 +1,47 @@
+{
+  "batch": "contract_coherence",
+  "batch_index": 17,
+  "assessments": {
+    "contract_coherence": 84.0
+  },
+  "dimension_notes": {
+    "contract_coherence": {
+      "evidence": [
+        "convex/gameData.ts declares `initialRoom: Room` but computes it via `rooms[runtime.domain.rooms[0]?.id ?? \"server-room\"]`, which can evaluate to `undefined` if the key is missing.",
+        "The adjacent doc comment in convex/gameData.ts states it \"Defaults to \\\"server-room\\\" if no rooms are defined,\" but the implementation only switches lookup key and does not guarantee a Room value exists.",
+        "Other reviewed contracts in seed files (e.g., mission validation return shapes and Convex `returns` validators) were largely aligned with runtime behavior."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "confidence": "high"
+    }
+  },
+  "issues": [
+    {
+      "dimension": "contract_coherence",
+      "identifier": "initial_room_type_promise_can_be_undefined",
+      "summary": "initialRoom is typed as Room but can resolve to undefined at runtime",
+      "related_files": [
+        "convex/gameData.ts"
+      ],
+      "evidence": [
+        "convex/gameData.ts:67-68 exports `initialRoom: Room = rooms[runtime.domain.rooms[0]?.id ?? \"server-room\"]`.",
+        "If `runtime.domain.rooms` is empty and `rooms[\"server-room\"]` is absent, the lookup returns `undefined`, violating the declared `Room` contract and docstring fallback claim."
+      ],
+      "suggestion": "Make the contract honest by either (a) changing the type to `Room | undefined` and handling it at call sites, or (b) enforcing a guaranteed fallback with an explicit runtime guard (throw with clear error) or a constructed default Room object.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "assumed_domain_invariants_without_runtime_guard"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Domain invariant (presence of a valid starting room) is assumed in type-level API without runtime enforcement."
+    ],
+    "likely_symptoms": [
+      "Similar direct record indexing expressions typed as non-optional values in data bootstrap modules."
+    ],
+    "possible_false_positives": []
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "batch": "package_organization",
+  "batch_index": 14,
+  "assessments": {
+    "package_organization": 81.4
+  },
+  "dimension_notes": {
+    "package_organization": {
+      "evidence": [
+        "holistic_context.structure shows `convex/` as the dominant package (`total_loc: 1911`) with low cohesion signals (`avg_fan_in: 1.0`, `avg_fan_out: 1.6`) while containing mixed concerns at one level: platform config (`auth.config.ts`, `convex.config.ts`), schema/types (`schema.ts`, `types.ts`), and runtime/game workflows (`gameActions.ts`, `gameData.ts`, `missions.ts`, `cacheCleanup.ts`).",
+        "Import edges are mostly one-way and clean (`convex/ -> convex/domainSpec/` 4, `convex/ -> convex/lib/` 2, `convex/ -> convex/utils/` 1), so the main friction is navigability/placement rather than coupling direction failures.",
+        "Repository has two similarly named planning trees with different responsibilities (`pddl/` build artifacts and `convex/domainSpec/pddl/` runtime-imported plan JSON), plus many docs still referencing `packages/domain-spec/...` paths that do not exist in this repo, making placement expectations inconsistent for contributors."
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "issues": [
+    {
+      "dimension": "package_organization",
+      "identifier": "convex_root_mixed_concerns",
+      "summary": "The `convex/` root mixes config, contracts, and gameplay workflows in one flat layer.",
+      "related_files": [
+        "convex/auth.config.ts",
+        "convex/convex.config.ts",
+        "convex/gameActions.ts",
+        "convex/gameData.ts",
+        "convex/missions.ts",
+        "convex/cacheCleanup.ts",
+        "convex/schema.ts",
+        "convex/types.ts"
+      ],
+      "evidence": [
+        "Top-level `convex/` currently holds 8 production files spanning unrelated ownership boundaries (platform boot/config, shared contracts, gameplay state/actions, maintenance actions).",
+        "Structure profile marks this directory as disproportionately large (`total_loc: 1911`) and only lightly reused per file (`avg_fan_in: 1.0`), which indicates search-first navigation instead of predictable placement."
+      ],
+      "suggestion": "Stage reorg in three moves: (1) create folders `convex/config/` (auth/convex config), `convex/contracts/` (schema/types), and `convex/functions/game/` + `convex/functions/ops/` (gameplay vs maintenance actions); (2) move files in order: config files first, then contracts, then operational/game files (`cacheCleanup.ts`, `missions.ts`, `gameData.ts`, `gameActions.ts`) to minimize temporary broken imports; (3) run import updates and validation with `rg -n \"from \\\"\\./(auth\\.config|convex\\.config|schema|types|gameActions|gameData|missions|cacheCleanup)\\\"\" convex app components lib scripts`, then `pnpm exec tsc --noEmit` and `pnpm lint`.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "flat_convex_root"
+    },
+    {
+      "dimension": "package_organization",
+      "identifier": "domain_spec_path_ambiguity",
+      "summary": "Path conventions for domain-spec are split between current and legacy package roots, reducing discoverability.",
+      "related_files": [
+        "convex/domainSpec/index.ts",
+        "convex/domainSpec/README.md",
+        "docs/pddl/integration-implementation.md",
+        "docs/pddl/integration-complete.md",
+        "docs/feature-requests/coderabbit-config-update.md",
+        "docs/ssot/documentation-plan.md"
+      ],
+      "evidence": [
+        "`convex/domainSpec/index.ts` and runtime imports treat `convex/domainSpec/` as canonical, but multiple docs still direct contributors to `packages/domain-spec/...` paths.",
+        "This creates a navigation mismatch between implementation and guidance, especially around `pddl/` vs `convex/domainSpec/pddl/` responsibilities."
+      ],
+      "suggestion": "Apply a staged docs/package clarity cleanup: (1) define a single canonical map in `docs/ssot/README.md` for `convex/domainSpec/` (runtime source) and `pddl/` (planner build artifacts); (2) update legacy `packages/domain-spec` references across docs to current paths using `rg -n \"packages/domain-spec|packages/domain spec\" docs scripts README.md`; (3) add a short root-level `docs/architecture/package-map.md` and validate consistency with `rg -n \"convex/domainSpec|pddl/\" docs README.md` plus a dry run of planner flow `pnpm planning:refresh`.",
+      "confidence": "high",
+      "impact_scope": "codebase",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "path_convention_drift"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Feature growth concentrated in `convex/` without folder-level ownership boundaries.",
+      "Migration from earlier `packages/domain-spec` layout left documentation and conceptual package maps partially updated."
+    ],
+    "likely_symptoms": [
+      "Repeated imports from relative `./domainSpec` while docs reference different roots.",
+      "Contributors placing new backend files directly under `convex/` instead of ownership-based subfolders."
+    ],
+    "possible_false_positives": [
+      "Root `middleware.ts` appears as low fan-in peripheral in structure data but is framework-constrained in Next.js and should remain root-level."
+    ]
+  }
+}

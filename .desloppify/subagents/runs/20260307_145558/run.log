@@ -1,0 +1,33 @@
+2026-03-07T14:55:58+00:00 run-start runner=codex parallel=True max_parallel=3 timeout=1200s heartbeat=15.0s stall_warning=0s stall_kill=120s retries=1 retry_backoff=2.0s upper_bound=140m selected=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+2026-03-07T14:55:58+00:00 run-path /Users/charlesdunda/src/s33dunda/RogueNode-desloppify/.desloppify/subagents/runs/20260307_145558
+2026-03-07T14:55:58+00:00 packet /Users/charlesdunda/src/s33dunda/RogueNode-desloppify/.desloppify/review_packets/holistic_packet_20260307_145558.json
+2026-03-07T14:55:58+00:00 blind-packet /Users/charlesdunda/src/s33dunda/RogueNode-desloppify/.desloppify/review_packet_blind.json
+2026-03-07T14:55:58+00:00 batch-queued batch=1 position=1/20
+2026-03-07T14:55:58+00:00 batch-start batch=1 position=1/20
+2026-03-07T14:55:58+00:00 batch-queued batch=2 position=2/20
+2026-03-07T14:55:58+00:00 batch-start batch=2 position=2/20
+2026-03-07T14:55:58+00:00 batch-queued batch=3 position=3/20
+2026-03-07T14:55:58+00:00 batch-start batch=3 position=3/20
+2026-03-07T14:55:58+00:00 batch-queued batch=4 position=4/20
+2026-03-07T14:55:58+00:00 batch-queued batch=5 position=5/20
+2026-03-07T14:55:58+00:00 batch-queued batch=6 position=6/20
+2026-03-07T14:55:58+00:00 batch-queued batch=7 position=7/20
+2026-03-07T14:55:58+00:00 batch-queued batch=8 position=8/20
+2026-03-07T14:55:58+00:00 batch-queued batch=9 position=9/20
+2026-03-07T14:55:58+00:00 batch-queued batch=10 position=10/20
+2026-03-07T14:55:58+00:00 batch-queued batch=11 position=11/20
+2026-03-07T14:55:58+00:00 batch-queued batch=12 position=12/20
+2026-03-07T14:55:58+00:00 batch-queued batch=13 position=13/20
+2026-03-07T14:55:58+00:00 batch-queued batch=14 position=14/20
+2026-03-07T14:55:58+00:00 batch-queued batch=15 position=15/20
+2026-03-07T14:55:58+00:00 batch-queued batch=16 position=16/20
+2026-03-07T14:55:58+00:00 batch-queued batch=17 position=17/20
+2026-03-07T14:55:58+00:00 batch-queued batch=18 position=18/20
+2026-03-07T14:55:58+00:00 batch-queued batch=19 position=19/20
+2026-03-07T14:55:58+00:00 batch-queued batch=20 position=20/20
+2026-03-07T14:56:13+00:00 heartbeat active=[1, 2, 3] queued=[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={1:15, 2:15, 3:15}
+2026-03-07T14:56:28+00:00 heartbeat active=[1, 2, 3] queued=[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={1:30, 2:30, 3:30}
+2026-03-07T14:56:43+00:00 heartbeat active=[1, 2, 3] queued=[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={1:45, 2:45, 3:45}
+2026-03-07T14:56:58+00:00 heartbeat active=[1, 2, 3] queued=[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={1:60, 2:60, 3:60}
+2026-03-07T14:57:03+00:00 batch-done batch=3 position=3/20 code=0 elapsed=64
+2026-03-07T14:57:03+00:00 batch-start batch=4 position=4/20

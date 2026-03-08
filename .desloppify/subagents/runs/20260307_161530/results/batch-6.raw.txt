@@ -1,0 +1,114 @@
+{
+  "batch": "abstraction_fitness",
+  "batch_index": 6,
+  "assessments": {
+    "abstraction_fitness": 78.4
+  },
+  "dimension_notes": {
+    "abstraction_fitness": {
+      "evidence": [
+        "convex/gameActions.ts defines internal wrappers like writeCommandOutput and getGameStateById that are invoked through ctx.runMutation/ctx.runQuery from executeAsyncCommand; writeCommandOutput accepts a broad arg object (playerId, gameStateId, commandInput, commandType, outputId, outputLines, success) but only patches outputId/outputLines/success.",
+        "convex/missions.ts contains thin mutation wrappers (validateMissionStep, validateAllMissionSteps) that primarily delegate to validateMissionStepInternal / validateAllMissionsInBatch with no additional policy or translation.",
+        "convex/cacheCleanup.ts has two near-duplicate actions (cleanupCacheEntriesInternal and cleanupCacheEntries) with duplicated try/catch + runMutation flow, differing mainly by auth check.",
+        "components/GameTerminal.tsx and lib/hooks/useCommandProcessor.ts add a single-use forwarding layer: processCommand trims then calls sendCommand, while GameTerminal maintains two command entry points (handleSubmit and executeCommand) that both forward to processCommand after local command checks."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "sub_axes": {
+        "abstraction_leverage": 74.0,
+        "indirection_cost": 63.0,
+        "interface_honesty": 86.0,
+        "delegation_density": 71.0,
+        "definition_directness": 69.0,
+        "type_discipline": 88.0
+      }
+    }
+  },
+  "issues": [
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "write_command_output_overwide_contract",
+      "summary": "writeCommandOutput exposes a wide arg bag but uses only three fields",
+      "related_files": [
+        "convex/gameActions.ts"
+      ],
+      "evidence": [
+        "writeCommandOutput args include playerId, gameStateId, commandInput, commandType, outputId, outputLines, success (lines 327-336).",
+        "Handler only patches by outputId with outputLines and success (lines 338-343), so most parameters are pass-through ceremony.",
+        "executeAsyncCommand repeatedly constructs the full object for internal.gameActions.writeCommandOutput (e.g., lines 221-232, 270-280, 285-296)."
+      ],
+      "suggestion": "Narrow writeCommandOutput to only the fields it actually needs, or split into explicit APIs (e.g., updateTerminalOutput) so callers stop forwarding unused context.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "overwide_internal_contracts"
+    },
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "legacy_mission_wrapper_indirection",
+      "summary": "Mission validation wrappers add extra callable surfaces without behavior",
+      "related_files": [
+        "convex/missions.ts"
+      ],
+      "evidence": [
+        "validateMissionStep mutation immediately returns validateMissionStepInternal(...) with no extra translation (lines 343-357).",
+        "validateAllMissionSteps mutation is marked deprecated and only delegates to validateAllMissionsInBatch (lines 360-381)."
+      ],
+      "suggestion": "Remove deprecated validateAllMissionSteps and collapse thin wrappers where possible; keep a single authoritative mission-validation entry per use-case.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "legacy_wrapper_accumulation"
+    },
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "duplicated_cleanup_action_layers",
+      "summary": "Cache cleanup has two duplicated action layers with minimal abstraction value",
+      "related_files": [
+        "convex/cacheCleanup.ts"
+      ],
+      "evidence": [
+        "cleanupCacheEntriesInternal and cleanupCacheEntries both run the same cleanup mutation and return the same success/error object shape (lines 15-36 vs 58-82).",
+        "The only behavioral difference is requireAdmin in the public action (line 63), while core cleanup flow is duplicated in both handlers."
+      ],
+      "suggestion": "Extract shared cleanup execution into one internal helper and keep thin boundary wrappers only for auth/scheduling entrypoints.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "boundary_wrapper_duplication"
+    },
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "single_use_command_processor_wrapper",
+      "summary": "useCommandProcessor adds a single-use forwarding layer with little leverage",
+      "related_files": [
+        "lib/hooks/useCommandProcessor.ts",
+        "components/GameTerminal.tsx"
+      ],
+      "evidence": [
+        "useCommandProcessor only trims input and forwards to sendCommand (lines 5-20).",
+        "GameTerminal is the only caller and already handles command preprocessing/branching in handleSubmit and executeCommand (lines 141-163), creating a wrapper chain without cross-feature reuse."
+      ],
+      "suggestion": "Inline the mutation call into GameTerminal or promote useCommandProcessor into a fuller command service (validation, retry, telemetry) used by multiple components.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "single_use_abstractions"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Internal/public API surfaces were expanded incrementally, leaving legacy and boundary wrappers in place after behavior moved elsewhere.",
+      "Argument contracts were designed for context-rich calls and not narrowed after handler responsibilities shrank."
+    ],
+    "likely_symptoms": [
+      "Wrapper mutations/actions that only delegate to one helper",
+      "Repeated object construction for internal calls with partially unused fields",
+      "Single-consumer hooks/services that mostly forward calls"
+    ],
+    "possible_false_positives": [
+      "Some Convex internal wrappers are required boundary seams for action↔query/mutation calls and should not be removed wholesale."
+    ]
+  }
+}

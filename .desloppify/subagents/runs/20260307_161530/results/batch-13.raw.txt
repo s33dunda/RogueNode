@@ -1,0 +1,90 @@
+{
+  "batch": "incomplete_migration",
+  "batch_index": 13,
+  "assessments": {
+    "incomplete_migration": 81.0
+  },
+  "dimension_notes": {
+    "incomplete_migration": {
+      "evidence": [
+        "`convex/missions.ts` still exports `validateAllMissionSteps` with explicit `@deprecated` guidance to use `validateAllMissionsInBatch`, so old and new mission-validation APIs coexist.",
+        "Active code paths in `convex/gameActions.ts` already call `validateAllMissionsInBatch` directly, while the deprecated mutation remains exported as a compatibility layer.",
+        "Domain-spec access is split between barrel imports and direct runtime-file imports (`convex/missions.ts` imports both `./domainSpec` and `./domainSpec/runtime`; `convex/gameData.ts` uses `./domainSpec`; `convex/gameActions.ts` uses `./domainSpec/runtime`), leaving no single canonical API surface.",
+        "`convex/gameData.ts` contains migration-era commentary (`This replaces the old utils/GameData.ts`) that points to an old structure but does not indicate completion criteria or removal timeline."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "issues": [
+    {
+      "dimension": "incomplete_migration",
+      "identifier": "deprecated_mission_mutation_still_exported",
+      "summary": "Deprecated mission-validation mutation remains exported alongside the replacement API.",
+      "related_files": [
+        "convex/missions.ts",
+        "convex/gameActions.ts"
+      ],
+      "evidence": [
+        "`convex/missions.ts` defines `validateAllMissionSteps` with `@deprecated Use validateAllMissionsInBatch directly` but still exports it as an internal mutation.",
+        "`convex/gameActions.ts` already imports and uses `validateAllMissionsInBatch` directly, indicating the new path is active while the old shim remains."
+      ],
+      "suggestion": "Remove `validateAllMissionSteps` after confirming no external/internal callers depend on it; if temporary compatibility is required, add a tracked removal issue/date and route all callers through one canonical API until deletion.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "mission_validation_migration_residue"
+    },
+    {
+      "dimension": "incomplete_migration",
+      "identifier": "domainspec_import_surface_split",
+      "summary": "Both barrel and direct-file imports coexist for domainSpec APIs.",
+      "related_files": [
+        "convex/missions.ts",
+        "convex/gameData.ts",
+        "convex/gameActions.ts",
+        "convex/domainSpec/index.ts"
+      ],
+      "evidence": [
+        "`convex/missions.ts` imports `getMissionPlan`/`matchesStep` from `./domainSpec` and `getMissionsForRoom` from `./domainSpec/runtime` in the same module.",
+        "`convex/gameData.ts` uses barrel import `./domainSpec`, while `convex/gameActions.ts` imports from `./domainSpec/runtime`."
+      ],
+      "suggestion": "Standardize on one import surface (prefer the barrel if intended as the public module boundary), export missing symbols there if needed, and update call sites to eliminate mixed old/new access patterns.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "domainspec_api_surface_migration"
+    },
+    {
+      "dimension": "incomplete_migration",
+      "identifier": "stale_migration_comment_in_gamedata",
+      "summary": "Migration-era comment references an old module without closure metadata.",
+      "related_files": [
+        "convex/gameData.ts"
+      ],
+      "evidence": [
+        "`convex/gameData.ts` documents: `This replaces the old utils/GameData.ts for backend usage.`",
+        "The comment gives no migration status, removal tracking, or compatibility constraints, so it reads as leftover migration context rather than current contract."
+      ],
+      "suggestion": "Replace migration-history phrasing with current-state contract docs, or annotate with a tracked issue/date if migration cleanup is still pending.",
+      "confidence": "medium",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "documentation_migration_residue"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Migration steps were implemented functionally, but cleanup of transitional APIs/import conventions was not completed.",
+      "No enforced canonical import boundary for `domainSpec` allowed mixed usage to persist."
+    ],
+    "likely_symptoms": [
+      "New contributors may keep adding direct `runtime` imports instead of using a single public surface.",
+      "Deprecated internal mutation may remain indefinitely because it is low-risk and not actively used."
+    ],
+    "possible_false_positives": [
+      "The deprecated mutation could be intentionally retained for out-of-repo callers; this repository alone cannot prove external dependency absence."
+    ]
+  }
+}

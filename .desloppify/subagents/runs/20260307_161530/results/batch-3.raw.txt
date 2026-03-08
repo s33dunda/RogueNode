@@ -1,0 +1,77 @@
+{
+  "batch": "convention_outlier",
+  "batch_index": 3,
+  "assessments": {
+    "convention_outlier": 81.0
+  },
+  "dimension_notes": {
+    "convention_outlier": {
+      "evidence": [
+        "Two parallel domain-model conventions coexist: `convex/types.ts` defines Convex validators and inferred app types (`item`, `enemy`, `gameState`, `Room`, `GameState`), while `convex/domainSpec/schema.ts` defines a separate Zod schema/type system (`roomSchema`, `enemySchema`, `RoomSpec`, `MissionSpec`).",
+        "Usage is mixed across sibling runtime modules: `convex/gameActions.ts` consumes Convex-side types (`./types`) and also domainSpec runtime helpers (`./domainSpec/runtime`), while `convex/gameData.ts` consumes barrel exports from `./domainSpec`.",
+        "Directory organization pattern is inconsistent in `convex/`: `convex/domainSpec/index.ts` is a barrel re-export entrypoint, but sibling folders like `convex/utils`, `convex/lib`, and `convex/agents` do not expose index-based entrypoints and are imported by concrete file paths."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "issues": [
+    {
+      "dimension": "convention_outlier",
+      "identifier": "dual_domain_type_conventions",
+      "summary": "Domain entities are modeled with two competing schema/type conventions across the same backend subsystem.",
+      "related_files": [
+        "convex/types.ts",
+        "convex/domainSpec/schema.ts",
+        "convex/gameActions.ts",
+        "convex/gameData.ts"
+      ],
+      "evidence": [
+        "`convex/types.ts` uses Convex `v.object(...)` validators + `Infer` aliases (e.g., `Room`, `GameState`).",
+        "`convex/domainSpec/schema.ts` separately uses Zod schemas + `z.infer` aliases (e.g., `RoomSpec`, `MissionSpec`).",
+        "`convex/gameActions.ts` imports from both worlds (`./types` and `./domainSpec/runtime`), showing no single convention boundary."
+      ],
+      "suggestion": "Choose one canonical domain-model strategy for backend runtime boundaries (either Convex validators first with adapters, or Zod-first with explicit translation layer) and document/enforce import rules so sibling modules do not mix both conventions ad hoc.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change",
+      "root_cause_cluster": "parallel_modeling_tracks"
+    },
+    {
+      "dimension": "convention_outlier",
+      "identifier": "inconsistent_module_entrypoint_pattern",
+      "summary": "Only `convex/domainSpec` uses a barrel `index.ts` export surface while sibling Convex areas use direct-file imports.",
+      "related_files": [
+        "convex/domainSpec/index.ts",
+        "convex/gameData.ts",
+        "convex/missions.ts",
+        "convex/utils/cacheUtils.ts",
+        "convex/lib/auth.ts"
+      ],
+      "evidence": [
+        "`convex/domainSpec/index.ts` re-exports `data`, `runtime`, and `schema` via `export *`.",
+        "Consumers import domainSpec through the folder entrypoint (`import { runtime, toolCatalog } from \"./domainSpec\"` in `convex/gameData.ts`).",
+        "Other sibling directories (`convex/utils`, `convex/lib`, `convex/agents`) are consumed via explicit file modules and do not follow the same entrypoint convention."
+      ],
+      "suggestion": "Standardize module surface conventions inside `convex/`: either adopt explicit `index.ts` entrypoints consistently for subdirectories or remove the domainSpec barrel and require direct imports everywhere.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "module_surface_inconsistency"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Domain-spec migration introduced a second modeling style without a strict boundary contract.",
+      "Module entrypoint conventions evolved locally by directory instead of as a repo-wide rule."
+    ],
+    "likely_symptoms": [
+      "Developers importing similar entities from different modules depending on context.",
+      "Naming divergence (`*Schema`/`*Spec` vs plain domain nouns) continuing as new files are added."
+    ],
+    "possible_false_positives": [
+      "Default exports in `convex/*.config.ts` and `convex/schema.ts` appear intentionally framework/config-driven and were not treated as defects."
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+	test: {
+		environment: "node",
+		exclude: [".next/**", "node_modules/**", "convex/_generated/**"],
+	},
+});

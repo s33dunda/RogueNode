@@ -1,14 +1,5 @@
-/**
- * Game Data Module - Convex Backend
- *
- * This module provides game data (rooms, enemies, missions, tools) for use
- * within Convex functions. It imports from the canonical domain-spec runtime
- * to ensure consistency across the application.
- *
- * This replaces the old utils/GameData.ts for backend usage.
- */
-
-import { runtime, toolCatalog } from "./domainSpec";
+import { domainData, missionList, toolCatalog } from "./domainSpec/data";
+import type { RoomSpec } from "./domainSpec/schema";
 import type { CommandLineTool, Room, RoomsRecord } from "./types";
 
 /**
@@ -19,16 +10,24 @@ export const gameMap = {
 	height: 1,
 };
 
-/**
- * Rooms indexed by room ID for fast lookup
- *
- * Converts the array of rooms from domain-spec into a record
- * for O(1) access by room ID.
- */
-export const rooms: RoomsRecord = runtime.domain.rooms.reduce((acc, room) => {
-	acc[room.id] = room as Room;
-	return acc;
-}, {} as RoomsRecord);
+function toRoom(room: RoomSpec): Room {
+	return {
+		id: room.id,
+		name: room.name,
+		description: room.description,
+		exits: { ...room.exits },
+	};
+}
+
+function buildRoomsRecord(domainRooms: readonly RoomSpec[]): RoomsRecord {
+	const roomMap: RoomsRecord = {};
+	for (const room of domainRooms) {
+		roomMap[room.id] = toRoom(room);
+	}
+	return roomMap;
+}
+
+export const rooms = buildRoomsRecord(domainData.rooms);
 
 /**
  * Enemy roster from domain specification
@@ -36,14 +35,14 @@ export const rooms: RoomsRecord = runtime.domain.rooms.reduce((acc, room) => {
  * These are the base enemy definitions. Each player's game state
  * gets a deep clone of this array to track defeated enemies.
  */
-export const enemies = runtime.domain.enemies;
+export const enemies = domainData.enemies;
 
 /**
  * Mission definitions from domain specification
  *
  * Includes mission metadata, optimal plans, and problem references.
  */
-export const missions = runtime.missions;
+export const missions = missionList;
 
 /**
  * Command-line tools available to players
@@ -59,10 +58,10 @@ export const commandLineTools: CommandLineTool[] = toolCatalog.map((tool) => ({
 	explanation: tool.explanation,
 }));
 
-/**
- * Initial/starting room for new players
- *
- * Defaults to "server-room" if no rooms are defined.
- */
-export const initialRoom: Room =
-	rooms[runtime.domain.rooms[0]?.id ?? "server-room"];
+const [firstRoom] = domainData.rooms;
+
+if (!firstRoom) {
+	throw new Error("Domain data must define at least one room");
+}
+
+export const initialRoom = toRoom(firstRoom);

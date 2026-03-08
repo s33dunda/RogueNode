@@ -1,0 +1,118 @@
+{
+  "batch": "high_level_elegance",
+  "batch_index": 2,
+  "assessments": {
+    "high_level_elegance": 74.3
+  },
+  "dimension_notes": {
+    "high_level_elegance": {
+      "evidence": [
+        "Top-level docs are inconsistent with runtime reality: `README.md` and `convex/README.md` are still starter template content, while the implemented app is a RogueNode game terminal.",
+        "`docs/ssot/README.md` describes canonical generated artifacts under `packages/domain-spec/generated/`, but the actual runtime/planning flow and imports use `convex/domainSpec/pddl/...` and `pddl/generated/...`.",
+        "`ARCHITECTURE.md` prescribes Server Component `preloadQuery` as a key integration pattern, but `app/page.tsx` is a client component using `Authenticated/Unauthenticated` with no preload path.",
+        "`convex/gameActions.ts` centralizes multiple subsystem responsibilities (command dispatch, async orchestration, cache behavior, mission feedback composition, game-state persistence, and telemetry-style recording), making ownership boundaries less predictable for change planning.",
+        "In `scripts/run-planning.mjs`, missing/invalid `plan.json` only logs a warning and still reports successful completion, which weakens trust in the documented planning contract and allows stale runtime artifacts to persist."
+      ],
+      "impact_scope": "codebase",
+      "fix_scope": "architectural_change",
+      "confidence": "high"
+    }
+  },
+  "issues": [
+    {
+      "dimension": "high_level_elegance",
+      "identifier": "stale_contract_docs",
+      "summary": "Primary project docs no longer represent the actual product architecture, reducing trust in ownership and entry-point guidance.",
+      "related_files": [
+        "README.md",
+        "convex/README.md",
+        "ARCHITECTURE.md",
+        "app/page.tsx"
+      ],
+      "evidence": [
+        "`README.md` and `convex/README.md` are template onboarding docs for generic Convex starter flows.",
+        "`ARCHITECTURE.md` emphasizes Server Component preload patterns, but runtime entry (`app/page.tsx`) is a client-first auth wrapper around `GameTerminal`.",
+        "A new engineer following top-level docs would be sent to outdated patterns and incorrect starting assumptions."
+      ],
+      "suggestion": "Replace starter docs with a concise, authoritative architecture map: actual entry points (`app/layout.tsx`, `app/page.tsx`, `convex/gameActions.ts`), ownership boundaries, and current data/auth flow; remove or clearly mark legacy guidance.",
+      "confidence": "high",
+      "impact_scope": "codebase",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "documentation_drift"
+    },
+    {
+      "dimension": "high_level_elegance",
+      "identifier": "ssot_path_drift",
+      "summary": "SSOT documentation references a different artifact topology than the runtime code uses.",
+      "related_files": [
+        "docs/ssot/README.md",
+        "docs/pddl/planning-workflow.md",
+        "convex/domainSpec/data.ts",
+        "scripts/run-planning.mjs"
+      ],
+      "evidence": [
+        "`docs/ssot/README.md` names `packages/domain-spec/generated/` as canonical output location.",
+        "Runtime imports in `convex/domainSpec/data.ts` load plans from `convex/domainSpec/pddl/problems/...`.",
+        "`docs/pddl/planning-workflow.md` and `scripts/run-planning.mjs` reflect the `convex/domainSpec/...` + `pddl/generated/...` layout instead."
+      ],
+      "suggestion": "Unify on one canonical artifact topology and update SSOT docs to match executable workflow; include a single source diagram referenced by both docs and scripts.",
+      "confidence": "high",
+      "impact_scope": "codebase",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "documentation_drift"
+    },
+    {
+      "dimension": "high_level_elegance",
+      "identifier": "god_module_game_actions",
+      "summary": "`gameActions` acts as a cross-cutting ownership hub instead of a focused subsystem boundary.",
+      "related_files": [
+        "convex/gameActions.ts",
+        "convex/missions.ts",
+        "convex/gameData.ts",
+        "convex/utils/cacheUtils.ts"
+      ],
+      "evidence": [
+        "`convex/gameActions.ts` handles initialization, command parsing/dispatch, async scheduling, cache-aware behavior, mission feedback composition, output persistence, game state updates, and tool usage recording.",
+        "This broad scope creates a single high-change surface where unrelated feature work collides (missions, caching, command execution, analytics-like recording).",
+        "Subsystem responsibilities already exist in neighboring modules (`missions`, `gameData`, `cacheUtils`) but orchestration ownership is still concentrated."
+      ],
+      "suggestion": "Split `gameActions` into domain-aligned entry modules (e.g., `playerStateActions`, `commandActions`, `missionActions`, `telemetryActions`) with a thin shared command orchestration layer and explicit internal API contracts.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change",
+      "root_cause_cluster": "boundary_collapse"
+    },
+    {
+      "dimension": "high_level_elegance",
+      "identifier": "planning_refresh_stale_success",
+      "summary": "Planning orchestration can report success while silently retaining stale runtime plans.",
+      "related_files": [
+        "scripts/run-planning.mjs",
+        "convex/domainSpec/data.ts"
+      ],
+      "evidence": [
+        "In `copyPlanJson`, missing `plan.json` or JSON parse failures produce warnings and return without failing the command.",
+        "`main()` still logs success after planner step, so reruns can appear healthy even when runtime import targets were not updated.",
+        "Runtime consumes plan artifacts directly from `convex/domainSpec/pddl/...`, so this behavior can preserve stale data without an explicit failure signal."
+      ],
+      "suggestion": "Add strict gating in `run-planning.mjs`: fail the run when plan sync is missing/invalid by default (or require an explicit `--allow-stale-plan` override), and verify target artifact freshness before final success output.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "orchestration_guardrail_gap"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Template and migration-era documentation was not retired as implementation evolved.",
+      "Feature iteration accumulated inside a single Convex action hub instead of preserving explicit module ownership seams.",
+      "Automation scripts prioritize non-blocking flow over correctness gates, enabling stale artifact acceptance."
+    ],
+    "likely_symptoms": [
+      "Engineers needing broad file sweeps for routine feature edits.",
+      "Frequent clarification questions on canonical data/artifact locations.",
+      "Planning pipeline reruns that appear green while gameplay behavior remains unchanged."
+    ],
+    "possible_false_positives": []
+  }
+}

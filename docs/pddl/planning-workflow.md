@@ -23,10 +23,11 @@ graph TD
    - Generate the PDDL domain/problem via the LLM CLI (`scripts/generate-pddl-llm.mjs`).
    - Write `.pddl` files to `pddl/generated/` (used by Python planner only).
    - Run the Fast Downward planner (`scripts/plan_fd.py`) to validate solvability.
+   - Fail the run if `plan.json` is missing or invalid after planning.
    - Write the resulting `plan.json` (with metadata) to `convex/domainSpec/pddl/problems/` so runtime can import it.
 3. Runtime code (`convex/gameActions.ts`, `convex/gameData.ts`) imports from `convex/domainSpec/`—including mission plans—to deliver the scenario and compare against the stored plan.
 
 **Key Separation:**
 
-- **Convex runtime imports:** `convex/domainSpec/` (synced copy of schema, data, runtime, plan.json from `packages/domain-spec/`)
+- **Convex runtime imports:** `convex/domainSpec/` (canonical runtime schema/data/helpers plus synced `plan.json`)
 - **PDDL artifacts:** `pddl/` (planning.ts, *.pddl files - NOT imported by Convex)

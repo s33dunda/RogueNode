@@ -10,7 +10,7 @@ import {
 	query,
 } from "./_generated/server";
 import { getMissionById } from "./domainSpec/runtime";
-import { commandLineTools, enemies, rooms } from "./gameData";
+import { commandLineTools, enemies, initialRoom, rooms } from "./gameData";
 import { requireAuth } from "./lib/auth";
 import { validateAllMissionsInBatch } from "./missions";
 import type { GameState } from "./types";
@@ -38,10 +38,10 @@ export const initializeGameState = mutation({
 		// Create initial game state
 		const gameStateId = await ctx.db.insert("gameState", {
 			playerId: identity.subject,
-			currentRoom: "server-room", // Starting room
+			currentRoom: initialRoom.id,
 			inventory: [],
 			health: 100,
-			visited: ["server-room"],
+			visited: [initialRoom.id],
 			enemies: enemies.map((enemy) => ({ ...enemy })), // Deep clone enemy roster
 			gameOver: false,
 			skillPoints: 0,

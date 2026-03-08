@@ -1,0 +1,86 @@
+{
+  "batch": "initialization_coupling",
+  "batch_index": 15,
+  "assessments": {
+    "initialization_coupling": 76.8
+  },
+  "dimension_notes": {
+    "initialization_coupling": {
+      "evidence": [
+        "components/ConvexClientProvider.tsx creates `const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!)` at module scope, so importing the module requires env to already be present and constructs a global client eagerly.",
+        "convex/agents/pingAgent.ts creates `export const pingAgent = new Agent(...)` at module scope; this singleton is shared process-wide and its creation is tied to import timing rather than explicit runtime wiring.",
+        "convex/auth.config.ts reads `process.env.CLERK_JWT_ISSUER_DOMAIN` in a module-level exported config object, binding provider config at import/boot time.",
+        "The packet does not provide `holistic_context.scan_evidence.mutable_globals` or `holistic_context.errors.mutable_globals` entries; verification here is based on direct code inspection."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "issues": [
+    {
+      "dimension": "initialization_coupling",
+      "identifier": "eager_convex_client_singleton",
+      "summary": "Convex client is constructed at import time from env, creating fragile boot coupling.",
+      "related_files": [
+        "components/ConvexClientProvider.tsx"
+      ],
+      "evidence": [
+        "Line 8 constructs `new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!)` at module load.",
+        "The non-null assertion (`!`) means missing env fails only after import-time construction path is reached, which is brittle in tests/alternative runtimes."
+      ],
+      "suggestion": "Move client creation behind a lazily initialized provider-local factory (e.g., `useMemo` or a `getConvexClient()` helper) that validates env explicitly and throws a clear runtime error only when provider is actually rendered.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "module_scope_singletons"
+    },
+    {
+      "dimension": "initialization_coupling",
+      "identifier": "module_scope_agent_singleton",
+      "summary": "Agent singleton is instantiated at module scope, coupling runtime behavior to import order.",
+      "related_files": [
+        "convex/agents/pingAgent.ts"
+      ],
+      "evidence": [
+        "Line 61 exports `pingAgent` as `new Agent(...)` at module scope.",
+        "Action handler reuses this singleton (`pingAgent.continueThread` / `pingAgent.createThread`), so tests and alternate boot paths cannot easily control initialization or replace dependencies."
+      ],
+      "suggestion": "Introduce an explicit `getPingAgent()` factory/registry that lazily creates and caches the Agent, and inject it into `executePingCommand` (or retrieve from a scoped runtime context) so initialization is intentional and overridable.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "module_scope_singletons"
+    },
+    {
+      "dimension": "initialization_coupling",
+      "identifier": "import_time_auth_env_binding",
+      "summary": "Auth provider domain is bound from environment at module initialization time.",
+      "related_files": [
+        "convex/auth.config.ts"
+      ],
+      "evidence": [
+        "The exported `authConfig` object includes `domain: process.env.CLERK_JWT_ISSUER_DOMAIN` directly in module scope.",
+        "This creates boot-time coupling to environment loading order and makes config mutation/testing harder without reloading the module."
+      ],
+      "suggestion": "Export a `buildAuthConfig()` function that reads env at call time and validates required keys, then call it from the Convex bootstrap entrypoint to make initialization order explicit.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "import_time_env_reads"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Core runtime objects are created as module-level singletons instead of through explicit bootstrap factories.",
+      "Environment values are read at module scope in multiple runtime-critical modules."
+    ],
+    "likely_symptoms": [
+      "Flaky test setup when env vars are set after imports.",
+      "Hard-to-control runtime replacement/mocking of infrastructure clients and agents."
+    ],
+    "possible_false_positives": [
+      "Some module-scope config in Convex/Next boot paths can be framework-conventional; risk depends on how often modules are imported outside standard boot."
+    ]
+  }
+}

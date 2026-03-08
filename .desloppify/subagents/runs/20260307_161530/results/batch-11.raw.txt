@@ -1,0 +1,85 @@
+{
+  "batch": "api_surface_coherence",
+  "batch_index": 11,
+  "assessments": {
+    "api_surface_coherence": 81.0
+  },
+  "dimension_notes": {
+    "api_surface_coherence": {
+      "evidence": [
+        "Mission runtime helpers use inconsistent absence contracts: `getMissionById` returns `undefined` for missing IDs while `getMissionPlan` converts the same condition to `[]`, forcing callers to remember per-function semantics instead of one predictable not-found shape.",
+        "The same domain API family is consumed through mixed import surfaces in one module (`./domainSpec` and `./domainSpec/runtime` in `convex/missions.ts`), which weakens discoverability of the canonical entrypoint.",
+        "Related mission APIs communicate failures differently at boundary points: `gameActions.startMission` throws errors for invalid availability while mission-step validation APIs return success-shaped objects with `matched: false` and feedback strings for invalid states."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "issues": [
+    {
+      "dimension": "api_surface_coherence",
+      "identifier": "mission_lookup_absence_contract_drift",
+      "summary": "Sibling mission lookup helpers encode not-found as different shapes (`undefined` vs `[]`).",
+      "related_files": [
+        "convex/domainSpec/runtime.ts"
+      ],
+      "evidence": [
+        "`getMissionById(missionId)` returns `MissionSpec | undefined`.",
+        "`getMissionPlan(missionId)` internally calls `getMissionById` but returns `mission?.optimalPlan ?? []`, collapsing missing mission and no-plan into the same `[]` result."
+      ],
+      "suggestion": "Standardize lookup contract across mission helpers (for example: return a shared `Result`/discriminated union with explicit `not_found` vs `no_plan`, or keep nullable return semantics consistently) and update callers to one predictable pattern.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "mission_api_contract_inconsistency"
+    },
+    {
+      "dimension": "api_surface_coherence",
+      "identifier": "mixed_domainspec_entrypoints",
+      "summary": "One module imports the same API family from both barrel and subpath entrypoints.",
+      "related_files": [
+        "convex/missions.ts",
+        "convex/domainSpec/index.ts"
+      ],
+      "evidence": [
+        "`convex/missions.ts` imports `getMissionPlan`/`matchesStep` from `./domainSpec` and `getMissionsForRoom` from `./domainSpec/runtime`.",
+        "`convex/domainSpec/index.ts` re-exports `runtime`, so both import routes are valid and competing."
+      ],
+      "suggestion": "Define and enforce one public import surface for domain spec helpers (prefer the barrel or prefer subpath), then normalize existing imports to that single convention.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "mission_api_contract_inconsistency"
+    },
+    {
+      "dimension": "api_surface_coherence",
+      "identifier": "mission_api_error_channel_mismatch",
+      "summary": "Related mission APIs use inconsistent failure channels (throws vs status-like returns).",
+      "related_files": [
+        "convex/gameActions.ts",
+        "convex/missions.ts"
+      ],
+      "evidence": [
+        "`gameActions.startMission` throws `Error` for mission-not-found and unavailable-room conditions.",
+        "`validateMissionStepInternal` and `validateAndPrepareUpdate` represent invalid states as normal return payloads (`matched: false`, feedback text), not thrown errors."
+      ],
+      "suggestion": "Choose a consistent error contract for mission APIs at boundaries (typed thrown errors with codes, or discriminated return objects) and document it in exported function/mutation contracts so callers can handle failures uniformly.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "mission_api_contract_inconsistency"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Mission functionality evolved across internal helpers and public mutations without a single enforced API contract style.",
+      "Multiple valid entrypoints (`domainSpec` barrel and direct `runtime`) allow convention drift."
+    ],
+    "likely_symptoms": [
+      "Callers needing ad hoc per-function handling for missing missions or invalid mission state.",
+      "Future contributors adding new mission helpers with mismatched not-found/error semantics."
+    ],
+    "possible_false_positives": []
+  }
+}

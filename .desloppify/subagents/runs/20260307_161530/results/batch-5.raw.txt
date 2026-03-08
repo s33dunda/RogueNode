@@ -1,0 +1,69 @@
+{
+  "batch": "naming_quality",
+  "batch_index": 5,
+  "assessments": {
+    "naming_quality": 81.4
+  },
+  "dimension_notes": {
+    "naming_quality": {
+      "evidence": [
+        "In `convex/gameActions.ts`, the term `commandType` is used for literal command names like \"help\", \"look\", and \"ping\", which reads as a category/type but behaves as a command verb/name.",
+        "In `convex/gameActions.ts`, `writeCommandOutput` does not write a new terminal record; it patches `outputLines` and `success` on an existing `outputId`, so the function name overstates behavior.",
+        "Naming is otherwise mostly explicit across cache/auth/mission helpers (`generateCacheKey`, `loadPlayerGameState`, `validateAllMissionsInBatch`), but these repeated mismatches create recurring interpretation friction."
+      ],
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "issues": [
+    {
+      "dimension": "naming_quality",
+      "identifier": "command_type_is_command_name",
+      "summary": "`commandType` is named like a category but stores concrete command names.",
+      "related_files": [
+        "convex/gameActions.ts",
+        "convex/schema.ts",
+        "convex/types.ts"
+      ],
+      "evidence": [
+        "`parseCommandType` returns `commandType` values such as \"help\", \"look\", and \"ping\".",
+        "`isSyncCommand` and command dispatch switch on `commandType` as a command token, not a type taxonomy.",
+        "`terminalOutput` persists this field as `commandType`, reinforcing the same misleading term across schema and validators."
+      ],
+      "suggestion": "Rename `commandType` to `commandName` (or `commandVerb`) across mutations/actions/schema/validators and associated DTO fields to align names with actual semantics.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "legacy_command_naming"
+    },
+    {
+      "dimension": "naming_quality",
+      "identifier": "write_command_output_misleading",
+      "summary": "`writeCommandOutput` is named as create/write but only patches an existing output row.",
+      "related_files": [
+        "convex/gameActions.ts"
+      ],
+      "evidence": [
+        "`writeCommandOutput` requires an existing `outputId` and calls `ctx.db.patch(args.outputId, ...)`.",
+        "The same module uses `ctx.db.insert(\"terminalOutput\", ...)` for actual creation, so this symbol's name mismatches its behavior."
+      ],
+      "suggestion": "Rename `writeCommandOutput` to `patchCommandOutput` or `finalizeCommandOutputPatch` and update internal call sites for behavior-honest naming.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "legacy_command_naming"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Early command model appears to have started with broad \"type\" terminology and then evolved toward concrete verb-based dispatch without renaming persisted fields.",
+      "Internal mutation names emphasize workflow intent (\"write\") rather than exact data operation (\"patch\")."
+    ],
+    "likely_symptoms": [
+      "commandType",
+      "writeCommandOutput"
+    ],
+    "possible_false_positives": []
+  }
+}

@@ -1,139 +1,17 @@
 import { v } from "convex/values";
-import type { Doc, Id } from "./_generated/dataModel";
+import type { Id } from "./_generated/dataModel";
 import {
 	internalMutation,
 	internalQuery,
 	type MutationCtx,
 } from "./_generated/server";
-import { getMissionPlan, matchesStep } from "./domainSpec";
 import { getMissionsForRoom } from "./domainSpec/runtime";
+import { validateAndPrepareUpdate } from "./missionValidation";
 import {
 	type MissionStepValidationResult,
 	missionProgressEntry,
 	missionStepValidationResult,
 } from "./types";
-
-/**
- * Validate a player's command against a mission progress document and produce any required progress updates.
- *
- * This is a pure function with no side effects; it computes whether the provided command matches the current mission step,
- * assembles user-facing feedback, computes skill gained, and prepares a partial document patch suitable for persistence.
- *
- * @param progress - The missionProgress document representing the player's current mission state
- * @param playerCommand - The raw command/string issued by the player to validate against the current step
- * @returns An object containing:
- *  - `id`: the missionProgress document id
- *  - `changes`: a Partial missionProgress patch to apply to the database, or `null` when no change is applicable
- *  - `result`: a MissionStepValidationResult with fields:
- *      - `matched`: `true` if the command satisfied the current step, `false` otherwise
- *      - `expectedAction`: a short string describing the expected action/target
- *      - `feedback`: an array of user-facing feedback messages
- *      - `missionComplete`: `true` if the match completed the mission, `false` otherwise
- *      - `skillGained`: numeric skill points awarded for this validation (zero when not matched)
- */
-export function validateAndPrepareUpdate(
-	progress: Doc<"missionProgress">,
-	playerCommand: string,
-): {
-	id: Id<"missionProgress">;
-	changes: Partial<Doc<"missionProgress">> | null;
-	result: MissionStepValidationResult;
-} {
-	// Mission not in progress
-	if (progress.status !== "in_progress") {
-		return {
-			id: progress._id,
-			changes: null,
-			result: {
-				matched: false,
-				expectedAction: "",
-				feedback: ["No active mission found. Start a mission first."],
-				missionComplete: false,
-				skillGained: 0,
-			},
-		};
-	}
-
-	const plan = getMissionPlan(progress.missionId);
-	if (plan.length === 0) {
-		return {
-			id: progress._id,
-			changes: null,
-			result: {
-				matched: false,
-				expectedAction: "",
-				feedback: ["Mission has no validation plan."],
-				missionComplete: false,
-				skillGained: 0,
-			},
-		};
-	}
-
-	const currentStep = plan[progress.currentStepIndex];
-	if (!currentStep) {
-		return {
-			id: progress._id,
-			changes: null,
-			result: {
-				matched: false,
-				expectedAction: "",
-				feedback: ["Mission already complete."],
-				missionComplete: true,
-				skillGained: 0,
-			},
-		};
-	}
-
-	const matched = matchesStep(playerCommand, currentStep);
-	const nextStepIndex = matched
-		? progress.currentStepIndex + 1
-		: progress.currentStepIndex;
-	const missionComplete = matched && nextStepIndex >= plan.length;
-
-	const feedback = matched
-		? [
-				`✓ Correct! ${currentStep.description}`,
-				missionComplete
-					? "Mission complete! Well done."
-					: `Next step: ${plan[nextStepIndex]?.description ?? "Unknown"}`,
-			]
-		: [
-				`✗ Not quite. Expected: ${currentStep.action} ${
-					currentStep.target ?? ""
-				}`,
-				`Hint: ${currentStep.description}`,
-			];
-
-	// Prepare database changes (only if step was matched or attempted)
-	const changes: Partial<Doc<"missionProgress">> = {
-		currentStepIndex: nextStepIndex,
-		completedSteps: [
-			...progress.completedSteps,
-			{
-				stepIndex: progress.currentStepIndex,
-				playerCommand,
-				expectedAction: currentStep.action,
-				matched,
-				timestamp: Date.now(),
-			},
-		],
-		status: missionComplete ? "completed" : "in_progress",
-		...(missionComplete ? { completedAt: Date.now() } : {}),
-	};
-
-	return {
-		id: progress._id,
-		changes,
-		result: {
-			matched,
-			expectedAction:
-				`${currentStep.action} ${currentStep.target ?? ""}`.trim(),
-			feedback,
-			missionComplete,
-			skillGained: matched ? 10 : 0,
-		},
-	};
-}
 
 /**
  * Validate every in-progress mission for a player using a single read and apply any resulting progress updates atomically.
@@ -202,7 +80,7 @@ export async function validateAllMissionsInBatch(
 /**
  * Validate a player's command against a specific mission's current step and persist any resulting progress updates.
  *
- * Internal legacy wrapper that looks up the player's active mission progress, performs pure in-memory validation via validateAndPrepareUpdate, and applies database patches when the progress should change. This function does not perform authorization checks — the caller must ensure it is allowed to act on behalf of `playerId`. For validating multiple active missions in one operation, prefer `validateAllMissionsInBatch`.
+ * Load a mission's progress, apply the pure validation helper, and persist any resulting patch.
  *
  * @param ctx - Mutation context providing database access and execution environment
  * @param playerId - Identifier of the player whose mission progress will be validated
@@ -259,7 +137,7 @@ export const getActiveMissions = internalQuery({
 	},
 	returns: v.array(missionProgressEntry),
 	handler: async (ctx, { playerId }) => {
-		return await ctx.db
+		return ctx.db
 			.query("missionProgress")
 			.withIndex("by_player_status", (q) =>
 				q.eq("playerId", playerId).eq("status", "in_progress"),
@@ -284,7 +162,7 @@ export const getMissionProgress = internalQuery({
 	},
 	returns: v.union(missionProgressEntry, v.null()),
 	handler: async (ctx, { playerId, missionId }) => {
-		return await ctx.db
+		return ctx.db
 			.query("missionProgress")
 			.withIndex("by_player_mission", (q) =>
 				q.eq("playerId", playerId).eq("missionId", missionId),
@@ -320,7 +198,7 @@ export const startMission = internalMutation({
 		}
 
 		// Create new progress tracker
-		return await ctx.db.insert("missionProgress", {
+		return ctx.db.insert("missionProgress", {
 			playerId,
 			gameStateId,
 			missionId,
@@ -348,35 +226,7 @@ export const validateMissionStep = internalMutation({
 	},
 	returns: missionStepValidationResult,
 	handler: async (ctx, { playerId, missionId, playerCommand }) => {
-		return await validateMissionStepInternal(
-			ctx,
-			playerId,
-			missionId,
-			playerCommand,
-		);
-	},
-});
-
-/**
- * Internal mutation: Validate all mission steps (DEPRECATED - use batch function)
- *
- * Delegates to the optimized batch validation function which queries all active
- * missions directly and validates them in a single transaction.
- *
- * @deprecated Use validateAllMissionsInBatch directly for better performance
- */
-export const validateAllMissionSteps = internalMutation({
-	args: {
-		playerId: v.string(),
-		playerCommand: v.string(),
-	},
-	returns: v.object({
-		feedback: v.array(v.string()),
-		totalSkillGained: v.number(),
-	}),
-	handler: async (ctx, { playerId, playerCommand }) => {
-		// Delegate to optimized batch function
-		return await validateAllMissionsInBatch(ctx, playerId, playerCommand);
+		return validateMissionStepInternal(ctx, playerId, missionId, playerCommand);
 	},
 });
 
@@ -408,7 +258,13 @@ export const getMissionsWithProgress = internalQuery({
 		// Get missions available in this room
 		const missions = getMissionsForRoom(roomId);
 
-		const result = [];
+		const result: Array<{
+			id: string;
+			title: string;
+			synopsis: string;
+			status: "available" | "in_progress" | "completed";
+			progressId?: Id<"missionProgress">;
+		}> = [];
 		for (const mission of missions) {
 			const progress = await ctx.db
 				.query("missionProgress")

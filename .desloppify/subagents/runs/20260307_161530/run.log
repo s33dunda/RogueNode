@@ -1,0 +1,109 @@
+2026-03-07T16:15:30+00:00 run-start runner=codex parallel=True max_parallel=3 timeout=1200s heartbeat=15.0s stall_warning=0s stall_kill=120s retries=1 retry_backoff=2.0s upper_bound=140m selected=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+2026-03-07T16:15:30+00:00 run-path /Users/charlesdunda/src/s33dunda/RogueNode-desloppify/.desloppify/subagents/runs/20260307_161530
+2026-03-07T16:15:30+00:00 packet .desloppify/review_packets/holistic_packet_20260307_145558.json
+2026-03-07T16:15:30+00:00 blind-packet /Users/charlesdunda/src/s33dunda/RogueNode-desloppify/.desloppify/review_packet_blind.json
+2026-03-07T16:15:30+00:00 batch-queued batch=1 position=1/20
+2026-03-07T16:15:30+00:00 batch-start batch=1 position=1/20
+2026-03-07T16:15:30+00:00 batch-queued batch=2 position=2/20
+2026-03-07T16:15:30+00:00 batch-queued batch=3 position=3/20
+2026-03-07T16:15:30+00:00 batch-start batch=2 position=2/20
+2026-03-07T16:15:30+00:00 batch-start batch=3 position=3/20
+2026-03-07T16:15:30+00:00 batch-queued batch=4 position=4/20
+2026-03-07T16:15:30+00:00 batch-queued batch=5 position=5/20
+2026-03-07T16:15:30+00:00 batch-queued batch=6 position=6/20
+2026-03-07T16:15:30+00:00 batch-queued batch=7 position=7/20
+2026-03-07T16:15:30+00:00 batch-queued batch=8 position=8/20
+2026-03-07T16:15:30+00:00 batch-queued batch=9 position=9/20
+2026-03-07T16:15:30+00:00 batch-queued batch=10 position=10/20
+2026-03-07T16:15:30+00:00 batch-queued batch=11 position=11/20
+2026-03-07T16:15:30+00:00 batch-queued batch=12 position=12/20
+2026-03-07T16:15:30+00:00 batch-queued batch=13 position=13/20
+2026-03-07T16:15:30+00:00 batch-queued batch=14 position=14/20
+2026-03-07T16:15:30+00:00 batch-queued batch=15 position=15/20
+2026-03-07T16:15:30+00:00 batch-queued batch=16 position=16/20
+2026-03-07T16:15:30+00:00 batch-queued batch=17 position=17/20
+2026-03-07T16:15:30+00:00 batch-queued batch=18 position=18/20
+2026-03-07T16:15:30+00:00 batch-queued batch=19 position=19/20
+2026-03-07T16:15:30+00:00 batch-queued batch=20 position=20/20
+2026-03-07T16:15:45+00:00 heartbeat active=[1, 2, 3] queued=[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={1:15, 2:15, 3:15}
+2026-03-07T16:16:00+00:00 heartbeat active=[1, 2, 3] queued=[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={1:30, 2:30, 3:30}
+2026-03-07T16:16:15+00:00 heartbeat active=[1, 2, 3] queued=[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={1:45, 2:45, 3:45}
+2026-03-07T16:16:30+00:00 heartbeat active=[1, 2, 3] queued=[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={1:60, 2:60, 3:60}
+2026-03-07T16:16:45+00:00 heartbeat active=[1, 2, 3] queued=[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={1:75, 2:75, 3:75}
+2026-03-07T16:16:50+00:00 batch-start batch=4 position=4/20
+2026-03-07T16:16:50+00:00 batch-done batch=3 position=3/20 code=0 elapsed=80
+2026-03-07T16:17:05+00:00 heartbeat active=[1, 2, 4] queued=[5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={1:95, 2:95, 4:15}
+2026-03-07T16:17:20+00:00 heartbeat active=[1, 2, 4] queued=[5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={1:110, 2:110, 4:30}
+2026-03-07T16:17:35+00:00 heartbeat active=[1, 2, 4] queued=[5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={1:125, 2:125, 4:45}
+2026-03-07T16:17:50+00:00 heartbeat active=[1, 2, 4] queued=[5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={1:140, 2:140, 4:60}
+2026-03-07T16:18:05+00:00 heartbeat active=[1, 2, 4] queued=[5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={1:155, 2:155, 4:75}
+2026-03-07T16:18:09+00:00 batch-start batch=5 position=5/20
+2026-03-07T16:18:09+00:00 batch-start batch=6 position=6/20
+2026-03-07T16:18:09+00:00 batch-done batch=4 position=4/20 code=0 elapsed=79
+2026-03-07T16:18:09+00:00 batch-done batch=2 position=2/20 code=0 elapsed=159
+2026-03-07T16:18:24+00:00 heartbeat active=[1, 5, 6] queued=[7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={1:174, 5:15, 6:15}
+2026-03-07T16:18:27+00:00 batch-start batch=7 position=7/20
+2026-03-07T16:18:27+00:00 batch-done batch=1 position=1/20 code=0 elapsed=177
+2026-03-07T16:18:42+00:00 heartbeat active=[5, 6, 7] queued=[8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={5:33, 6:33, 7:15}
+2026-03-07T16:18:57+00:00 heartbeat active=[5, 6, 7] queued=[8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={5:48, 6:48, 7:30}
+2026-03-07T16:19:12+00:00 heartbeat active=[5, 6, 7] queued=[8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={5:63, 6:63, 7:45}
+2026-03-07T16:19:22+00:00 batch-start batch=8 position=8/20
+2026-03-07T16:19:22+00:00 batch-done batch=5 position=5/20 code=0 elapsed=72
+2026-03-07T16:19:37+00:00 heartbeat active=[6, 7, 8] queued=[9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={6:87, 7:69, 8:15}
+2026-03-07T16:19:52+00:00 heartbeat active=[6, 7, 8] queued=[9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={6:102, 7:84, 8:30}
+2026-03-07T16:20:07+00:00 heartbeat active=[6, 7, 8] queued=[9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={6:117, 7:99, 8:45}
+2026-03-07T16:20:22+00:00 heartbeat active=[6, 7, 8] queued=[9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={6:132, 7:114, 8:60}
+2026-03-07T16:20:34+00:00 batch-start batch=9 position=9/20
+2026-03-07T16:20:34+00:00 batch-done batch=6 position=6/20 code=0 elapsed=144
+2026-03-07T16:20:35+00:00 batch-done batch=8 position=8/20 code=0 elapsed=73
+2026-03-07T16:20:35+00:00 batch-start batch=10 position=10/20
+2026-03-07T16:20:36+00:00 batch-start batch=11 position=11/20
+2026-03-07T16:20:36+00:00 batch-done batch=7 position=7/20 code=0 elapsed=128
+2026-03-07T16:20:51+00:00 heartbeat active=[9, 10, 11] queued=[12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={9:16, 10:15, 11:15}
+2026-03-07T16:21:06+00:00 heartbeat active=[9, 10, 11] queued=[12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={9:31, 10:30, 11:30}
+2026-03-07T16:21:21+00:00 heartbeat active=[9, 10, 11] queued=[12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={9:47, 10:45, 11:45}
+2026-03-07T16:21:36+00:00 heartbeat active=[9, 10, 11] queued=[12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={9:62, 10:61, 11:60}
+2026-03-07T16:21:51+00:00 heartbeat active=[9, 10, 11] queued=[12, 13, 14, 15, 16, 17, 18, 19, 20] elapsed={9:77, 10:76, 11:75}
+2026-03-07T16:21:54+00:00 batch-start batch=12 position=12/20
+2026-03-07T16:21:54+00:00 batch-done batch=9 position=9/20 code=0 elapsed=80
+2026-03-07T16:22:03+00:00 batch-start batch=13 position=13/20
+2026-03-07T16:22:03+00:00 batch-done batch=10 position=10/20 code=0 elapsed=88
+2026-03-07T16:22:06+00:00 batch-done batch=11 position=11/20 code=0 elapsed=90
+2026-03-07T16:22:06+00:00 batch-start batch=14 position=14/20
+2026-03-07T16:22:21+00:00 heartbeat active=[12, 13, 14] queued=[15, 16, 17, 18, 19, 20] elapsed={12:26, 13:17, 14:15}
+2026-03-07T16:22:36+00:00 heartbeat active=[12, 13, 14] queued=[15, 16, 17, 18, 19, 20] elapsed={12:41, 13:32, 14:30}
+2026-03-07T16:22:51+00:00 heartbeat active=[12, 13, 14] queued=[15, 16, 17, 18, 19, 20] elapsed={12:57, 13:47, 14:45}
+2026-03-07T16:23:06+00:00 heartbeat active=[12, 13, 14] queued=[15, 16, 17, 18, 19, 20] elapsed={12:72, 13:62, 14:60}
+2026-03-07T16:23:21+00:00 heartbeat active=[12, 13, 14] queued=[15, 16, 17, 18, 19, 20] elapsed={12:87, 13:78, 14:75}
+2026-03-07T16:23:34+00:00 batch-start batch=15 position=15/20
+2026-03-07T16:23:34+00:00 batch-done batch=14 position=14/20 code=0 elapsed=87
+2026-03-07T16:23:49+00:00 heartbeat active=[12, 13, 15] queued=[16, 17, 18, 19, 20] elapsed={12:114, 13:105, 15:15}
+2026-03-07T16:24:01+00:00 batch-done batch=13 position=13/20 code=0 elapsed=117
+2026-03-07T16:24:01+00:00 batch-start batch=16 position=16/20
+2026-03-07T16:24:01+00:00 batch-start batch=17 position=17/20
+2026-03-07T16:24:01+00:00 batch-done batch=12 position=12/20 code=0 elapsed=126
+2026-03-07T16:24:16+00:00 heartbeat active=[15, 16, 17] queued=[18, 19, 20] elapsed={15:42, 16:15, 17:15}
+2026-03-07T16:24:31+00:00 heartbeat active=[15, 16, 17] queued=[18, 19, 20] elapsed={15:57, 16:30, 17:30}
+2026-03-07T16:24:46+00:00 heartbeat active=[15, 16, 17] queued=[18, 19, 20] elapsed={15:72, 16:45, 17:45}
+2026-03-07T16:25:01+00:00 heartbeat active=[15, 16, 17] queued=[18, 19, 20] elapsed={15:87, 16:60, 17:60}
+2026-03-07T16:25:16+00:00 heartbeat active=[15, 16, 17] queued=[18, 19, 20] elapsed={15:102, 16:75, 17:75}
+2026-03-07T16:25:31+00:00 heartbeat active=[15, 16, 17] queued=[18, 19, 20] elapsed={15:117, 16:90, 17:90}
+2026-03-07T16:25:33+00:00 batch-start batch=18 position=18/20
+2026-03-07T16:25:33+00:00 batch-done batch=16 position=16/20 code=0 elapsed=92
+2026-03-07T16:25:41+00:00 batch-start batch=19 position=19/20
+2026-03-07T16:25:41+00:00 batch-done batch=17 position=17/20 code=0 elapsed=100
+2026-03-07T16:25:47+00:00 batch-start batch=20 position=20/20
+2026-03-07T16:25:47+00:00 batch-done batch=15 position=15/20 code=0 elapsed=133
+2026-03-07T16:26:02+00:00 heartbeat active=[18, 19, 20] queued=[] elapsed={18:29, 19:21, 20:15}
+2026-03-07T16:26:17+00:00 heartbeat active=[18, 19, 20] queued=[] elapsed={18:44, 19:36, 20:30}
+2026-03-07T16:26:32+00:00 heartbeat active=[18, 19, 20] queued=[] elapsed={18:59, 19:51, 20:45}
+2026-03-07T16:26:47+00:00 heartbeat active=[18, 19, 20] queued=[] elapsed={18:74, 19:66, 20:60}
+2026-03-07T16:27:02+00:00 heartbeat active=[18, 19, 20] queued=[] elapsed={18:89, 19:81, 20:75}
+2026-03-07T16:27:17+00:00 heartbeat active=[18, 19, 20] queued=[] elapsed={18:104, 19:96, 20:90}
+2026-03-07T16:27:22+00:00 batch-done batch=19 position=19/20 code=0 elapsed=101
+2026-03-07T16:27:26+00:00 batch-done batch=18 position=18/20 code=0 elapsed=113
+2026-03-07T16:27:41+00:00 heartbeat active=[20] queued=[] elapsed={20:114}
+2026-03-07T16:27:56+00:00 heartbeat active=[20] queued=[] elapsed={20:129}
+2026-03-07T16:27:58+00:00 batch-done batch=20 position=20/20 code=0 elapsed=130
+2026-03-07T16:27:58+00:00 run-summary /Users/charlesdunda/src/s33dunda/RogueNode-desloppify/.desloppify/subagents/runs/20260307_161530/run_summary.json
+2026-03-07T16:27:58+00:00 run-finished successful=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] failed=[] imported=/Users/charlesdunda/src/s33dunda/RogueNode-desloppify/.desloppify/subagents/runs/20260307_161530/holistic_issues_merged.json

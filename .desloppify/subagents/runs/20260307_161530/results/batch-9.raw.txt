@@ -1,0 +1,91 @@
+{
+  "batch": "mid_level_elegance",
+  "batch_index": 9,
+  "assessments": {
+    "mid_level_elegance": 74.0
+  },
+  "dimension_notes": {
+    "mid_level_elegance": {
+      "evidence": [
+        "Command orchestration is split across multiple seams: `sendCommand` handles sync commands inline, schedules async work, and also contains a separate cached-async fast path that duplicates mission validation + output composition + skill updates already centralized in `finalizeCommandOutput`.",
+        "Integration boundary for the `missions` command is split between client and server: `components/GameTerminal.tsx` intercepts `missions` locally, while `convex/gameActions.ts` treats unknown commands as unsupported in `processSyncCommand`, creating a hidden contract across layers.",
+        "Auth/lifecycle handoff is duplicated across app shell and terminal component: `app/page.tsx` gates with Convex `Authenticated/Unauthenticated`, while `components/GameTerminal.tsx` independently gates with Clerk `useUser` + `identityReady` + Convex `skip` sentinels."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "issues": [
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "duplicated_async_finalize_paths",
+      "summary": "Cached and non-cached async command paths use different orchestration seams with duplicated glue logic.",
+      "related_files": [
+        "convex/gameActions.ts",
+        "convex/missions.ts"
+      ],
+      "evidence": [
+        "`sendCommand` cached branch manually calls `validateAllMissionsInBatch`, assembles mission output lines, inserts terminal output, and patches game state.",
+        "Non-cached async flow routes through `executeAsyncCommand` -> `finalizeCommandOutput`, which performs similar mission validation/output/state update responsibilities in a separate seam.",
+        "The same cross-module handoff responsibilities (mission validation + output merge + skill/thread propagation) are implemented in two different paths."
+      ],
+      "suggestion": "Create one internal boundary for async command finalization (e.g., always call `finalizeCommandOutput` for both cached and non-cached async results) and make cached flow produce a normalized `commandResult` payload only.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "split_command_orchestration"
+    },
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "client_server_command_contract_split",
+      "summary": "The `missions` command contract is implicit and split across client UI and backend command handler.",
+      "related_files": [
+        "components/GameTerminal.tsx",
+        "convex/gameActions.ts"
+      ],
+      "evidence": [
+        "`GameTerminal` intercepts `missions` in `handleSubmit` and `executeCommand` and opens a local panel instead of sending the command.",
+        "Backend `processSyncCommand` does not handle `missions` and default branch reports command not available.",
+        "Help text returned by backend includes `missions`, but behavior depends on UI-specific interception."
+      ],
+      "suggestion": "Define `missions` ownership at one seam: either support it as a first-class server command, or explicitly remove it from server command help and expose a dedicated UI action contract so behavior is predictable across clients.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "split_command_orchestration"
+    },
+    {
+      "dimension": "mid_level_elegance",
+      "identifier": "duplicated_auth_lifecycle_gates",
+      "summary": "Authentication and readiness checks are duplicated across UI layers, obscuring boundary responsibility.",
+      "related_files": [
+        "app/page.tsx",
+        "components/GameTerminal.tsx",
+        "components/ConvexClientProvider.tsx"
+      ],
+      "evidence": [
+        "`app/page.tsx` already gates by Convex `Authenticated/Unauthenticated`.",
+        "`GameTerminal` separately checks Clerk `isLoaded`/`user`, and additionally gates Convex queries via `identityReady ? {} : \"skip\"`.",
+        "This creates multiple integration seams for auth/readiness instead of one explicit handoff point."
+      ],
+      "suggestion": "Centralize auth lifecycle at one boundary (page/provider level), pass a resolved authenticated contract into `GameTerminal`, and remove duplicate Clerk/skip gating from leaf components.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "split_auth_handoff"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Feature growth added fast paths without consolidating boundary orchestration contracts.",
+      "Frontend and backend both evolved command/auth ownership, but no single seam owner was enforced."
+    ],
+    "likely_symptoms": [
+      "Behavior drift between cached and non-cached command execution.",
+      "UI-specific command behavior not reproducible from non-UI clients.",
+      "Additional auth/loading conditionals added in new components instead of reusing one boundary."
+    ],
+    "possible_false_positives": []
+  }
+}

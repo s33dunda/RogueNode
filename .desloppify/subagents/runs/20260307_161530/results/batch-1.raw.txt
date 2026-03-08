@@ -1,0 +1,93 @@
+{
+  "batch": "cross_module_architecture",
+  "batch_index": 1,
+  "assessments": {
+    "cross_module_architecture": 74.6
+  },
+  "dimension_notes": {
+    "cross_module_architecture": {
+      "evidence": [
+        "`convex/gameActions.ts` imports domain runtime, game data, auth, mission logic, shared types, and cache utils in one module (`convex/gameActions.ts:12-18`), making it the orchestration hub for gameplay, mission progression, async scheduling, and persistence.",
+        "`validateAllMissionsInBatch` from `convex/missions.ts` is called directly from multiple places inside `convex/gameActions.ts` (`convex/gameActions.ts:115`, `convex/gameActions.ts:435`) instead of crossing through a narrower boundary, increasing cross-module blast radius when mission behavior changes.",
+        "Table contracts are duplicated in both schema and shared type validators: `commandOutputCache`/`missionProgress` structures in `convex/schema.ts:60-101` are re-declared as `commandOutputCacheEntry`/`missionProgressEntry` in `convex/types.ts:103-155`, creating parallel boundary definitions.",
+        "`convex/types.ts` mixes backend validator contracts with a frontend-only behavioral type (`ItemWithFunctions`) in the same shared module (`convex/types.ts:84-90`), which blurs server/client boundary intent in the most imported type file.",
+        "Codebase size is concentrated in `convex/` (2689 LOC) versus `components/` (571 LOC) and `app/` (107 LOC), and the largest module (`convex/gameActions.ts`) centralizes many responsibilities, reinforcing a backend-heavy coupling center."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change",
+      "confidence": "high"
+    }
+  },
+  "issues": [
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "duplicated_table_contracts_across_schema_and_types",
+      "summary": "Database table shapes are duplicated across schema and shared types, creating drift-prone boundaries.",
+      "related_files": [
+        "convex/schema.ts",
+        "convex/types.ts"
+      ],
+      "evidence": [
+        "`convex/schema.ts:60-101` defines `commandOutputCache` and `missionProgress` table schemas.",
+        "`convex/types.ts:103-155` redefines those same structures as `commandOutputCacheEntry` and `missionProgressEntry` validators with overlapping fields."
+      ],
+      "suggestion": "Create a single source of truth for table contracts (for example a dedicated `convex/contracts/` module) and have both `schema.ts` and consumer modules import from it, instead of maintaining parallel validators.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "shared_contract_boundary_missing"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "game_actions_as_cross_subsystem_hub",
+      "summary": "A single gameplay module coordinates too many subsystems, creating high change ripple risk.",
+      "related_files": [
+        "convex/gameActions.ts",
+        "convex/missions.ts",
+        "convex/agents/pingAgent.ts",
+        "convex/utils/cacheUtils.ts"
+      ],
+      "evidence": [
+        "`convex/gameActions.ts:12-18` imports mission runtime, data, auth, mission validation, cache utilities, and shared validators together.",
+        "Mission progression is invoked from multiple paths inside the same hub (`convex/gameActions.ts:115`, `convex/gameActions.ts:435`), tightly coupling command execution to mission internals.",
+        "The same module also handles async scheduling and downstream internal calls (`ctx.scheduler.runAfter` and `internal.*` calls), combining orchestration with domain mutation concerns."
+      ],
+      "suggestion": "Split `gameActions.ts` into bounded modules (command dispatch, mission integration adapter, output persistence, and state updates), and expose mission behavior through a narrow internal API boundary to reduce direct dependency fan-out.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change",
+      "root_cause_cluster": "orchestration_hub_coupling"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "frontend_server_boundary_blur_in_shared_types",
+      "summary": "Server-shared type module contains frontend-only behavior types, weakening boundary clarity.",
+      "related_files": [
+        "convex/types.ts"
+      ],
+      "evidence": [
+        "`convex/types.ts:84-90` declares `ItemWithFunctions` with a `use` callback while comments mark it as frontend-only.",
+        "The same file is heavily used by backend modules for Convex validators and table-entry contracts, so frontend behavior types and backend persistence contracts co-reside in one boundary module."
+      ],
+      "suggestion": "Move frontend-only behavioral interfaces into a frontend-local module (for example under `lib/` or `components/` types) and keep `convex/types.ts` limited to backend/shared serialization contracts.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "shared_contract_boundary_missing"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "A single shared contracts module grew to include both persistence and UI behavior concerns.",
+      "Gameplay orchestration evolved inside one file without enforcing subsystem boundaries."
+    ],
+    "likely_symptoms": [
+      "Frequent cross-file edits touching `gameActions.ts` plus mission/cache/auth modules for routine features.",
+      "Schema/type mismatch regressions when table fields evolve."
+    ],
+    "possible_false_positives": [
+      "No packet-provided `coupling.boundary_violations` or `dependencies.deferred_import_density` entries were present in this blind packet, so cycle/deferred-import risk was evaluated from direct code inspection only.",
+      "No in-repo review/queue orchestration flow was found in production TS/TSX files for the loop-prone workflow checks."
+    ]
+  }
+}

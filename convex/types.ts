@@ -81,28 +81,7 @@ export const commandResult = v.object({
 	success: v.boolean(),
 });
 
-// Frontend-only Item type that includes the use function
-export interface ItemWithFunctions extends Item {
-	use?: (gameState: GameState) => {
-		message: string[];
-		updateState?: Partial<GameState>;
-	};
-}
-
-// Action function type for executePingCommand
-export type ExecuteCommandAction = {
-	args: {
-		target: string;
-		gameState: GameState;
-		threadId?: string;
-	};
-	returns: CommandResult;
-};
-
-// Command output cache validator (matches schema exactly)
-export const commandOutputCacheEntry = v.object({
-	_id: v.id("commandOutputCache"),
-	_creationTime: v.number(),
+export const commandOutputCacheFields = {
 	command: v.string(),
 	target: v.string(),
 	gameStateHash: v.string(),
@@ -113,45 +92,62 @@ export const commandOutputCacheEntry = v.object({
 	timestamp: v.number(),
 	hitCount: v.number(),
 	threadId: v.optional(v.string()),
-});
+};
 
-// Terminal output entry validator (matches terminalOutput table schema)
-export const terminalOutputEntry = v.object({
-	_id: v.id("terminalOutput"),
-	_creationTime: v.number(),
+export const terminalOutputFields = {
 	playerId: v.string(),
 	gameStateId: v.id("gameState"),
 	commandInput: v.string(),
 	outputLines: v.array(v.string()),
 	commandType: v.string(),
 	success: v.boolean(),
+};
+
+export const missionProgressStep = v.object({
+	stepIndex: v.number(),
+	playerCommand: v.string(),
+	expectedAction: v.string(),
+	matched: v.boolean(),
+	timestamp: v.number(),
+});
+
+export const missionProgressStatus = v.union(
+	v.literal("not_started"),
+	v.literal("in_progress"),
+	v.literal("completed"),
+	v.literal("failed"),
+);
+
+export const missionProgressFields = {
+	playerId: v.string(),
+	gameStateId: v.id("gameState"),
+	missionId: v.string(),
+	currentStepIndex: v.number(),
+	completedSteps: v.array(missionProgressStep),
+	status: missionProgressStatus,
+	startedAt: v.number(),
+	completedAt: v.optional(v.number()),
+};
+
+// Command output cache validator (matches schema exactly)
+export const commandOutputCacheEntry = v.object({
+	_id: v.id("commandOutputCache"),
+	_creationTime: v.number(),
+	...commandOutputCacheFields,
+});
+
+// Terminal output entry validator (matches terminalOutput table schema)
+export const terminalOutputEntry = v.object({
+	_id: v.id("terminalOutput"),
+	_creationTime: v.number(),
+	...terminalOutputFields,
 });
 
 // Mission progress entry validator (matches missionProgress table schema)
 export const missionProgressEntry = v.object({
 	_id: v.id("missionProgress"),
 	_creationTime: v.number(),
-	playerId: v.string(),
-	gameStateId: v.id("gameState"),
-	missionId: v.string(),
-	currentStepIndex: v.number(),
-	completedSteps: v.array(
-		v.object({
-			stepIndex: v.number(),
-			playerCommand: v.string(),
-			expectedAction: v.string(),
-			matched: v.boolean(),
-			timestamp: v.number(),
-		}),
-	),
-	status: v.union(
-		v.literal("not_started"),
-		v.literal("in_progress"),
-		v.literal("completed"),
-		v.literal("failed"),
-	),
-	startedAt: v.number(),
-	completedAt: v.optional(v.number()),
+	...missionProgressFields,
 });
 
 // Mission step validation result (matches validateMissionStep response)
@@ -175,6 +171,7 @@ export type CommandArgs = Infer<typeof commandArgs>;
 export type CommandOutputCacheEntry = Infer<typeof commandOutputCacheEntry>;
 export type TerminalOutputEntry = Infer<typeof terminalOutputEntry>;
 export type MissionProgressEntry = Infer<typeof missionProgressEntry>;
+export type MissionProgressStatus = Infer<typeof missionProgressStatus>;
 export type MissionStepValidationResult = Infer<
 	typeof missionStepValidationResult
 >;

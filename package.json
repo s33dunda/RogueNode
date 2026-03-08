@@ -10,16 +10,15 @@
 		"build": "next build",
 		"start": "next start",
 		"lint": "eslint .",
+		"test": "vitest run",
 		"lint:fix": "eslint . --fix && biome check --write .",
 		"planning:prompt": "node scripts/generate-pddl-llm.mjs",
 		"planning:refresh": "node scripts/run-planning.mjs"
 	},
 	"dependencies": {
 		"@ai-sdk/openai": "^2.0.32",
-		"@clerk/clerk-react": "^5.47.0",
 		"@clerk/nextjs": "^6.32.0",
 		"@convex-dev/agent": "^0.2.10",
-		"@xyflow/react": "^12.8.5",
 		"ai": "^5.0.48",
 		"convex": "^1.27.1",
 		"lucide-react": "^0.544.0",
@@ -40,7 +39,8 @@
 		"npm-run-all": "^4.1.5",
 		"prettier": "^3.6.2",
 		"tailwindcss": "^4.1.13",
-		"typescript": "^5.9.2"
+		"typescript": "^5.9.2",
+		"vitest": "^4.0.18"
 	},
 	"pnpm": {
 		"onlyBuiltDependencies": [

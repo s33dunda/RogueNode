@@ -1,0 +1,68 @@
+{
+  "batch": "authorization_consistency",
+  "batch_index": 20,
+  "assessments": {
+    "authorization_consistency": 82.6
+  },
+  "dimension_notes": {
+    "authorization_consistency": {
+      "evidence": [
+        "All public Convex handlers in `convex/gameActions.ts` call `requireAuth(ctx)` before reading/writing player-scoped data (`initializeGameState`, `sendCommand`, `getGameState`, `getLook`, `getTerminalOutput`, `startMission`, `getActiveMissions`).",
+        "Admin-only public actions in `convex/cacheCleanup.ts` consistently use `requireAdmin(ctx)` (`cleanupCacheEntries`, `getCacheStats`).",
+        "Ownership checks are inconsistent across internal mutations: `finalizeCommandOutput` in `convex/gameActions.ts` validates `playerId` against loaded `outputDoc` and `gameState`, but sibling internal mutations (`writeCommandOutput`, `persistCommandGameState`, `recordToolUsage`) trust caller-provided identifiers without equivalent ownership verification.",
+        "A privileged bypass path exists in `convex/cacheCleanup.ts`: `cleanupCacheEntriesInternal` performs deletion without auth/audit checks while its public sibling requires admin; this is acceptable for cron use but not enforced/documented as a strict execution boundary in code."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "issues": [
+    {
+      "dimension": "authorization_consistency",
+      "identifier": "internal_ownership_validation_drift",
+      "summary": "Internal mutations apply inconsistent ownership checks for player-scoped writes",
+      "related_files": [
+        "convex/gameActions.ts"
+      ],
+      "evidence": [
+        "`finalizeCommandOutput` explicitly verifies `outputDoc.playerId === args.playerId` and `gameState.playerId === args.playerId` before patching.",
+        "Sibling internal mutations `writeCommandOutput`, `persistCommandGameState`, and `recordToolUsage` patch/insert player-scoped records based only on passed IDs/strings and do not enforce the same ownership invariant."
+      ],
+      "suggestion": "Create a shared internal authorization helper for player-scoped internal writes (for example, validate `gameStateId` ownership and cross-check related record ownership) and apply it uniformly to internal mutations that accept `playerId` or game-state IDs.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "implicit_trust_in_internal_callers"
+    },
+    {
+      "dimension": "authorization_consistency",
+      "identifier": "privileged_internal_cleanup_without_audit_guard",
+      "summary": "Internal cache cleanup bypasses admin controls without explicit guardrail/audit pattern",
+      "related_files": [
+        "convex/cacheCleanup.ts",
+        "convex/utils/cacheUtils.ts"
+      ],
+      "evidence": [
+        "`cleanupCacheEntries` and `getCacheStats` require `requireAdmin(ctx)`, but `cleanupCacheEntriesInternal` performs the same deletion path with no auth check or audit event.",
+        "`cleanupCacheEntriesInternal` directly invokes `internal.utils.cacheUtils.cleanupOldCacheEntries`; no in-code execution constraint (cron-only assertion) or audit logging is enforced at this privileged path."
+      ],
+      "suggestion": "Add an explicit privileged-execution contract for internal cleanup paths (for example, dedicated scheduler-only wrapper plus structured audit log mutation for cleanup invocations) so bypass behavior is consistently controlled and observable.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "implicit_trust_in_internal_callers"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Authorization invariants are enforced strongly at public entry points, but internal call chains rely on informal trust assumptions rather than a single reusable policy layer.",
+      "Privileged maintenance paths prioritize operability (cron/internal) without equivalent policy/audit consistency."
+    ],
+    "likely_symptoms": [
+      "Future internal functions may repeat caller-trust patterns and miss ownership checks.",
+      "Security reviews may require function-by-function inspection of internal handlers instead of trusting one invariant."
+    ],
+    "possible_false_positives": []
+  }
+}

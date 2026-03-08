@@ -1,0 +1,85 @@
+{
+  "batch": "error_consistency",
+  "batch_index": 4,
+  "assessments": {
+    "error_consistency": 73.0
+  },
+  "dimension_notes": {
+    "error_consistency": {
+      "evidence": [
+        "convex/agents/pingAgent.ts wraps the full handler in a broad catch (lines 101-190) and always returns a generic network failure payload, even when failures could come from cache query/mutation or agent thread creation.",
+        "convex/cacheCleanup.ts catches errors in all three handlers (lines 19-34, 65-80, 92-125), logs, and returns success-shaped fallback objects instead of propagating or using a typed error contract.",
+        "convex/gameActions.ts uses mixed failure modes for similar missing-state conditions: sendCommand -> loadPlayerGameState throws (lines 70, 671-680), getActiveMissions returns [] (lines 954-956), and executeAsyncCommand writes user-facing output then returns (lines 220-233).",
+        "convex/gameActions.ts executeAsyncCommand catch block (lines 283-297) collapses all async command failures into the same generic terminal output, reducing diagnosability and making failure behavior less predictable."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "issues": [
+    {
+      "dimension": "error_consistency",
+      "identifier": "ping_agent_broad_catch_masks_failure_mode",
+      "summary": "executePingCommand collapses heterogeneous failures into one generic network error response",
+      "related_files": [
+        "convex/agents/pingAgent.ts"
+      ],
+      "evidence": [
+        "The handler wraps cache lookup, cache writes, thread creation/continuation, and model generation in one catch (lines 101-190).",
+        "On any exception it always returns 'ping: network error occurred' (lines 181-185), even for non-network faults such as storage or agent runtime errors."
+      ],
+      "suggestion": "Split exception handling by boundary: preserve typed failure categories (e.g., cache_failure, agent_failure, network_simulation_failure) and map each to distinct user-safe output while logging original error context.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "error_contract_not_standardized"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "cache_cleanup_swallows_operational_errors",
+      "summary": "Cache maintenance actions log-and-return sentinel values instead of explicit failure contracts",
+      "related_files": [
+        "convex/cacheCleanup.ts"
+      ],
+      "evidence": [
+        "cleanupCacheEntriesInternal and cleanupCacheEntries catch errors and return { deletedCount: 0, message: 'Cache cleanup failed' } (lines 28-33 and 74-79).",
+        "getCacheStats catches and returns zeroed stats (lines 119-124), making operational failure indistinguishable from valid empty/low-data states."
+      ],
+      "suggestion": "Adopt a consistent error result shape (e.g., { ok: false, code, message }) or rethrow typed errors after wrapping context; avoid zero-value fallbacks that blur success vs failure.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "error_contract_not_standardized"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "missing_game_state_handled_three_different_ways",
+      "summary": "Missing game state condition uses throw, empty return, and terminal side-effect fallback",
+      "related_files": [
+        "convex/gameActions.ts"
+      ],
+      "evidence": [
+        "sendCommand loads state via loadPlayerGameState and throws when absent (lines 70 and 678-680).",
+        "getActiveMissions returns [] when game state is absent (lines 954-956).",
+        "executeAsyncCommand writes fallback terminal output and returns on missing state (lines 220-233)."
+      ],
+      "suggestion": "Define a single subsystem-level policy for absent game state (typed domain error + boundary mapper), then apply it consistently across mutations/queries/actions.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "error_contract_not_standardized"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "No shared error taxonomy for Convex action/query/mutation boundaries.",
+      "User-facing fallback strings are used as de facto error protocol instead of structured domain/application errors."
+    ],
+    "likely_symptoms": [
+      "Generic catch-all messages like 'unexpected error' and zero-value fallback payloads.",
+      "Different handlers requiring per-endpoint knowledge to know whether failure throws, returns empty, or returns success-shaped error data."
+    ],
+    "possible_false_positives": []
+  }
+}

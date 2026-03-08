@@ -1,0 +1,109 @@
+{
+  "batch": "design_coherence",
+  "batch_index": 16,
+  "assessments": {
+    "design_coherence": 72.0
+  },
+  "dimension_notes": {
+    "design_coherence": {
+      "evidence": [
+        "convex/gameActions.ts combines many responsibilities in one module: player initialization, command parsing/dispatch, async scheduling, cache lookup behavior, mission progress integration, terminal output persistence, and mission start/list APIs.",
+        "The same structural command-finalization pattern appears in multiple paths in convex/gameActions.ts (cache-hit path inside sendCommand and finalizeCommandOutput): combine tool output + mission feedback, write terminal output, then patch game state skill/session.",
+        "components/GameTerminal.tsx handles authentication gating, initialization lifecycle, terminal rendering orchestration, mission modal behavior, nav hover behavior, and command routing in one component, with duplicated mission command branching in both handleSubmit and executeCommand.",
+        "convex/cacheCleanup.ts duplicates cleanup control flow (run mutation + identical success/failure mapping) across internal and admin entrypoints instead of sharing a single implementation unit."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "issues": [
+    {
+      "dimension": "design_coherence",
+      "identifier": "god_module_game_actions",
+      "summary": "gameActions.ts is a multi-domain orchestration hub with mixed concerns",
+      "related_files": [
+        "convex/gameActions.ts",
+        "convex/missions.ts",
+        "convex/utils/cacheUtils.ts"
+      ],
+      "evidence": [
+        "convex/gameActions.ts (~975 LOC) contains command parsing helpers, sync command rendering, async tool orchestration, cache logic, mission entrypoints, and game-state persistence in one file.",
+        "Both transport-layer concerns (scheduler/action wiring) and domain concerns (mission/game progression) are implemented side-by-side in the same module."
+      ],
+      "suggestion": "Split gameActions into focused modules: (1) command dispatch/execution, (2) output/game-state finalization, (3) mission-facing public API, and keep only thin Convex handlers in gameActions.ts delegating to those modules.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change",
+      "root_cause_cluster": "command_orchestration_coupling"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "duplicated_command_finalization_flow",
+      "summary": "Command output+mission+state update flow is duplicated across execution paths",
+      "related_files": [
+        "convex/gameActions.ts"
+      ],
+      "evidence": [
+        "In sendCommand cache-hit branch, code validates missions, merges feedback into output lines, inserts/patches output, then updates skill points/tool session.",
+        "finalizeCommandOutput repeats the same structural sequence (mission validation, output assembly, terminal patch, state patch), creating parallel implementations of the same orchestration contract."
+      ],
+      "suggestion": "Introduce a single shared finalization routine used by cache-hit and async-complete paths (or route both through finalizeCommandOutput) with one canonical mission-feedback/output/state-update sequence.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "command_orchestration_coupling"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "monolithic_terminal_container",
+      "summary": "GameTerminal component mixes UI composition with orchestration state machine",
+      "related_files": [
+        "components/GameTerminal.tsx",
+        "lib/hooks/useCommandProcessor.ts",
+        "components/TerminalInput.tsx",
+        "components/TerminalOutput.tsx"
+      ],
+      "evidence": [
+        "GameTerminal owns auth/loading guards, server initialization effects, scroll effects, nav hover policy, mission modal state, and command dispatch decisions.",
+        "Mission command branching is duplicated in both handleSubmit and executeCommand, indicating command-routing logic is spread across handlers instead of centralized."
+      ],
+      "suggestion": "Extract a dedicated hook (e.g., useTerminalSessionController) for initialization/state-machine logic and a single command router function reused by both manual submit and nav-triggered execution.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor",
+      "root_cause_cluster": "ui_orchestration_mixing"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "duplicated_cache_cleanup_entrypoint_logic",
+      "summary": "Internal/admin cache cleanup handlers repeat identical operational flow",
+      "related_files": [
+        "convex/cacheCleanup.ts"
+      ],
+      "evidence": [
+        "cleanupCacheEntriesInternal and cleanupCacheEntries each perform the same mutation call and identical success/error result shaping.",
+        "Only auth gating differs, but the cleanup behavior itself is duplicated rather than delegated."
+      ],
+      "suggestion": "Factor shared cleanup execution into one private helper that both actions call, keeping auth checks at entrypoints and one canonical result-mapping implementation.",
+      "confidence": "high",
+      "impact_scope": "local",
+      "fix_scope": "single_edit",
+      "root_cause_cluster": "entrypoint_duplication"
+    }
+  ],
+  "retrospective": {
+    "root_causes": [
+      "Feature growth concentrated orchestration in single entrypoint files instead of introducing intermediate service modules.",
+      "Parallel implementation paths (cache-hit vs async completion, internal vs admin entrypoints) evolved without enforcing single shared execution pipelines."
+    ],
+    "likely_symptoms": [
+      "god_module_game_actions",
+      "duplicated_command_finalization_flow",
+      "monolithic_terminal_container"
+    ],
+    "possible_false_positives": [
+      "orphaned flags on app/layout.tsx and app/page.tsx likely come from import-graph limitations for framework entrypoints rather than true dead design."
+    ]
+  }
+}
