@@ -64,7 +64,7 @@ export function generateCacheKey(
 	const normalizedState = normalizeGameState(gameState);
 	const stateString = JSON.stringify(
 		normalizedState,
-		Object.keys(normalizedState).sort(),
+		Object.keys(normalizedState).sort((left, right) => left.localeCompare(right)),
 	);
 
 	// Simple hash function for the state

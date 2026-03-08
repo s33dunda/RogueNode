@@ -54,6 +54,13 @@ const cacheEntry = v.object({
 type CacheEntry = Infer<typeof cacheEntry>;
 type StatsResult = Infer<typeof statsResult>;
 
+function buildEmptyStatsResult(): StatsResult {
+	return {
+		totalEntries: 0,
+		avgHitCount: 0,
+	};
+}
+
 // Admin-only action for cache cleanup (requires admin privileges)
 export const cleanupCacheEntries = action({
 	args: v.object({}),
@@ -118,10 +125,7 @@ export const getCacheStats = action({
 			};
 		} catch (error) {
 			console.error("Cache stats error:", error);
-			return {
-				totalEntries: 0,
-				avgHitCount: 0,
-			};
+			return buildEmptyStatsResult();
 		}
 	},
 });

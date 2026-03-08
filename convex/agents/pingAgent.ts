@@ -7,6 +7,19 @@ import { internalAction } from "../_generated/server";
 import { type CommandResult, commandArgs, commandResult } from "../types";
 import { generateCacheKey } from "../utils/cacheUtils";
 
+function buildPingFailureResult(threadId: string | undefined) {
+	return {
+		output: [
+			"ping: network error occurred",
+			"Unable to reach target system",
+			"Check network connectivity and try again",
+		],
+		threadId,
+		skillGained: 0,
+		success: false,
+	};
+}
+
 // Network context tool for realistic ping simulation
 const getNetworkContext = createTool({
 	description: "Get current network conditions for ping simulation",
@@ -177,16 +190,7 @@ Use getNetworkContext tool to get network conditions, then provide realistic pin
 			};
 		} catch (error) {
 			console.error("Ping agent error:", error);
-			return {
-				output: [
-					"ping: network error occurred",
-					"Unable to reach target system",
-					"Check network connectivity and try again",
-				],
-				threadId,
-				skillGained: 0,
-				success: false,
-			};
+			return buildPingFailureResult(threadId);
 		}
 	},
 });

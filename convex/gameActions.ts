@@ -281,7 +281,7 @@ export const executeAsyncCommand = internalAction({
 				}
 			}
 		} catch (error) {
-			console.error("executeAsyncCommand error", error);
+			console.warn("executeAsyncCommand error", error);
 			await ctx.runMutation(internal.gameActions.writeCommandOutput, {
 				playerId: args.playerId,
 				gameStateId: args.gameStateId,
@@ -693,10 +693,10 @@ async function loadPlayerGameState(ctx: MutationCtx, playerId: string) {
  * @returns The `GameState` object with Convex-specific fields removed
  */
 function docToGameState(doc: Doc<"gameState">): GameState {
-	const { _id: _unusedId, _creationTime: _unusedCreationTime, ...rest } = doc;
-	void _unusedId;
-	void _unusedCreationTime;
-	return rest as GameState;
+	const gameState = { ...doc } as Partial<Doc<"gameState">>;
+	delete gameState._id;
+	delete gameState._creationTime;
+	return gameState as GameState;
 }
 
 /**
@@ -967,9 +967,11 @@ export const getActiveMissions = query({
 		});
 
 		// Strip progressId before returning to client
-		return missionsWithProgress.map(({ progressId: _unused, ...mission }) => {
-			void _unused;
-			return mission;
-		});
+		return missionsWithProgress.map((mission) => ({
+			id: mission.id,
+			title: mission.title,
+			synopsis: mission.synopsis,
+			status: mission.status,
+		}));
 	},
 });
