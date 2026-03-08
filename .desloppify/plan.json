@@ -1,7 +1,7 @@
 {
   "version": 8,
   "created": "2026-03-07T14:55:34+00:00",
-  "updated": "2026-03-08T21:24:53+00:00",
+  "updated": "2026-03-08T22:00:26+00:00",
   "queue_order": [
     "smells::convex/lib/auth.ts::todo_fixme",
     "subjective::authorization_consistency",
@@ -41,37 +41,37 @@
       "issue_id": "single_use::app/globals.css",
       "created_at": "2026-03-07T14:55:34+00:00",
       "cluster": "auto/single_use",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "single_use::components/TerminalOutput.tsx": {
       "issue_id": "single_use::components/TerminalOutput.tsx",
       "created_at": "2026-03-07T14:55:34+00:00",
-      "cluster": "auto/single_use",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "cluster": null,
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "single_use::components/TerminalInput.tsx": {
       "issue_id": "single_use::components/TerminalInput.tsx",
       "created_at": "2026-03-07T14:55:34+00:00",
-      "cluster": "auto/single_use",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "cluster": null,
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "single_use::components/CRTEffects.tsx": {
       "issue_id": "single_use::components/CRTEffects.tsx",
       "created_at": "2026-03-07T14:55:34+00:00",
-      "cluster": "auto/single_use",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "cluster": null,
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "single_use::lib/hooks/useCommandProcessor.ts": {
       "issue_id": "single_use::lib/hooks/useCommandProcessor.ts",
       "created_at": "2026-03-07T14:55:34+00:00",
       "cluster": "auto/single_use",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "single_use::components/ConvexClientProvider.tsx": {
       "issue_id": "single_use::components/ConvexClientProvider.tsx",
       "created_at": "2026-03-07T14:55:34+00:00",
       "cluster": "auto/single_use",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "orphaned::convex/gameActions.ts": {
       "issue_id": "orphaned::convex/gameActions.ts",
@@ -100,14 +100,14 @@
     "orphaned::app/page.tsx": {
       "issue_id": "orphaned::app/page.tsx",
       "created_at": "2026-03-07T14:55:34+00:00",
-      "cluster": "auto/orphaned",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "cluster": null,
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "orphaned::app/layout.tsx": {
       "issue_id": "orphaned::app/layout.tsx",
       "created_at": "2026-03-07T14:55:34+00:00",
-      "cluster": "auto/orphaned",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "cluster": null,
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "orphaned::middleware.ts": {
       "issue_id": "orphaned::middleware.ts",
@@ -335,7 +335,7 @@
       "issue_id": "subjective_review::components/MissionPanel.tsx::unreviewed",
       "created_at": "2026-03-07T14:55:34+00:00",
       "cluster": "auto/subjective_review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective_review::components/TerminalInput.tsx::unreviewed": {
       "issue_id": "subjective_review::components/TerminalInput.tsx::unreviewed",
@@ -347,7 +347,7 @@
       "issue_id": "subjective_review::components/TerminalNav.tsx::unreviewed",
       "created_at": "2026-03-07T14:55:34+00:00",
       "cluster": "auto/subjective_review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective_review::components/TerminalOutput.tsx::unreviewed": {
       "issue_id": "subjective_review::components/TerminalOutput.tsx::unreviewed",
@@ -443,19 +443,19 @@
       "issue_id": "subjective::abstraction_fitness",
       "created_at": "2026-03-07T14:55:34+00:00",
       "cluster": "auto/stale-review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective::ai_generated_debt": {
       "issue_id": "subjective::ai_generated_debt",
       "created_at": "2026-03-07T14:55:34+00:00",
       "cluster": "auto/stale-review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective::api_surface_coherence": {
       "issue_id": "subjective::api_surface_coherence",
       "created_at": "2026-03-07T14:55:34+00:00",
       "cluster": "auto/stale-review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective::authorization_consistency": {
       "issue_id": "subjective::authorization_consistency",
@@ -467,55 +467,55 @@
       "issue_id": "subjective::contract_coherence",
       "created_at": "2026-03-07T14:55:34+00:00",
       "cluster": "auto/stale-review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective::convention_outlier": {
       "issue_id": "subjective::convention_outlier",
       "created_at": "2026-03-07T14:55:34+00:00",
       "cluster": "auto/stale-review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective::cross_module_architecture": {
       "issue_id": "subjective::cross_module_architecture",
       "created_at": "2026-03-07T14:55:34+00:00",
       "cluster": "auto/stale-review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective::dependency_health": {
       "issue_id": "subjective::dependency_health",
       "created_at": "2026-03-07T14:55:34+00:00",
       "cluster": "auto/stale-review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective::design_coherence": {
       "issue_id": "subjective::design_coherence",
       "created_at": "2026-03-07T14:55:34+00:00",
       "cluster": "auto/stale-review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective::error_consistency": {
       "issue_id": "subjective::error_consistency",
       "created_at": "2026-03-07T14:55:34+00:00",
       "cluster": "auto/stale-review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective::high_level_elegance": {
       "issue_id": "subjective::high_level_elegance",
       "created_at": "2026-03-07T14:55:34+00:00",
       "cluster": "auto/stale-review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective::incomplete_migration": {
       "issue_id": "subjective::incomplete_migration",
       "created_at": "2026-03-07T14:55:34+00:00",
       "cluster": "auto/stale-review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective::initialization_coupling": {
       "issue_id": "subjective::initialization_coupling",
       "created_at": "2026-03-07T14:55:34+00:00",
       "cluster": "auto/stale-review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective::logic_clarity": {
       "issue_id": "subjective::logic_clarity",
@@ -545,19 +545,19 @@
       "issue_id": "subjective::package_organization",
       "created_at": "2026-03-07T14:55:34+00:00",
       "cluster": "auto/stale-review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective::test_strategy": {
       "issue_id": "subjective::test_strategy",
       "created_at": "2026-03-07T14:55:34+00:00",
       "cluster": "auto/stale-review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective::type_safety": {
       "issue_id": "subjective::type_safety",
       "created_at": "2026-03-07T14:55:34+00:00",
       "cluster": "auto/stale-review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "deprecated::convex/missions.ts::validateAllMissionSteps": {
       "issue_id": "deprecated::convex/missions.ts::validateAllMissionSteps",
@@ -983,37 +983,37 @@
       "issue_id": "subjective_review::convex/gameActions.ts::changed",
       "created_at": "2026-03-07T16:40:17+00:00",
       "cluster": "auto/subjective_review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective_review::convex/gameData.ts::changed": {
       "issue_id": "subjective_review::convex/gameData.ts::changed",
       "created_at": "2026-03-07T16:40:17+00:00",
       "cluster": "auto/subjective_review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective_review::convex/lib/auth.ts::changed": {
       "issue_id": "subjective_review::convex/lib/auth.ts::changed",
       "created_at": "2026-03-07T16:40:17+00:00",
       "cluster": "auto/subjective_review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective_review::convex/missions.ts::changed": {
       "issue_id": "subjective_review::convex/missions.ts::changed",
       "created_at": "2026-03-07T16:40:17+00:00",
       "cluster": "auto/subjective_review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective_review::convex/schema.ts::changed": {
       "issue_id": "subjective_review::convex/schema.ts::changed",
       "created_at": "2026-03-07T16:40:17+00:00",
       "cluster": "auto/subjective_review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective_review::.::holistic_stale": {
       "issue_id": "subjective_review::.::holistic_stale",
       "created_at": "2026-03-07T16:46:57+00:00",
       "cluster": "auto/subjective_review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "exports::convex/gameData.ts::gameMap": {
       "issue_id": "exports::convex/gameData.ts::gameMap",
@@ -1193,31 +1193,31 @@
       "issue_id": "test_coverage::convex/utils/cacheUtils.ts::untested_module",
       "created_at": "2026-03-07T16:46:57+00:00",
       "cluster": "auto/test_coverage",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "test_coverage::lib/hooks/useCommandProcessor.ts::untested_module": {
       "issue_id": "test_coverage::lib/hooks/useCommandProcessor.ts::untested_module",
       "created_at": "2026-03-07T16:46:57+00:00",
-      "cluster": "auto/test_coverage",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "cluster": null,
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "test_coverage::convex/missions.ts::untested_module": {
       "issue_id": "test_coverage::convex/missions.ts::untested_module",
       "created_at": "2026-03-07T16:46:57+00:00",
       "cluster": "auto/test_coverage",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "test_coverage::components/ConvexClientProvider.tsx::untested_module": {
       "issue_id": "test_coverage::components/ConvexClientProvider.tsx::untested_module",
       "created_at": "2026-03-07T16:46:57+00:00",
-      "cluster": "auto/test_coverage",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "cluster": null,
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "test_coverage::components/GameTerminal.tsx::untested_module": {
       "issue_id": "test_coverage::components/GameTerminal.tsx::untested_module",
       "created_at": "2026-03-07T16:46:57+00:00",
-      "cluster": "auto/test_coverage",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "cluster": null,
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "test_coverage::middleware.ts::untested_module": {
       "issue_id": "test_coverage::middleware.ts::untested_module",
@@ -1229,7 +1229,7 @@
       "issue_id": "test_coverage::convex/cacheCleanup.ts::untested_module",
       "created_at": "2026-03-07T16:46:57+00:00",
       "cluster": "auto/test_coverage",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "test_coverage::convex/auth.config.ts::untested_module": {
       "issue_id": "test_coverage::convex/auth.config.ts::untested_module",
@@ -1240,26 +1240,26 @@
     "test_coverage::components/TerminalOutput.tsx::untested_module": {
       "issue_id": "test_coverage::components/TerminalOutput.tsx::untested_module",
       "created_at": "2026-03-07T16:46:57+00:00",
-      "cluster": "auto/test_coverage",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "cluster": null,
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "test_coverage::app/page.tsx::untested_module": {
       "issue_id": "test_coverage::app/page.tsx::untested_module",
       "created_at": "2026-03-07T16:46:57+00:00",
-      "cluster": "auto/test_coverage",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "cluster": null,
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "test_coverage::pddl/planning.ts::untested_module": {
       "issue_id": "test_coverage::pddl/planning.ts::untested_module",
       "created_at": "2026-03-07T16:46:57+00:00",
       "cluster": "auto/test_coverage",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "test_coverage::convex/agents/pingAgent.ts::untested_module": {
       "issue_id": "test_coverage::convex/agents/pingAgent.ts::untested_module",
       "created_at": "2026-03-07T16:46:57+00:00",
       "cluster": "auto/test_coverage",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "test_coverage::convex/schema.ts::untested_module": {
       "issue_id": "test_coverage::convex/schema.ts::untested_module",
@@ -1270,96 +1270,124 @@
     "test_coverage::components/TerminalInput.tsx::untested_module": {
       "issue_id": "test_coverage::components/TerminalInput.tsx::untested_module",
       "created_at": "2026-03-07T16:46:57+00:00",
-      "cluster": "auto/test_coverage",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "cluster": null,
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "test_coverage::components/CRTEffects.tsx::untested_module": {
       "issue_id": "test_coverage::components/CRTEffects.tsx::untested_module",
       "created_at": "2026-03-07T16:46:57+00:00",
-      "cluster": "auto/test_coverage",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "cluster": null,
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "test_coverage::components/MissionPanel.tsx::untested_module": {
       "issue_id": "test_coverage::components/MissionPanel.tsx::untested_module",
       "created_at": "2026-03-07T16:46:57+00:00",
-      "cluster": "auto/test_coverage",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "cluster": null,
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "test_coverage::app/layout.tsx::untested_module": {
       "issue_id": "test_coverage::app/layout.tsx::untested_module",
       "created_at": "2026-03-07T16:46:57+00:00",
-      "cluster": "auto/test_coverage",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "cluster": null,
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "test_coverage::components/TerminalNav.tsx::untested_module": {
       "issue_id": "test_coverage::components/TerminalNav.tsx::untested_module",
       "created_at": "2026-03-07T16:46:57+00:00",
-      "cluster": "auto/test_coverage",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "cluster": null,
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "test_coverage::convex/gameActions.ts::untested_module": {
       "issue_id": "test_coverage::convex/gameActions.ts::untested_module",
       "created_at": "2026-03-07T16:46:57+00:00",
       "cluster": "auto/test_coverage",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "smells::convex/utils/cacheUtils.ts::magic_number": {
       "issue_id": "smells::convex/utils/cacheUtils.ts::magic_number",
       "created_at": "2026-03-08T20:56:18+00:00",
       "cluster": "auto/smells-magic_number",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "smells::convex/missionValidation.test.ts::magic_number": {
       "issue_id": "smells::convex/missionValidation.test.ts::magic_number",
       "created_at": "2026-03-08T20:56:18+00:00",
       "cluster": "auto/smells-magic_number",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective_review::convex/missionValidation.ts::unreviewed": {
       "issue_id": "subjective_review::convex/missionValidation.ts::unreviewed",
       "created_at": "2026-03-08T20:56:18+00:00",
       "cluster": "auto/subjective_review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective_review::convex/domainSpec/runtime.ts::changed": {
       "issue_id": "subjective_review::convex/domainSpec/runtime.ts::changed",
       "created_at": "2026-03-08T21:03:11+00:00",
       "cluster": "auto/subjective_review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "orphaned::proxy.ts": {
       "issue_id": "orphaned::proxy.ts",
       "created_at": "2026-03-08T21:24:53+00:00",
       "cluster": "auto/orphaned",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "subjective_review::components/GameTerminal.tsx::changed": {
       "issue_id": "subjective_review::components/GameTerminal.tsx::changed",
       "created_at": "2026-03-08T21:24:53+00:00",
       "cluster": "auto/subjective_review",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
     },
     "test_coverage::proxy.ts::untested_module": {
       "issue_id": "test_coverage::proxy.ts::untested_module",
       "created_at": "2026-03-08T21:24:53+00:00",
       "cluster": "auto/test_coverage",
-      "updated_at": "2026-03-08T21:24:53+00:00"
+      "updated_at": "2026-03-08T22:00:26+00:00"
+    },
+    "single_use::app/layout.tsx": {
+      "issue_id": "single_use::app/layout.tsx",
+      "created_at": "2026-03-08T22:00:26+00:00",
+      "cluster": "auto/single_use",
+      "updated_at": "2026-03-08T22:00:26+00:00"
+    },
+    "test_coverage::lib/hooks/useCommandProcessor.ts::transitive_only": {
+      "issue_id": "test_coverage::lib/hooks/useCommandProcessor.ts::transitive_only",
+      "created_at": "2026-03-08T22:00:26+00:00",
+      "cluster": "auto/test_coverage",
+      "updated_at": "2026-03-08T22:00:26+00:00"
+    },
+    "orphaned::vitest.config.ts": {
+      "issue_id": "orphaned::vitest.config.ts",
+      "created_at": "2026-03-08T22:00:26+00:00",
+      "cluster": "auto/orphaned",
+      "updated_at": "2026-03-08T22:00:26+00:00"
+    },
+    "smells::convex/auth.config.test.ts::hardcoded_url": {
+      "issue_id": "smells::convex/auth.config.test.ts::hardcoded_url",
+      "created_at": "2026-03-08T22:00:26+00:00",
+      "cluster": "auto/smells-hardcoded_url",
+      "updated_at": "2026-03-08T22:00:26+00:00"
+    },
+    "smells::components/ConvexClientProvider.test.tsx::hardcoded_url": {
+      "issue_id": "smells::components/ConvexClientProvider.test.tsx::hardcoded_url",
+      "created_at": "2026-03-08T22:00:26+00:00",
+      "cluster": "auto/smells-hardcoded_url",
+      "updated_at": "2026-03-08T22:00:26+00:00"
     }
   },
   "clusters": {
     "auto/single_use": {
       "name": "auto/single_use",
-      "description": "Fix 6 single_use issues",
+      "description": "Fix 4 single_use issues",
       "issue_ids": [
         "single_use::app/globals.css",
-        "single_use::components/TerminalOutput.tsx",
-        "single_use::components/TerminalInput.tsx",
-        "single_use::components/CRTEffects.tsx",
         "single_use::lib/hooks/useCommandProcessor.ts",
-        "single_use::components/ConvexClientProvider.tsx"
+        "single_use::components/ConvexClientProvider.tsx",
+        "single_use::app/layout.tsx"
       ],
       "created_at": "2026-03-07T14:55:34+00:00",
-      "updated_at": "2026-03-08T21:24:53+00:00",
+      "updated_at": "2026-03-08T22:00:26+00:00",
       "auto": true,
       "cluster_key": "detector::single_use",
       "action": "desloppify move",
@@ -1367,14 +1395,13 @@
     },
     "auto/orphaned": {
       "name": "auto/orphaned",
-      "description": "Fix 3 orphaned issues",
+      "description": "Fix 2 orphaned issues",
       "issue_ids": [
-        "orphaned::app/page.tsx",
-        "orphaned::app/layout.tsx",
-        "orphaned::proxy.ts"
+        "orphaned::proxy.ts",
+        "orphaned::vitest.config.ts"
       ],
       "created_at": "2026-03-07T14:55:34+00:00",
-      "updated_at": "2026-03-08T21:24:53+00:00",
+      "updated_at": "2026-03-08T22:00:26+00:00",
       "auto": true,
       "cluster_key": "detector::orphaned",
       "action": "desloppify move",
@@ -1382,28 +1409,19 @@
     },
     "auto/test_coverage": {
       "name": "auto/test_coverage",
-      "description": "Fix 17 test coverage issues",
+      "description": "Fix 8 test coverage issues",
       "issue_ids": [
         "test_coverage::convex/utils/cacheUtils.ts::untested_module",
-        "test_coverage::lib/hooks/useCommandProcessor.ts::untested_module",
         "test_coverage::convex/missions.ts::untested_module",
-        "test_coverage::components/ConvexClientProvider.tsx::untested_module",
-        "test_coverage::components/GameTerminal.tsx::untested_module",
         "test_coverage::convex/cacheCleanup.ts::untested_module",
-        "test_coverage::components/TerminalOutput.tsx::untested_module",
-        "test_coverage::app/page.tsx::untested_module",
         "test_coverage::pddl/planning.ts::untested_module",
         "test_coverage::convex/agents/pingAgent.ts::untested_module",
-        "test_coverage::components/TerminalInput.tsx::untested_module",
-        "test_coverage::components/CRTEffects.tsx::untested_module",
-        "test_coverage::components/MissionPanel.tsx::untested_module",
-        "test_coverage::app/layout.tsx::untested_module",
-        "test_coverage::components/TerminalNav.tsx::untested_module",
         "test_coverage::convex/gameActions.ts::untested_module",
-        "test_coverage::proxy.ts::untested_module"
+        "test_coverage::proxy.ts::untested_module",
+        "test_coverage::lib/hooks/useCommandProcessor.ts::transitive_only"
       ],
       "created_at": "2026-03-07T14:55:34+00:00",
-      "updated_at": "2026-03-08T21:24:53+00:00",
+      "updated_at": "2026-03-08T22:00:26+00:00",
       "auto": true,
       "cluster_key": "detector::test_coverage",
       "action": "add tests for untested production modules \u2014 prioritize by import count",
@@ -1608,6 +1626,20 @@
       "updated_at": "2026-03-08T20:56:18+00:00",
       "auto": true,
       "cluster_key": "typed::smells::magic_number",
+      "action": "fix code smells",
+      "user_modified": false
+    },
+    "auto/smells-hardcoded_url": {
+      "name": "auto/smells-hardcoded_url",
+      "description": "Fix 2 hardcoded url issues",
+      "issue_ids": [
+        "smells::convex/auth.config.test.ts::hardcoded_url",
+        "smells::components/ConvexClientProvider.test.tsx::hardcoded_url"
+      ],
+      "created_at": "2026-03-08T22:00:26+00:00",
+      "updated_at": "2026-03-08T22:00:26+00:00",
+      "auto": true,
+      "cluster_key": "typed::smells::hardcoded_url",
       "action": "fix code smells",
       "user_modified": false
     }
@@ -2893,16 +2925,194 @@
       "superseded_at": "2026-03-08T21:24:53+00:00",
       "remapped_to": null,
       "candidates": []
+    },
+    "orphaned::app/layout.tsx": {
+      "original_id": "orphaned::app/layout.tsx",
+      "original_detector": "orphaned",
+      "original_file": "app/layout.tsx",
+      "original_summary": "Orphaned file (41 LOC): zero importers, not an entry point",
+      "status": "superseded",
+      "superseded_at": "2026-03-08T22:00:26+00:00",
+      "remapped_to": null,
+      "candidates": []
+    },
+    "orphaned::app/page.tsx": {
+      "original_id": "orphaned::app/page.tsx",
+      "original_detector": "orphaned",
+      "original_file": "app/page.tsx",
+      "original_summary": "Orphaned file (66 LOC): zero importers, not an entry point",
+      "status": "superseded",
+      "superseded_at": "2026-03-08T22:00:26+00:00",
+      "remapped_to": null,
+      "candidates": []
+    },
+    "single_use::components/CRTEffects.tsx": {
+      "original_id": "single_use::components/CRTEffects.tsx",
+      "original_detector": "single_use",
+      "original_file": "components/CRTEffects.tsx",
+      "original_summary": "Single-use (27 LOC): only imported by components/GameTerminal.tsx",
+      "status": "superseded",
+      "superseded_at": "2026-03-08T22:00:26+00:00",
+      "remapped_to": null,
+      "candidates": []
+    },
+    "single_use::components/TerminalInput.tsx": {
+      "original_id": "single_use::components/TerminalInput.tsx",
+      "original_detector": "single_use",
+      "original_file": "components/TerminalInput.tsx",
+      "original_summary": "Single-use (33 LOC): only imported by components/GameTerminal.tsx",
+      "status": "superseded",
+      "superseded_at": "2026-03-08T22:00:26+00:00",
+      "remapped_to": null,
+      "candidates": []
+    },
+    "single_use::components/TerminalOutput.tsx": {
+      "original_id": "single_use::components/TerminalOutput.tsx",
+      "original_detector": "single_use",
+      "original_file": "components/TerminalOutput.tsx",
+      "original_summary": "Single-use (37 LOC): only imported by components/GameTerminal.tsx",
+      "status": "superseded",
+      "superseded_at": "2026-03-08T22:00:26+00:00",
+      "remapped_to": null,
+      "candidates": []
+    },
+    "smells::components/GameTerminal.tsx::console_error_no_throw": {
+      "original_id": "smells::components/GameTerminal.tsx::console_error_no_throw",
+      "original_detector": "smells",
+      "original_file": "components/GameTerminal.tsx",
+      "original_summary": "1x console.error without throw/return",
+      "status": "superseded",
+      "superseded_at": "2026-03-08T22:00:26+00:00",
+      "remapped_to": null,
+      "candidates": [
+        "smells::components/GameTerminal.tsx::nested_closure",
+        "smells::components/GameTerminal.tsx::high_cyclomatic_complexity"
+      ]
+    },
+    "smells::components/GameTerminal.tsx::voided_symbol": {
+      "original_id": "smells::components/GameTerminal.tsx::voided_symbol",
+      "original_detector": "smells",
+      "original_file": "components/GameTerminal.tsx",
+      "original_summary": "1x Dead internal code (void-suppressed unused symbol)",
+      "status": "superseded",
+      "superseded_at": "2026-03-08T22:00:26+00:00",
+      "remapped_to": null,
+      "candidates": [
+        "smells::components/GameTerminal.tsx::nested_closure",
+        "smells::components/GameTerminal.tsx::high_cyclomatic_complexity"
+      ]
+    },
+    "test_coverage::app/layout.tsx::untested_module": {
+      "original_id": "test_coverage::app/layout.tsx::untested_module",
+      "original_detector": "test_coverage",
+      "original_file": "app/layout.tsx",
+      "original_summary": "Untested module (41 LOC, 0 importers)",
+      "status": "superseded",
+      "superseded_at": "2026-03-08T22:00:26+00:00",
+      "remapped_to": null,
+      "candidates": []
+    },
+    "test_coverage::app/page.tsx::untested_module": {
+      "original_id": "test_coverage::app/page.tsx::untested_module",
+      "original_detector": "test_coverage",
+      "original_file": "app/page.tsx",
+      "original_summary": "Untested module (66 LOC, 0 importers)",
+      "status": "superseded",
+      "superseded_at": "2026-03-08T22:00:26+00:00",
+      "remapped_to": null,
+      "candidates": []
+    },
+    "test_coverage::components/CRTEffects.tsx::untested_module": {
+      "original_id": "test_coverage::components/CRTEffects.tsx::untested_module",
+      "original_detector": "test_coverage",
+      "original_file": "components/CRTEffects.tsx",
+      "original_summary": "Untested module (27 LOC, 1 importers)",
+      "status": "superseded",
+      "superseded_at": "2026-03-08T22:00:26+00:00",
+      "remapped_to": null,
+      "candidates": []
+    },
+    "test_coverage::components/ConvexClientProvider.tsx::untested_module": {
+      "original_id": "test_coverage::components/ConvexClientProvider.tsx::untested_module",
+      "original_detector": "test_coverage",
+      "original_file": "components/ConvexClientProvider.tsx",
+      "original_summary": "Untested module (20 LOC, 1 importers)",
+      "status": "superseded",
+      "superseded_at": "2026-03-08T22:00:26+00:00",
+      "remapped_to": null,
+      "candidates": []
+    },
+    "test_coverage::components/GameTerminal.tsx::untested_module": {
+      "original_id": "test_coverage::components/GameTerminal.tsx::untested_module",
+      "original_detector": "test_coverage",
+      "original_file": "components/GameTerminal.tsx",
+      "original_summary": "Untested module (193 LOC, 1 importers)",
+      "status": "superseded",
+      "superseded_at": "2026-03-08T22:00:26+00:00",
+      "remapped_to": null,
+      "candidates": []
+    },
+    "test_coverage::components/MissionPanel.tsx::untested_module": {
+      "original_id": "test_coverage::components/MissionPanel.tsx::untested_module",
+      "original_detector": "test_coverage",
+      "original_file": "components/MissionPanel.tsx",
+      "original_summary": "Untested module (173 LOC, 1 importers)",
+      "status": "superseded",
+      "superseded_at": "2026-03-08T22:00:26+00:00",
+      "remapped_to": null,
+      "candidates": []
+    },
+    "test_coverage::components/TerminalInput.tsx::untested_module": {
+      "original_id": "test_coverage::components/TerminalInput.tsx::untested_module",
+      "original_detector": "test_coverage",
+      "original_file": "components/TerminalInput.tsx",
+      "original_summary": "Untested module (33 LOC, 1 importers)",
+      "status": "superseded",
+      "superseded_at": "2026-03-08T22:00:26+00:00",
+      "remapped_to": null,
+      "candidates": []
+    },
+    "test_coverage::components/TerminalNav.tsx::untested_module": {
+      "original_id": "test_coverage::components/TerminalNav.tsx::untested_module",
+      "original_detector": "test_coverage",
+      "original_file": "components/TerminalNav.tsx",
+      "original_summary": "Untested module (78 LOC, 1 importers)",
+      "status": "superseded",
+      "superseded_at": "2026-03-08T22:00:26+00:00",
+      "remapped_to": null,
+      "candidates": []
+    },
+    "test_coverage::components/TerminalOutput.tsx::untested_module": {
+      "original_id": "test_coverage::components/TerminalOutput.tsx::untested_module",
+      "original_detector": "test_coverage",
+      "original_file": "components/TerminalOutput.tsx",
+      "original_summary": "Untested module (37 LOC, 1 importers)",
+      "status": "superseded",
+      "superseded_at": "2026-03-08T22:00:26+00:00",
+      "remapped_to": null,
+      "candidates": []
+    },
+    "test_coverage::lib/hooks/useCommandProcessor.ts::untested_module": {
+      "original_id": "test_coverage::lib/hooks/useCommandProcessor.ts::untested_module",
+      "original_detector": "test_coverage",
+      "original_file": "lib/hooks/useCommandProcessor.ts",
+      "original_summary": "Untested module (21 LOC, 1 importers)",
+      "status": "superseded",
+      "superseded_at": "2026-03-08T22:00:26+00:00",
+      "remapped_to": null,
+      "candidates": [
+        "test_coverage::lib/hooks/useCommandProcessor.ts::transitive_only"
+      ]
     }
   },
   "promoted_ids": [
     "smells::convex/lib/auth.ts::todo_fixme"
   ],
   "plan_start_scores": {
-    "strict": 65.4,
-    "overall": 65.4,
-    "objective": 72.6,
-    "verified": 72.6
+    "strict": 69.7,
+    "overall": 69.7,
+    "objective": 83.3,
+    "verified": 83.3
   },
   "execution_log": [
     {
@@ -4658,6 +4868,80 @@
       "actor": "system",
       "note": null,
       "detail": {}
+    },
+    {
+      "timestamp": "2026-03-08T22:00:26+00:00",
+      "action": "reconcile",
+      "issue_ids": [
+        "orphaned::app/layout.tsx",
+        "orphaned::app/page.tsx",
+        "single_use::components/CRTEffects.tsx",
+        "single_use::components/TerminalInput.tsx",
+        "single_use::components/TerminalOutput.tsx",
+        "smells::components/GameTerminal.tsx::console_error_no_throw",
+        "smells::components/GameTerminal.tsx::voided_symbol",
+        "test_coverage::app/layout.tsx::untested_module",
+        "test_coverage::app/page.tsx::untested_module",
+        "test_coverage::components/CRTEffects.tsx::untested_module",
+        "test_coverage::components/ConvexClientProvider.tsx::untested_module",
+        "test_coverage::components/GameTerminal.tsx::untested_module",
+        "test_coverage::components/MissionPanel.tsx::untested_module",
+        "test_coverage::components/TerminalInput.tsx::untested_module",
+        "test_coverage::components/TerminalNav.tsx::untested_module",
+        "test_coverage::components/TerminalOutput.tsx::untested_module",
+        "test_coverage::lib/hooks/useCommandProcessor.ts::untested_module"
+      ],
+      "cluster_name": null,
+      "actor": "system",
+      "note": null,
+      "detail": {
+        "superseded_count": 17,
+        "pruned_count": 0,
+        "resurfaced_count": 0,
+        "clusters_completed_count": 0
+      }
+    },
+    {
+      "timestamp": "2026-03-08T22:00:26+00:00",
+      "action": "sync_unscored",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "system",
+      "note": null,
+      "detail": {
+        "changes": true
+      }
+    },
+    {
+      "timestamp": "2026-03-08T22:00:26+00:00",
+      "action": "sync_stale",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "system",
+      "note": null,
+      "detail": {
+        "changes": true
+      }
+    },
+    {
+      "timestamp": "2026-03-08T22:00:26+00:00",
+      "action": "auto_cluster",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "system",
+      "note": null,
+      "detail": {
+        "changes": true
+      }
+    },
+    {
+      "timestamp": "2026-03-08T22:00:26+00:00",
+      "action": "seed_start_scores",
+      "issue_ids": [],
+      "cluster_name": null,
+      "actor": "system",
+      "note": null,
+      "detail": {}
     }
   ],
   "epic_triage_meta": {
@@ -4794,5 +5078,5 @@
     "review::.::holistic::initialization_coupling::import_time_auth_env_binding::c87d9274"
   ],
   "commit_tracking_branch": null,
-  "scan_count_at_plan_start": 7
+  "scan_count_at_plan_start": 8
 }

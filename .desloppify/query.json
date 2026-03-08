@@ -7,10 +7,10 @@
       "confidence": "high",
       "detector": "workflow",
       "file": ".",
-      "summary": "Score checkpoint: strict 65.4/100",
+      "summary": "Score checkpoint: strict 69.7/100",
       "detail": {
-        "strict": 65.4,
-        "plan_start_strict": 65.4,
+        "strict": 69.7,
+        "plan_start_strict": 69.7,
         "delta": 0.0
       },
       "status": null,
@@ -47,99 +47,9 @@
       "id": "auto/test_coverage",
       "kind": "cluster",
       "action_type": "refactor",
-      "summary": "Fix 17 test coverage issues",
-      "member_count": 17,
+      "summary": "Fix 8 test coverage issues",
+      "member_count": 8,
       "members": [
-        {
-          "id": "test_coverage::app/layout.tsx::untested_module",
-          "kind": "issue",
-          "confidence": "high",
-          "detector": "test_coverage",
-          "file": "app/layout.tsx",
-          "summary": "Untested module (41 LOC, 0 importers)",
-          "status": "open",
-          "primary_command": "desloppify plan resolve \"test_coverage::app/layout.tsx::untested_module\" --note \"<what you did>\" --confirm"
-        },
-        {
-          "id": "test_coverage::app/page.tsx::untested_module",
-          "kind": "issue",
-          "confidence": "high",
-          "detector": "test_coverage",
-          "file": "app/page.tsx",
-          "summary": "Untested module (66 LOC, 0 importers)",
-          "status": "open",
-          "primary_command": "desloppify plan resolve \"test_coverage::app/page.tsx::untested_module\" --note \"<what you did>\" --confirm"
-        },
-        {
-          "id": "test_coverage::components/CRTEffects.tsx::untested_module",
-          "kind": "issue",
-          "confidence": "high",
-          "detector": "test_coverage",
-          "file": "components/CRTEffects.tsx",
-          "summary": "Untested module (27 LOC, 1 importers)",
-          "status": "open",
-          "primary_command": "desloppify plan resolve \"test_coverage::components/CRTEffects.tsx::untested_module\" --note \"<what you did>\" --confirm"
-        },
-        {
-          "id": "test_coverage::components/ConvexClientProvider.tsx::untested_module",
-          "kind": "issue",
-          "confidence": "high",
-          "detector": "test_coverage",
-          "file": "components/ConvexClientProvider.tsx",
-          "summary": "Untested module (20 LOC, 1 importers)",
-          "status": "open",
-          "primary_command": "desloppify plan resolve \"test_coverage::components/ConvexClientProvider.tsx::untested_module\" --note \"<what you did>\" --confirm"
-        },
-        {
-          "id": "test_coverage::components/GameTerminal.tsx::untested_module",
-          "kind": "issue",
-          "confidence": "high",
-          "detector": "test_coverage",
-          "file": "components/GameTerminal.tsx",
-          "summary": "Untested module (193 LOC, 1 importers)",
-          "status": "open",
-          "primary_command": "desloppify plan resolve \"test_coverage::components/GameTerminal.tsx::untested_module\" --note \"<what you did>\" --confirm"
-        },
-        {
-          "id": "test_coverage::components/MissionPanel.tsx::untested_module",
-          "kind": "issue",
-          "confidence": "high",
-          "detector": "test_coverage",
-          "file": "components/MissionPanel.tsx",
-          "summary": "Untested module (173 LOC, 1 importers)",
-          "status": "open",
-          "primary_command": "desloppify plan resolve \"test_coverage::components/MissionPanel.tsx::untested_module\" --note \"<what you did>\" --confirm"
-        },
-        {
-          "id": "test_coverage::components/TerminalInput.tsx::untested_module",
-          "kind": "issue",
-          "confidence": "high",
-          "detector": "test_coverage",
-          "file": "components/TerminalInput.tsx",
-          "summary": "Untested module (33 LOC, 1 importers)",
-          "status": "open",
-          "primary_command": "desloppify plan resolve \"test_coverage::components/TerminalInput.tsx::untested_module\" --note \"<what you did>\" --confirm"
-        },
-        {
-          "id": "test_coverage::components/TerminalNav.tsx::untested_module",
-          "kind": "issue",
-          "confidence": "high",
-          "detector": "test_coverage",
-          "file": "components/TerminalNav.tsx",
-          "summary": "Untested module (78 LOC, 1 importers)",
-          "status": "open",
-          "primary_command": "desloppify plan resolve \"test_coverage::components/TerminalNav.tsx::untested_module\" --note \"<what you did>\" --confirm"
-        },
-        {
-          "id": "test_coverage::components/TerminalOutput.tsx::untested_module",
-          "kind": "issue",
-          "confidence": "high",
-          "detector": "test_coverage",
-          "file": "components/TerminalOutput.tsx",
-          "summary": "Untested module (37 LOC, 1 importers)",
-          "status": "open",
-          "primary_command": "desloppify plan resolve \"test_coverage::components/TerminalOutput.tsx::untested_module\" --note \"<what you did>\" --confirm"
-        },
         {
           "id": "test_coverage::convex/agents/pingAgent.ts::untested_module",
           "kind": "issue",
@@ -191,16 +101,6 @@
           "primary_command": "desloppify plan resolve \"test_coverage::convex/utils/cacheUtils.ts::untested_module\" --note \"<what you did>\" --confirm"
         },
         {
-          "id": "test_coverage::lib/hooks/useCommandProcessor.ts::untested_module",
-          "kind": "issue",
-          "confidence": "high",
-          "detector": "test_coverage",
-          "file": "lib/hooks/useCommandProcessor.ts",
-          "summary": "Untested module (21 LOC, 1 importers)",
-          "status": "open",
-          "primary_command": "desloppify plan resolve \"test_coverage::lib/hooks/useCommandProcessor.ts::untested_module\" --note \"<what you did>\" --confirm"
-        },
-        {
           "id": "test_coverage::pddl/planning.ts::untested_module",
           "kind": "issue",
           "confidence": "high",
@@ -219,6 +119,16 @@
           "summary": "Untested module (18 LOC, 0 importers)",
           "status": "open",
           "primary_command": "desloppify plan resolve \"test_coverage::proxy.ts::untested_module\" --note \"<what you did>\" --confirm"
+        },
+        {
+          "id": "test_coverage::lib/hooks/useCommandProcessor.ts::transitive_only",
+          "kind": "issue",
+          "confidence": "medium",
+          "detector": "test_coverage",
+          "file": "lib/hooks/useCommandProcessor.ts",
+          "summary": "No direct tests (21 LOC, 1 importers) \u2014 covered only via imports from tested modules",
+          "status": "open",
+          "primary_command": "desloppify plan resolve \"test_coverage::lib/hooks/useCommandProcessor.ts::transitive_only\" --note \"<what you did>\" --confirm"
         }
       ],
       "cluster_name": "auto/test_coverage",
@@ -309,7 +219,7 @@
           "confidence": "low",
           "detector": "subjective_review",
           "file": ".",
-          "summary": "Codebase changed significantly since holistic review (27\u219243 files) \u2014 re-review recommended",
+          "summary": "Codebase changed significantly since holistic review (27\u219250 files) \u2014 re-review recommended",
           "status": "open",
           "primary_command": "desloppify review --prepare"
         },
@@ -370,7 +280,7 @@
       "primary_command": "desloppify autofix dead-useeffect --dry-run",
       "explain": {
         "kind": "issue",
-        "estimated_impact": 0.63626168224299,
+        "estimated_impact": 0.4870673952641165,
         "confidence": "medium",
         "confidence_rank": 1,
         "count": 3,
@@ -382,7 +292,7 @@
           "id asc"
         ]
       },
-      "queue_position": 31,
+      "queue_position": 22,
       "plan_cluster": {
         "name": "gameplay_backend",
         "description": "gameActions/cache/ping backend orchestration cleanup",
@@ -401,39 +311,6 @@
       }
     },
     {
-      "id": "smells::components/GameTerminal.tsx::console_error_no_throw",
-      "kind": "issue",
-      "confidence": "medium",
-      "detector": "smells",
-      "file": "components/GameTerminal.tsx",
-      "summary": "1x console.error without throw/return",
-      "detail": {
-        "smell_id": "console_error_no_throw",
-        "severity": "medium",
-        "count": 1,
-        "lines": [
-          84
-        ]
-      },
-      "status": "open",
-      "primary_command": "desloppify autofix dead-useeffect --dry-run",
-      "explain": {
-        "kind": "issue",
-        "estimated_impact": 0.63626168224299,
-        "confidence": "medium",
-        "confidence_rank": 1,
-        "count": 1,
-        "id": "smells::components/GameTerminal.tsx::console_error_no_throw",
-        "ranking_factors": [
-          "estimated_impact desc",
-          "confidence asc",
-          "count desc",
-          "id asc"
-        ]
-      },
-      "queue_position": 32
-    },
-    {
       "id": "smells::components/GameTerminal.tsx::high_cyclomatic_complexity",
       "kind": "issue",
       "confidence": "medium",
@@ -445,14 +322,14 @@
         "severity": "medium",
         "count": 1,
         "lines": [
-          13
+          109
         ]
       },
       "status": "open",
       "primary_command": "desloppify autofix dead-useeffect --dry-run",
       "explain": {
         "kind": "issue",
-        "estimated_impact": 0.63626168224299,
+        "estimated_impact": 0.4870673952641165,
         "confidence": "medium",
         "confidence_rank": 1,
         "count": 1,
@@ -464,40 +341,7 @@
           "id asc"
         ]
       },
-      "queue_position": 33
-    },
-    {
-      "id": "smells::components/GameTerminal.tsx::monster_function",
-      "kind": "issue",
-      "confidence": "medium",
-      "detector": "smells",
-      "file": "components/GameTerminal.tsx",
-      "summary": "1x Monster function (>150 LOC)",
-      "detail": {
-        "smell_id": "monster_function",
-        "severity": "high",
-        "count": 1,
-        "lines": [
-          13
-        ]
-      },
-      "status": "open",
-      "primary_command": "desloppify autofix dead-useeffect --dry-run",
-      "explain": {
-        "kind": "issue",
-        "estimated_impact": 0.63626168224299,
-        "confidence": "medium",
-        "confidence_rank": 1,
-        "count": 1,
-        "id": "smells::components/GameTerminal.tsx::monster_function",
-        "ranking_factors": [
-          "estimated_impact desc",
-          "confidence asc",
-          "count desc",
-          "id asc"
-        ]
-      },
-      "queue_position": 34
+      "queue_position": 23
     },
     {
       "id": "smells::components/GameTerminal.tsx::nested_closure",
@@ -511,14 +355,14 @@
         "severity": "medium",
         "count": 1,
         "lines": [
-          13
+          109
         ]
       },
       "status": "open",
       "primary_command": "desloppify autofix dead-useeffect --dry-run",
       "explain": {
         "kind": "issue",
-        "estimated_impact": 0.63626168224299,
+        "estimated_impact": 0.4870673952641165,
         "confidence": "medium",
         "confidence_rank": 1,
         "count": 1,
@@ -530,32 +374,32 @@
           "id asc"
         ]
       },
-      "queue_position": 35
+      "queue_position": 24
     },
     {
-      "id": "smells::components/GameTerminal.tsx::voided_symbol",
+      "id": "smells::convex/agents/pingAgent.ts::catch_return_default",
       "kind": "issue",
       "confidence": "medium",
       "detector": "smells",
-      "file": "components/GameTerminal.tsx",
-      "summary": "1x Dead internal code (void-suppressed unused symbol)",
+      "file": "convex/agents/pingAgent.ts",
+      "summary": "1x Catch block returns default object (silent failure)",
       "detail": {
-        "smell_id": "voided_symbol",
-        "severity": "medium",
+        "smell_id": "catch_return_default",
+        "severity": "high",
         "count": 1,
         "lines": [
-          97
+          178
         ]
       },
       "status": "open",
       "primary_command": "desloppify autofix dead-useeffect --dry-run",
       "explain": {
         "kind": "issue",
-        "estimated_impact": 0.63626168224299,
+        "estimated_impact": 0.4870673952641165,
         "confidence": "medium",
         "confidence_rank": 1,
         "count": 1,
-        "id": "smells::components/GameTerminal.tsx::voided_symbol",
+        "id": "smells::convex/agents/pingAgent.ts::catch_return_default",
         "ranking_factors": [
           "estimated_impact desc",
           "confidence asc",
@@ -563,15 +407,195 @@
           "id asc"
         ]
       },
-      "queue_position": 36
+      "queue_position": 25,
+      "plan_cluster": {
+        "name": "gameplay_backend",
+        "description": "gameActions/cache/ping backend orchestration cleanup",
+        "total_items": 37,
+        "action_steps": [
+          {
+            "title": "Extract repeated command-finalization and ownership/error-handling logic from gameActions."
+          },
+          {
+            "title": "Normalize cache cleanup and ping failure contracts to avoid silent fallback behavior."
+          },
+          {
+            "title": "Validate backend orchestration changes with lint/build and follow-up queue review."
+          }
+        ]
+      }
+    },
+    {
+      "id": "smells::convex/cacheCleanup.ts::catch_return_default",
+      "kind": "issue",
+      "confidence": "medium",
+      "detector": "smells",
+      "file": "convex/cacheCleanup.ts",
+      "summary": "1x Catch block returns default object (silent failure)",
+      "detail": {
+        "smell_id": "catch_return_default",
+        "severity": "high",
+        "count": 1,
+        "lines": [
+          119
+        ]
+      },
+      "status": "open",
+      "primary_command": "desloppify autofix dead-useeffect --dry-run",
+      "explain": {
+        "kind": "issue",
+        "estimated_impact": 0.4870673952641165,
+        "confidence": "medium",
+        "confidence_rank": 1,
+        "count": 1,
+        "id": "smells::convex/cacheCleanup.ts::catch_return_default",
+        "ranking_factors": [
+          "estimated_impact desc",
+          "confidence asc",
+          "count desc",
+          "id asc"
+        ]
+      },
+      "queue_position": 26,
+      "plan_cluster": {
+        "name": "gameplay_backend",
+        "description": "gameActions/cache/ping backend orchestration cleanup",
+        "total_items": 37,
+        "action_steps": [
+          {
+            "title": "Extract repeated command-finalization and ownership/error-handling logic from gameActions."
+          },
+          {
+            "title": "Normalize cache cleanup and ping failure contracts to avoid silent fallback behavior."
+          },
+          {
+            "title": "Validate backend orchestration changes with lint/build and follow-up queue review."
+          }
+        ]
+      }
+    },
+    {
+      "id": "smells::convex/gameActions.ts::console_error_no_throw",
+      "kind": "issue",
+      "confidence": "medium",
+      "detector": "smells",
+      "file": "convex/gameActions.ts",
+      "summary": "1x console.error without throw/return",
+      "detail": {
+        "smell_id": "console_error_no_throw",
+        "severity": "medium",
+        "count": 1,
+        "lines": [
+          284
+        ]
+      },
+      "status": "open",
+      "primary_command": "desloppify autofix dead-useeffect --dry-run",
+      "explain": {
+        "kind": "issue",
+        "estimated_impact": 0.4870673952641165,
+        "confidence": "medium",
+        "confidence_rank": 1,
+        "count": 1,
+        "id": "smells::convex/gameActions.ts::console_error_no_throw",
+        "ranking_factors": [
+          "estimated_impact desc",
+          "confidence asc",
+          "count desc",
+          "id asc"
+        ]
+      },
+      "queue_position": 27,
+      "plan_cluster": {
+        "name": "gameplay_backend",
+        "description": "gameActions/cache/ping backend orchestration cleanup",
+        "total_items": 37,
+        "action_steps": [
+          {
+            "title": "Extract repeated command-finalization and ownership/error-handling logic from gameActions."
+          },
+          {
+            "title": "Normalize cache cleanup and ping failure contracts to avoid silent fallback behavior."
+          },
+          {
+            "title": "Validate backend orchestration changes with lint/build and follow-up queue review."
+          }
+        ]
+      }
+    },
+    {
+      "id": "smells::convex/missions.ts::async_no_await",
+      "kind": "issue",
+      "confidence": "medium",
+      "detector": "smells",
+      "file": "convex/missions.ts",
+      "summary": "1x Async functions without await",
+      "detail": {
+        "smell_id": "async_no_await",
+        "severity": "medium",
+        "count": 1,
+        "lines": [
+          28
+        ]
+      },
+      "status": "open",
+      "primary_command": "desloppify autofix dead-useeffect --dry-run",
+      "explain": {
+        "kind": "issue",
+        "estimated_impact": 0.4870673952641165,
+        "confidence": "medium",
+        "confidence_rank": 1,
+        "count": 1,
+        "id": "smells::convex/missions.ts::async_no_await",
+        "ranking_factors": [
+          "estimated_impact desc",
+          "confidence asc",
+          "count desc",
+          "id asc"
+        ]
+      },
+      "queue_position": 28
+    },
+    {
+      "id": "smells::convex/utils/cacheUtils.ts::sort_no_comparator",
+      "kind": "issue",
+      "confidence": "medium",
+      "detector": "smells",
+      "file": "convex/utils/cacheUtils.ts",
+      "summary": "1x .sort() without comparator function",
+      "detail": {
+        "smell_id": "sort_no_comparator",
+        "severity": "medium",
+        "count": 1,
+        "lines": [
+          67
+        ]
+      },
+      "status": "open",
+      "primary_command": "desloppify autofix dead-useeffect --dry-run",
+      "explain": {
+        "kind": "issue",
+        "estimated_impact": 0.4870673952641165,
+        "confidence": "medium",
+        "confidence_rank": 1,
+        "count": 1,
+        "id": "smells::convex/utils/cacheUtils.ts::sort_no_comparator",
+        "ranking_factors": [
+          "estimated_impact desc",
+          "confidence asc",
+          "count desc",
+          "id asc"
+        ]
+      },
+      "queue_position": 29
     }
   ],
   "queue": {
-    "total": 10
+    "total": 12
   },
   "narrative": {
     "phase": "middle_grind",
-    "headline": "100 issues open. Test strategy (12.0%) needs attention \u2014 run `desloppify next` to start. (38 review issues \u2014 run `desloppify show review --status open`)",
+    "headline": "86 issues open. Test strategy (12.0%) needs attention \u2014 run `desloppify next` to start. (38 review issues \u2014 run `desloppify show review --status open`)",
     "dimensions": {
       "lowest_dimensions": [
         {
@@ -583,15 +607,17 @@
           "impact_description": "re-review to improve"
         },
         {
-          "name": "Test health",
-          "strict": 33.5,
-          "failing": 28,
-          "impact": 0.0
-        },
-        {
           "name": "High elegance",
           "strict": 50.3,
           "failing": 2,
+          "impact": 0.0,
+          "subjective": true,
+          "impact_description": "re-review to improve"
+        },
+        {
+          "name": "Design coherence",
+          "strict": 50.9,
+          "failing": 4,
           "impact": 0.0,
           "subjective": true,
           "impact_description": "re-review to improve"
@@ -606,12 +632,7 @@
         },
         {
           "name": "File health",
-          "strict": 97.6,
-          "stuck_scans": 5
-        },
-        {
-          "name": "Duplication",
-          "strict": 89.4,
+          "strict": 97.7,
           "stuck_scans": 5
         },
         {
@@ -720,8 +741,8 @@
       {
         "type": "reorganize",
         "detector": "orphaned",
-        "count": 3,
-        "description": "3 orphaned issues in 1 cluster(s) \u2014 run `desloppify next`",
+        "count": 2,
+        "description": "2 orphaned issues in 1 cluster(s) \u2014 run `desloppify next`",
         "command": "desloppify next",
         "impact": 0.0,
         "dimension": "Code quality",
@@ -746,8 +767,8 @@
       {
         "type": "reorganize",
         "detector": "single_use",
-        "count": 6,
-        "description": "6 single_use issues in 1 cluster(s) \u2014 run `desloppify next`",
+        "count": 4,
+        "description": "4 single_use issues in 1 cluster(s) \u2014 run `desloppify next`",
         "command": "desloppify next",
         "impact": 0.0,
         "dimension": "Code quality",
@@ -772,8 +793,8 @@
       {
         "type": "refactor",
         "detector": "test_coverage",
-        "count": 17,
-        "description": "17 test_coverage issues in 1 cluster(s) \u2014 run `desloppify next`",
+        "count": 8,
+        "description": "8 test_coverage issues in 1 cluster(s) \u2014 run `desloppify next`",
         "command": "desloppify next",
         "impact": 0.0,
         "dimension": "Test health",
@@ -809,16 +830,17 @@
       {
         "type": "manual_fix",
         "detector": "smells",
-        "count": 16,
-        "description": "16 smells issues in 1 cluster(s) \u2014 run `desloppify next`",
+        "count": 14,
+        "description": "14 smells issues in 2 cluster(s) \u2014 run `desloppify next`",
         "command": "desloppify next",
         "impact": 0.0,
         "dimension": "Code quality",
         "priority": 8,
         "clusters": [
-          "auto/smells-magic_number"
+          "auto/smells-magic_number",
+          "auto/smells-hardcoded_url"
         ],
-        "cluster_count": 1,
+        "cluster_count": 2,
         "lane": "refactor_0"
       },
       {
@@ -851,7 +873,7 @@
     "strategy": {
       "fixer_leverage": {
         "auto_fixable_count": 0,
-        "total_count": 176,
+        "total_count": 162,
         "coverage": 0.0,
         "impact_ratio": 0.0,
         "recommendation": "none"
@@ -863,7 +885,7 @@
             2,
             3
           ],
-          "file_count": 10,
+          "file_count": 7,
           "total_impact": 0.0,
           "automation": "manual",
           "run_first": false
@@ -876,7 +898,7 @@
             8,
             10
           ],
-          "file_count": 19,
+          "file_count": 20,
           "total_impact": 0.0,
           "automation": "manual",
           "run_first": false
@@ -894,7 +916,7 @@
           "actions": [
             5
           ],
-          "file_count": 17,
+          "file_count": 8,
           "total_impact": 0.0,
           "automation": "manual",
           "run_first": false
@@ -908,20 +930,20 @@
         {
           "name": "dead-useeffect",
           "detector": "smells",
-          "open_count": 16,
+          "open_count": 14,
           "command": "desloppify autofix dead-useeffect --dry-run"
         },
         {
           "name": "empty-if-chain",
           "detector": "smells",
-          "open_count": 16,
+          "open_count": 14,
           "command": "desloppify autofix empty-if-chain --dry-run"
         }
       ],
       "move": {
         "available": true,
         "relevant": true,
-        "reason": "3 orphaned files + 6 single-use files + 1 naming issues",
+        "reason": "2 orphaned files + 4 single-use files + 1 naming issues",
         "usage": "desloppify move <source> <dest> [--dry-run]"
       },
       "plan": {
@@ -945,7 +967,7 @@
     "milestone": null,
     "primary_action": {
       "command": "desloppify next",
-      "description": "3 orphaned issues in 1 cluster(s) \u2014 run `desloppify next`"
+      "description": "2 orphaned issues in 1 cluster(s) \u2014 run `desloppify next`"
     },
     "why_now": "4 independent workstreams, safe to parallelize. Rescan after each phase to verify. Review: 38 issue(s) \u2014 `desloppify show review --status open`.",
     "verification_step": {
@@ -955,15 +977,15 @@
     "risk_flags": [],
     "strict_target": {
       "target": 95.0,
-      "current": 65.4,
-      "gap": 29.6,
+      "current": 69.7,
+      "gap": 25.3,
       "state": "below",
       "warning": null
     },
     "reminders": [],
     "reminder_history": {
       "zone_classification": 3,
-      "report_scores": 6,
+      "report_scores": 7,
       "review_issues_pending": 3,
       "stagnant_nudge": 3,
       "feedback_nudge": 3
@@ -980,18 +1002,18 @@
     "clusters": [
       {
         "name": "auto/single_use",
-        "description": "Fix 6 single_use issues",
-        "item_count": 6
+        "description": "Fix 4 single_use issues",
+        "item_count": 4
       },
       {
         "name": "auto/orphaned",
-        "description": "Fix 3 orphaned issues",
-        "item_count": 3
+        "description": "Fix 2 orphaned issues",
+        "item_count": 2
       },
       {
         "name": "auto/test_coverage",
-        "description": "Fix 17 test coverage issues",
-        "item_count": 17
+        "description": "Fix 8 test coverage issues",
+        "item_count": 8
       },
       {
         "name": "auto/subjective_review",
@@ -1027,21 +1049,26 @@
         "name": "auto/smells-magic_number",
         "description": "Fix 2 magic number issues",
         "item_count": 2
+      },
+      {
+        "name": "auto/smells-hardcoded_url",
+        "description": "Fix 2 hardcoded url issues",
+        "item_count": 2
       }
     ],
     "total_ordered": 23,
     "total_skipped": 0,
     "plan_overrides_narrative": true
   },
-  "overall_score": 65.4,
-  "objective_score": 72.6,
-  "strict_score": 65.4,
+  "overall_score": 69.7,
+  "objective_score": 83.3,
+  "strict_score": 69.7,
   "scorecard_dimensions": [
     {
       "name": "File health",
-      "score": 97.6,
-      "strict": 97.6,
-      "checks": 29,
+      "score": 97.7,
+      "strict": 97.7,
+      "checks": 30,
       "failing": 1,
       "tier": 3,
       "subjective": false
@@ -1103,10 +1130,10 @@
     },
     {
       "name": "Code quality",
-      "score": 95.4,
-      "strict": 95.4,
-      "checks": 185,
-      "failing": 18,
+      "score": 96.5,
+      "strict": 96.5,
+      "checks": 191,
+      "failing": 13,
       "tier": 3,
       "subjective": false
     },
@@ -1164,9 +1191,9 @@
     },
     {
       "name": "Duplication",
-      "score": 89.4,
-      "strict": 89.4,
-      "checks": 33,
+      "score": 90.5,
+      "strict": 90.5,
+      "checks": 37,
       "failing": 5,
       "tier": 3,
       "subjective": false
@@ -1216,7 +1243,7 @@
       "name": "Security",
       "score": 100.0,
       "strict": 100.0,
-      "checks": 59,
+      "checks": 61,
       "failing": 0,
       "tier": 4,
       "subjective": false
@@ -1249,10 +1276,10 @@
     },
     {
       "name": "Test health",
-      "score": 33.5,
-      "strict": 33.5,
-      "checks": 274,
-      "failing": 28,
+      "score": 59.9,
+      "strict": 59.9,
+      "checks": 275,
+      "failing": 19,
       "tier": 4,
       "subjective": false
     },

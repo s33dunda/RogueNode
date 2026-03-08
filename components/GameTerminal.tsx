@@ -10,11 +10,104 @@ import TerminalInput from "./TerminalInput";
 import TerminalNav from "./TerminalNav";
 import TerminalOutput from "./TerminalOutput";
 
-const GameTerminal = () => {
-	// Get authenticated user from Clerk
-	const { user, isLoaded } = useUser();
+export const INTRO_LINES = [
+	"RogueNode v0.1 - DevOps Rogue Training Ground",
+	"© 1977 TERMINAL INDUSTRIES",
+	"---------------------------------------",
+	"You awaken in a dimly lit server room. The hum of machines surrounds you.",
+	"Your terminal flickers with an urgent message: 'SYSTEM COMPROMISED'",
+	"",
+	"Type 'help' for available commands or 'tools' to see DevOps commands.",
+];
 
-	// Convex action hooks (must be called before any returns)
+type TerminalHistoryEntry = {
+	commandInput: string;
+	outputLines: string[];
+};
+
+export function isMissionCommand(command: string): boolean {
+	return command.trim().toLowerCase() === "missions";
+}
+
+export function getNavVisibility(clientY: number, currentVisibility: boolean) {
+	if (clientY < 50) {
+		return true;
+	}
+
+	if (clientY > 100) {
+		return false;
+	}
+
+	return currentVisibility;
+}
+
+export function buildRenderedOutput(
+	terminalOutputs: TerminalHistoryEntry[] | null | undefined,
+	introLines: readonly string[] = INTRO_LINES,
+) {
+	if (!terminalOutputs || terminalOutputs.length === 0) {
+		return [...introLines, "> "];
+	}
+
+	const history = terminalOutputs.flatMap((entry) => [
+		`> ${entry.commandInput}`,
+		...entry.outputLines,
+	]);
+
+	return [...introLines, ...history];
+}
+
+interface GameTerminalShellProps {
+	disabled: boolean;
+	input: string;
+	isMissionPanelVisible: boolean;
+	isNavVisible: boolean;
+	onCloseMissionPanel: () => void;
+	onExecuteCommand: (command: string) => Promise<void>;
+	onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+	onMouseMove: (e: React.MouseEvent<HTMLElement>) => void;
+	onSubmit: (e: React.FormEvent) => Promise<void>;
+	renderedOutput: string[];
+	terminalRef: React.RefObject<HTMLDivElement | null>;
+}
+
+function GameTerminalShell({
+	disabled,
+	input,
+	isMissionPanelVisible,
+	isNavVisible,
+	onCloseMissionPanel,
+	onExecuteCommand,
+	onInputChange,
+	onMouseMove,
+	onSubmit,
+	renderedOutput,
+	terminalRef,
+}: GameTerminalShellProps) {
+	return (
+		<nav
+			className="flex flex-col h-full w-full bg-black text-green-500 overflow-hidden font-mono relative"
+			onMouseMove={onMouseMove}
+		>
+			<TerminalNav executeCommand={onExecuteCommand} isVisible={isNavVisible} />
+			<TerminalOutput output={renderedOutput} terminalRef={terminalRef} />
+			<TerminalInput
+				input={input}
+				onInputChange={onInputChange}
+				onSubmit={onSubmit}
+				disabled={disabled}
+			/>
+			<CRTEffects />
+			<MissionPanel
+				isVisible={isMissionPanelVisible}
+				onClose={onCloseMissionPanel}
+			/>
+		</nav>
+	);
+}
+
+const GameTerminal = () => {
+	const { user, isLoaded } = useUser();
 	const identityReady = isLoaded && !!user?.id;
 	const initializeGameState = useMutation(api.gameActions.initializeGameState);
 	const serverGameState = useQuery(
@@ -35,35 +128,13 @@ const GameTerminal = () => {
 
 	const { processCommand } = useCommandProcessor();
 
-	const introLines = useMemo(
-		() => [
-			"RogueNode v0.1 - DevOps Rogue Training Ground",
-			"© 1977 TERMINAL INDUSTRIES",
-			"---------------------------------------",
-			"You awaken in a dimly lit server room. The hum of machines surrounds you.",
-			"Your terminal flickers with an urgent message: 'SYSTEM COMPROMISED'",
-			"",
-			"Type 'help' for available commands or 'tools' to see DevOps commands.",
-		],
-		[],
+	const renderedOutput = useMemo(
+		() => buildRenderedOutput(terminalOutputs),
+		[terminalOutputs],
 	);
-
-	const renderedOutput = useMemo(() => {
-		if (!terminalOutputs || terminalOutputs.length === 0) {
-			return [...introLines, "> "];
-		}
-
-		const history = terminalOutputs.flatMap((entry) => [
-			`> ${entry.commandInput}`,
-			...entry.outputLines,
-		]);
-
-		return [...introLines, ...history];
-	}, [introLines, terminalOutputs]);
 
 	const gameStateReady = !!user?.id && serverGameState?.playerId === user.id;
 
-	// Initialize game state for the current user once their identity is known.
 	useEffect(() => {
 		if (!user?.id) {
 			initializationAttemptedForUserRef.current = null;
@@ -81,23 +152,19 @@ const GameTerminal = () => {
 
 		initializationAttemptedForUserRef.current = user.id;
 		initializeGameState().catch((err) => {
-			console.error("Failed to initialize game state:", err);
+			console.warn("Failed to initialize game state:", err);
 			if (initializationAttemptedForUserRef.current === user.id) {
 				initializationAttemptedForUserRef.current = null;
 			}
 		});
 	}, [user?.id, gameStateReady, initializeGameState]);
 
-	// Auto-scroll to bottom when output changes
 	useLayoutEffect(() => {
-		const lines = renderedOutput.length;
 		if (terminalRef.current) {
 			terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
 		}
-		void lines;
-	}, [renderedOutput.length]);
+	}, [renderedOutput]);
 
-	// Show loading state while user data loads
 	if (!isLoaded) {
 		return (
 			<div className="terminal-container bg-black text-green-400 p-4 font-mono">
@@ -106,7 +173,6 @@ const GameTerminal = () => {
 		);
 	}
 
-	// Require authentication - redirect to sign in if no user
 	if (!user) {
 		return (
 			<div className="terminal-container bg-black text-green-400 p-4 font-mono">
@@ -115,7 +181,6 @@ const GameTerminal = () => {
 		);
 	}
 
-	// Show loading state while game state is being initialized or query is loading
 	if (!gameStateReady || terminalOutputs === undefined) {
 		return (
 			<div className="terminal-container bg-black text-green-400 p-4 font-mono">
@@ -131,8 +196,7 @@ const GameTerminal = () => {
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
-		// Check for mission command
-		if (input.trim().toLowerCase() === "missions") {
+		if (isMissionCommand(input)) {
 			setIsMissionPanelVisible(true);
 			setInput("");
 			return;
@@ -143,8 +207,7 @@ const GameTerminal = () => {
 	};
 
 	const executeCommand = async (command: string) => {
-		// Check for mission command
-		if (command.trim().toLowerCase() === "missions") {
+		if (isMissionCommand(command)) {
 			setIsMissionPanelVisible(true);
 			return;
 		}
@@ -152,41 +215,26 @@ const GameTerminal = () => {
 		await processCommand(command);
 	};
 
+	const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
+		setIsNavVisible((currentVisibility) =>
+			getNavVisibility(e.clientY, currentVisibility),
+		);
+	};
+
 	return (
-		<nav
-			className="flex flex-col h-full w-full bg-black text-green-500 overflow-hidden font-mono relative"
-			onMouseMove={(e) => {
-				// Show nav when mouse is near the top of the screen
-				if (e.clientY < 50) {
-					setIsNavVisible(true);
-				} else if (e.clientY > 100) {
-					setIsNavVisible(false);
-				}
-			}}
-		>
-			{/* Terminal navigation bar */}
-			<TerminalNav executeCommand={executeCommand} isVisible={isNavVisible} />
-
-			{/* Terminal output */}
-			<TerminalOutput output={renderedOutput} terminalRef={terminalRef} />
-
-			{/* Input form */}
-			<TerminalInput
-				input={input}
-				onInputChange={handleInput}
-				onSubmit={handleSubmit}
-				disabled={serverGameState?.gameOver || !serverGameState}
-			/>
-
-			{/* CRT effect overlays */}
-			<CRTEffects />
-
-			{/* Mission panel overlay */}
-			<MissionPanel
-				isVisible={isMissionPanelVisible}
-				onClose={() => setIsMissionPanelVisible(false)}
-			/>
-		</nav>
+		<GameTerminalShell
+			disabled={serverGameState?.gameOver || !serverGameState}
+			input={input}
+			isMissionPanelVisible={isMissionPanelVisible}
+			isNavVisible={isNavVisible}
+			onCloseMissionPanel={() => setIsMissionPanelVisible(false)}
+			onExecuteCommand={executeCommand}
+			onInputChange={handleInput}
+			onMouseMove={handleMouseMove}
+			onSubmit={handleSubmit}
+			renderedOutput={renderedOutput}
+			terminalRef={terminalRef}
+		/>
 	);
 };
 
