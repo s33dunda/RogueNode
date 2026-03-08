@@ -5,7 +5,7 @@
 		"claude-code@latest",
 		"python@latest",
 		"codex@latest",
-		"nodejs@latest",
+		"nodejs@24",
 		"biome@latest"
 	],
 	"shell": {

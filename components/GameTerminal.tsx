@@ -1,7 +1,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
 import type React from "react";
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { api } from "../convex/_generated/api";
 import { useCommandProcessor } from "../lib/hooks/useCommandProcessor";
 import CRTEffects from "./CRTEffects";
@@ -29,9 +29,9 @@ const GameTerminal = () => {
 	const [input, setInput] = useState("");
 	const [isNavVisible, setIsNavVisible] = useState(false);
 	const [isMissionPanelVisible, setIsMissionPanelVisible] = useState(false);
-	const [gameStateInitialized, setGameStateInitialized] = useState(false);
 
 	const terminalRef = useRef<HTMLDivElement>(null);
+	const initializationAttemptedForUserRef = useRef<string | null>(null);
 
 	const { processCommand } = useCommandProcessor();
 
@@ -61,42 +61,32 @@ const GameTerminal = () => {
 		return [...introLines, ...history];
 	}, [introLines, terminalOutputs]);
 
-	// Reset state when user changes to prevent cross-account leakage
-	// biome-ignore lint/correctness/useExhaustiveDependencies: maybe we create a reset or clearCache later
-	useLayoutEffect(() => {
-		setGameStateInitialized(false);
-	}, [user?.id]);
+	const gameStateReady = !!user?.id && serverGameState?.playerId === user.id;
 
-	// Initialize game state when user loads
-	useLayoutEffect(() => {
+	// Initialize game state for the current user once their identity is known.
+	useEffect(() => {
 		if (!user?.id) {
+			initializationAttemptedForUserRef.current = null;
 			return;
 		}
 
-		// If server already has correct user data, just set initialized
-		if (serverGameState?.playerId === user.id) {
-			if (!gameStateInitialized) {
-				setGameStateInitialized(true);
-			}
+		if (gameStateReady) {
+			initializationAttemptedForUserRef.current = user.id;
 			return;
 		}
 
-		// If already tried to initialize, don't retry
-		if (gameStateInitialized) {
+		if (initializationAttemptedForUserRef.current === user.id) {
 			return;
 		}
 
-		// Initialize game state in the database first
+		initializationAttemptedForUserRef.current = user.id;
 		initializeGameState().catch((err) => {
 			console.error("Failed to initialize game state:", err);
-			// Don't set initialized=true on error to allow manual retry
+			if (initializationAttemptedForUserRef.current === user.id) {
+				initializationAttemptedForUserRef.current = null;
+			}
 		});
-	}, [
-		user?.id,
-		serverGameState?.playerId,
-		gameStateInitialized,
-		initializeGameState,
-	]);
+	}, [user?.id, gameStateReady, initializeGameState]);
 
 	// Auto-scroll to bottom when output changes
 	useLayoutEffect(() => {
@@ -126,7 +116,7 @@ const GameTerminal = () => {
 	}
 
 	// Show loading state while game state is being initialized or query is loading
-	if (!gameStateInitialized || terminalOutputs === undefined) {
+	if (!gameStateReady || terminalOutputs === undefined) {
 		return (
 			<div className="terminal-container bg-black text-green-400 p-4 font-mono">
 				<div>Initializing game state...</div>
