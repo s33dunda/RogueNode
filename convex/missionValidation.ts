@@ -1,7 +1,7 @@
 import type { MissionProgressEntry, MissionStepValidationResult } from "./types";
 import { getMissionPlan, matchesStep } from "./domainSpec/runtime";
 
-export type MissionProgressPatch = Pick<
+type MissionProgressPatch = Pick<
 	MissionProgressEntry,
 	"currentStepIndex" | "completedSteps" | "status" | "completedAt"
 >;
@@ -32,7 +32,7 @@ export function validateAndPrepareUpdate(
 	}
 
 	const plan = getMissionPlan(progress.missionId);
-	if (plan.length === 0) {
+	if (!plan || plan.length === 0) {
 		return {
 			id: progress._id,
 			changes: null,
